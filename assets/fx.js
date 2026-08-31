@@ -373,16 +373,22 @@
         return Math.min(1, Math.max(0, p));
       }
 
+      // The mark assembles over the first 45% of the scene and then simply
+      // stands there. The words do not start until .58, so there is a real
+      // beat where the whole mark is the only thing on the screen.
+      var ASSEMBLE = 0.45;
+
       function apply(p) {
+        var d = Math.min(1, p / ASSEMBLE);
         pin.style.setProperty("--p", p.toFixed(4));
-        STATE.reveal = p;
-        mark.classList.toggle("done", p > 0.985);
+        STATE.reveal = d;
+        mark.classList.toggle("done", d > 0.995);
         // The bar arrives with the mark whole, a beat before the first words.
-        if (bar) bar.classList.toggle("shown", p > 0.46);
+        if (bar) bar.classList.toggle("shown", d > 0.98);
 
         // 64 steps is finer than the dither grid can show, and still skips
         // most repaints while the opening is settling.
-        var step = Math.round(p * 64);
+        var step = Math.round(d * 64);
         if (step !== last) { last = step; paint(step / 64); }
       }
 
@@ -595,10 +601,27 @@
      handlers have had their say. */
   function fromTheTop() {
     try { history.scrollRestoration = "manual"; } catch (e) {}
-    function top() { scrollTo(0, 0); }
-    top();
-    if (document.readyState === "complete") requestAnimationFrame(top);
-    else addEventListener("load", function () { top(); requestAnimationFrame(top); });
+
+    // One shot is not enough: the browser restores after load, and the preview
+    // shell restores again when the page is promoted from thumbnail to full
+    // view. So we hold the top for a couple of seconds — and let go the moment
+    // the reader touches anything, so we never fight a real gesture.
+    var held = true;
+    function release() { held = false; }
+    ["wheel", "touchstart", "keydown", "pointerdown"].forEach(function (t) {
+      addEventListener(t, release, { passive: true, once: true });
+    });
+
+    function top() { if (held && scrollY !== 0) scrollTo(0, 0); }
+    addEventListener("scroll", top, { passive: true });
+
+    var until = (performance.now ? performance.now() : Date.now()) + 2200;
+    (function hold() {
+      top();
+      var now = performance.now ? performance.now() : Date.now();
+      if (held && now < until) requestAnimationFrame(hold);
+      else removeEventListener("scroll", top);
+    })();
   }
 
   function boot() {

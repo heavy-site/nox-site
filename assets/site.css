@@ -119,7 +119,7 @@ a{ color:var(--pale); }
      стільки, скільки треба словам під ним.
      --sig — сторона знака; текст іде за його нижньою кромкою, а не за екраном,
      тож між ними завжди однаковий проміжок. */
-  --t:clamp(0, calc((var(--p, 0) - .50) / .24), 1);
+  --t:clamp(0, calc((var(--p, 0) - .58) / .20), 1);
   --sig:calc(min(74vh, 90vw) * (1 - var(--t, 0) * .52));
   --lift:calc(var(--t, 0) * 16svh);
 }
@@ -433,16 +433,16 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 }
 
 /* ── поява знака за прокруткою ─────────────────────────────────────── */
-.pin .sigil{ opacity:calc(.15 + var(--p, 0) * .85); }
+.pin .sigil{ opacity:calc(.15 + clamp(0, calc(var(--p, 0) / .45), 1) * .85); }
 /* Сцена читається у три такти. Спершу сам знак — і більше нічого.
    Потім коротке вітання. Останнім — де це місце і що воно таке. */
 .pin .stagein .welcome{
-  opacity:clamp(0, calc((var(--p, 0) - .50) / .16), 1);
-  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .50) / .16, 1)) * 14px));
+  opacity:clamp(0, calc((var(--p, 0) - .60) / .14), 1);
+  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .60) / .14, 1)) * 14px));
 }
 .pin .stagein .place{
-  opacity:clamp(0, calc((var(--p, 0) - .74) / .16), 1);
-  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .74) / .16, 1)) * 12px));
+  opacity:clamp(0, calc((var(--p, 0) - .80) / .14), 1);
+  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .80) / .14, 1)) * 12px));
 }
 .pin .scroll{ opacity:clamp(0, calc(1 - var(--p, 0) * 3.2), 1); }
 
