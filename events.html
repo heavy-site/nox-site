@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Афіша — nøx</title>
 <meta name="description" content="Афіша nøx: вечори на майданчику на Нижньоюрківській, 31 у Києві — свої та від зовнішніх організаторів.">
+<meta name="theme-color" content="#06070A">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="nøx">
 <meta property="og:title" content="Афіша — nøx">
@@ -14,10 +15,15 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="film" aria-hidden="true"></div>
+<div class="burn" aria-hidden="true"></div>
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
 <div class="bar stuck" id="bar">
   <a class="wm" href="/">nøx</a>
@@ -25,7 +31,7 @@
     <a href="/">Головна</a>
     <a href="/events" aria-current="page">Афіша</a>
     <a href="/booking">Оренда</a>
-    <a class="cta" href="/booking">Забронювати дату</a>
+    <a class="cta" href="/booking">Забронювати</a>
   </nav>
 </div>
 
@@ -33,6 +39,7 @@
 
   <header class="phead">
     <div class="inner">
+      <p class="mark">Календар</p>
       <h1>Афіша</h1>
       <p class="lead">Вечори на майданчику — свої та від зовнішніх організаторів. Квитки продає той, хто робить вечір.</p>
     </div>
@@ -40,26 +47,26 @@
 
   <section>
     <div class="inner">
-      <div id="upcoming"></div>
+      <div class="rise" id="upcoming"></div>
       <div id="pastwrap" hidden>
         <p class="subcap">Що вже було</p>
-        <div id="past"></div>
+        <div class="rise" id="past"></div>
       </div>
     </div>
   </section>
 
   <section>
     <div class="inner">
-      <div class="teasers">
+      <div class="teasers rise">
         <a class="teaser" href="/booking">
           <em>Оренда</em>
-          <b>Хочете провести свій вечір?</b>
+          <b>Провести<br>свій вечір</b>
           <span>Зал на 300–350 гостей, власний бар, тераса. Розкажіть про дату — відповімо, чи вільна.</span>
           <span class="go">Забронювати дату →</span>
         </a>
         <a class="teaser" href="/">
           <em>Майданчик</em>
-          <b>Що це за місце</b>
+          <b>Що це<br>за місце</b>
           <span>215 м², план залу, бар 9,6 м, парковка. Нижньоюрківська, 31.</span>
           <span class="go">На головну →</span>
         </a>
@@ -86,6 +93,7 @@
   </div>
 </footer>
 
+<script src="/assets/fx.js"></script>
 <script src="/assets/site.js"></script>
 </body>
 </html>

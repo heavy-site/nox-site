@@ -48,7 +48,7 @@
     var host = $("headline");
     if (!host) return;
     host.innerHTML = items.map(function (h) {
-      return "<div><b>" + esc(h.value) + "</b><span>" + esc(h.label) + "</span></div>";
+      return '<div class="fig"><b>' + esc(h.value) + "</b><span>" + esc(h.label) + "</span></div>";
     }).join("");
   }
 
@@ -64,9 +64,14 @@
           (m.caption ? "<figcaption>" + esc(m.caption) + "</figcaption>" : "") + "</figure>";
       }).join("") + "</div>";
     } else {
-      host.innerHTML =
-        '<div class="planwrap"><img src="/assets/plan.svg" alt="План залу nøx: танцювальна зона з колонами, барна стійка 9,6 м, санвузол, гардероб"></div>' +
-        '<p class="plancap">План залу · 18,00 × 12,00 м · бар 9,6 м</p>';
+      host.innerHTML = '<div class="diagram" id="diagram"></div>' +
+        '<p class="diagcap">План залу · 18,00 × 12,00 м · бар 9,6 м</p>';
+      var box = document.getElementById("diagram");
+      if (window.noxDiagram) {
+        window.noxDiagram(box, { id: "page" });
+      } else {
+        box.innerHTML = '<img src="/assets/plan.svg" alt="План залу nøx">';
+      }
     }
   }
 
@@ -95,7 +100,7 @@
       up.innerHTML = (data.upcoming && data.upcoming.length)
         ? data.upcoming.map(function (e) { return evRow(e, false); }).join("")
         : '<div class="none"><p>Найближчі вечори зʼявляться тут. Дати ще вільні.</p>' +
-          '<a class="btn ghost" href="/booking">Забронювати дату</a></div>';
+          '<a class="btn machine" href="/booking">Забронювати дату</a></div>';
     }
     if ($("past") && data.past && data.past.length) {
       $("past").innerHTML = data.past.map(function (e) { return evRow(e, true); }).join("");

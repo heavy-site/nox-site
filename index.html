@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>nøx — майданчик у Києві</title>
 <meta name="description" content="nøx — майданчик для вечорів на Нижньоюрківській, 31 у Києві. Зал 215 м² на 300–350 гостей, бар 9,6 м, тераса і парковка.">
+<meta name="theme-color" content="#06070A">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="nøx">
 <meta property="og:title" content="nøx — майданчик у Києві">
@@ -14,10 +15,15 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="film" aria-hidden="true"></div>
+<div class="burn" aria-hidden="true"></div>
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
 <div class="bar" id="bar">
   <a class="wm" href="/">nøx</a>
@@ -25,49 +31,49 @@
     <a href="/" aria-current="page">Головна</a>
     <a href="/events">Афіша</a>
     <a href="/booking">Оренда</a>
-    <a class="cta" href="/booking">Забронювати дату</a>
+    <a class="cta" href="/booking">Забронювати</a>
   </nav>
 </div>
 
 <main>
 
   <div class="stage">
-    <div class="room" aria-hidden="true">
-      <img src="/assets/plan.svg" alt="">
-    </div>
-    <div class="beams" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="vig" aria-hidden="true"></div>
+    <div class="sigil" aria-hidden="true"></div>
     <div class="stagein">
       <h1>nøx</h1>
+      <p class="rune">Нижньоюрківська 31</p>
       <p class="tag">Майданчик для вечорів у Києві. Зал на <b>300–350 гостей</b>, власний бар, тераса.</p>
-      <p class="where">Нижньоюрківська 31 · 18+</p>
+      <p class="coord">50.4665 <span>◆</span> 30.4999 <span>◆</span> 18+</p>
     </div>
+    <div class="scroll" aria-hidden="true">Вниз</div>
   </div>
 
   <section id="prostir">
     <div class="inner">
-      <h2>Простір</h2>
-      <p class="lead">Один зал 18 на 12 метрів без колон посередині — планування не диктує вам сценарій вечора.</p>
-      <div class="hl" id="headline"></div>
-      <div id="visual"></div>
+      <p class="mark rise">I · Простір</p>
+      <h2 class="rise">Зал</h2>
+      <p class="lead rise">Вісімнадцять на дванадцять метрів без колон посередині. Планування не диктує вам сценарій вечора.</p>
+      <div class="figs rise" id="headline"></div>
+      <div class="rise" id="visual"></div>
     </div>
   </section>
 
-  <section>
+  <section id="vechir">
     <div class="inner">
-      <h2>Найближчий вечір</h2>
-      <div id="next"></div>
-      <div class="teasers" style="margin-top:clamp(36px,5vw,60px)">
+      <p class="mark rise">II · Календар</p>
+      <h2 class="rise">Найближчий вечір</h2>
+      <div class="rise" id="next"></div>
+      <div class="teasers rise" style="margin-top:clamp(40px,5vw,68px)">
         <a class="teaser" href="/events">
           <em>Афіша</em>
-          <b>Хто грає і коли</b>
+          <b>Хто грає<br>і коли</b>
           <span>Усі вечори на майданчику — свої та від зовнішніх організаторів.</span>
           <span class="go">Дивитись афішу →</span>
         </a>
         <a class="teaser" href="/booking">
           <em>Оренда</em>
-          <b>Провести свій вечір</b>
-          <span>Що входить у майданчик, план залу і форма на конкретну дату.</span>
+          <b>Провести<br>свій вечір</b>
+          <span>Що входить у майданчик, план залу і заявка на конкретну дату.</span>
           <span class="go">Забронювати дату →</span>
         </a>
       </div>
@@ -76,8 +82,9 @@
 
   <section id="gostyam">
     <div class="inner">
-      <h2>Гостям</h2>
-      <div class="grid4">
+      <p class="mark rise">III · Гостям</p>
+      <h2 class="rise">Як дістатися</h2>
+      <div class="grid4 rise">
         <div class="g"><b>Де це</b><span>Нижньоюрківська 31, на самому початку вулиці.<br><a href="https://maps.google.com/?q=50.466564192974495,30.499941806080255" target="_blank" rel="noopener">Відкрити мапу</a></span></div>
         <div class="g"><b>Парковка</b><span>Своя, біля входу.</span></div>
         <div class="g"><b>Вік</b><span>18+. Документи перевіряємо на вході.</span></div>
@@ -105,6 +112,7 @@
   </div>
 </footer>
 
+<script src="/assets/fx.js"></script>
 <script src="/assets/site.js"></script>
 </body>
 </html>

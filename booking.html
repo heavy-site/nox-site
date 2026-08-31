@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Оренда майданчика — nøx</title>
 <meta name="description" content="Оренда nøx під ваш вечір: зал 215 м² на 300–350 гостей, бар 9,6 м, гардероб, тераса, парковка. План залу і заявка на дату.">
+<meta name="theme-color" content="#06070A">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="nøx">
 <meta property="og:title" content="Оренда майданчика — nøx">
@@ -14,10 +15,15 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="film" aria-hidden="true"></div>
+<div class="burn" aria-hidden="true"></div>
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
 <div class="bar stuck" id="bar">
   <a class="wm" href="/">nøx</a>
@@ -25,7 +31,7 @@
     <a href="/">Головна</a>
     <a href="/events">Афіша</a>
     <a href="/booking" aria-current="page">Оренда</a>
-    <a class="cta" href="#dati">Забронювати дату</a>
+    <a class="cta" href="#dati">Забронювати</a>
   </nav>
 </div>
 
@@ -33,23 +39,25 @@
 
   <header class="phead">
     <div class="inner">
-      <h1>Оренда<br>майданчика</h1>
-      <p class="lead">Зал на 300–350 гостей під ваш вечір. Розкажіть про дату — відповімо, чи вільна, і що можемо взяти на себе.</p>
+      <p class="mark">Оренда</p>
+      <h1>Ваш вечір<br>у цьому залі</h1>
+      <p class="lead">Зал на 300–350 гостей. Розкажіть про дату — відповімо, чи вільна, і що можемо взяти на себе.</p>
     </div>
   </header>
 
   <section>
     <div class="inner">
-      <h2>Простір</h2>
-      <div class="hl" id="headline"></div>
-      <div id="visual"></div>
+      <p class="mark rise">I · Простір</p>
+      <div class="figs rise" id="headline"></div>
+      <div class="rise" id="visual"></div>
     </div>
   </section>
 
   <section id="scho">
     <div class="inner">
-      <h2>Що ви отримуєте</h2>
-      <div class="cols">
+      <p class="mark rise">II · Умови</p>
+      <h2 class="rise">Що ви отримуєте</h2>
+      <div class="cols rise">
         <div>
           <h3>Уже на майданчику</h3>
           <ul class="list" id="included"></ul>
@@ -57,7 +65,7 @@
         <div>
           <h3>Домовляємось окремо</h3>
           <ul class="list" id="arranged"></ul>
-          <p style="margin-top:26px">Ціна залежить від дати, тривалості й того, що саме потрібно від нас. Напишіть — порахуємо під ваш вечір.</p>
+          <p style="margin-top:28px">Ціна залежить від дати, тривалості й того, що саме потрібно від нас. Напишіть — порахуємо під ваш вечір.</p>
         </div>
       </div>
     </div>
@@ -65,8 +73,9 @@
 
   <section id="dati">
     <div class="inner">
-      <h2>Заявка на дату</h2>
-      <div class="book">
+      <p class="mark rise">III · Заявка</p>
+      <h2 class="rise">Забронювати дату</h2>
+      <div class="book rise">
         <div>
           <p class="lead">Відповідаємо в той самий день. Якщо дата зайнята — запропонуємо найближчі вільні.</p>
           <p>Якщо зручніше голосом — <a href="tel:+380633098621">+380&nbsp;63&nbsp;309&nbsp;8621</a>.</p>
@@ -74,15 +83,15 @@
         <form id="rentform" autocomplete="on">
           <div class="fields">
             <div class="f">
-              <label for="r-name">Хто ви *</label>
+              <label for="r-name">Хто ви <span>*</span></label>
               <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди">
             </div>
             <div class="f">
-              <label for="r-contact">Звʼязок *</label>
+              <label for="r-contact">Звʼязок <span>*</span></label>
               <input id="r-contact" name="contact" required maxlength="200" placeholder="Telegram, телефон або пошта">
             </div>
             <div class="f">
-              <label for="r-date">Дата *</label>
+              <label for="r-date">Дата <span>*</span></label>
               <input id="r-date" name="date" required maxlength="200" placeholder="15 листопада">
             </div>
             <div class="f">
@@ -130,6 +139,7 @@
   </div>
 </footer>
 
+<script src="/assets/fx.js"></script>
 <script src="/assets/site.js"></script>
 </body>
 </html>
