@@ -384,6 +384,73 @@
     });
   }
 
+  /* ── the waveform ───────────────────────────────────────────────────
+     Stacked horizontal lines in the left gutter. Flat at the top of the
+     page; scrolling raises a ridge through the stack, tallest at its middle.
+     Every line breathes slightly out of phase with its neighbours, so the
+     stack reads as a rhythm rather than a static graph. */
+  function waveform() {
+    var cv = document.getElementById("wave");
+    if (!cv) return;
+    var ctx = cv.getContext("2d");
+    if (!ctx) return;
+
+    var LINES = 34, STEPS = 44;
+    var dpr = Math.min(devicePixelRatio || 1, 2);
+    var W = 0, H = 0;
+
+    function size() {
+      var r = cv.getBoundingClientRect();
+      W = r.width; H = r.height;
+      cv.width = Math.max(1, Math.round(W * dpr));
+      cv.height = Math.max(1, Math.round(H * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    addEventListener("resize", size, { passive: true });
+    size();
+
+    function progress() {
+      var span = document.documentElement.scrollHeight - innerHeight;
+      return span > 0 ? Math.min(1, Math.max(0, scrollY / span)) : 0;
+    }
+
+    var visible = true;
+    document.addEventListener("visibilitychange", function () { visible = !document.hidden; });
+
+    var p = 0;
+    (function frame(now) {
+      requestAnimationFrame(frame);
+      if (!visible || W < 8) return;
+
+      var t = now / 1000;
+      p += (progress() - p) * 0.08;            // the ridge follows, it does not snap
+      ctx.clearRect(0, 0, W, H);
+
+      var gap = H / (LINES + 1);
+      for (var i = 0; i < LINES; i++) {
+        var y0 = gap * (i + 1);
+        var d = i / (LINES - 1) - 0.5;
+        var env = Math.exp(-d * d * 7);        // the ridge peaks mid-stack
+        var beat = REDUCED ? 1 : 0.80 + 0.20 * Math.sin(t * 2.1 + i * 0.36);
+        var amp = gap * 3.1 * p * env * beat;
+
+        ctx.beginPath();
+        for (var s = 0; s <= STEPS; s++) {
+          var x = W * s / STEPS;
+          var u = x / W - 0.46;
+          var ridge = Math.exp(-u * u * 15);
+          var wob = REDUCED ? 0
+            : (Math.sin(x * 0.13 + t * 1.25 + i) + Math.sin(x * 0.058 - t * 0.85 + i * 2)) * 0.5;
+          var y = y0 - amp * ridge - wob * (0.7 + 2.6 * p * env);
+          if (s) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.strokeStyle = "rgba(46,155,240," + (0.09 + 0.34 * env * p).toFixed(3) + ")";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    })(performance.now());
+  }
+
   /* ── 3. the wordmark stutters now and then ──────────────────────── */
   function glitch() {
     var stage = document.querySelector(".stagein");
@@ -424,6 +491,7 @@
 
   function boot() {
     voidLayer();
+    waveform();
     glitch();
     reveals();
     var sig = document.querySelector(".sigil");

@@ -152,6 +152,7 @@ out = """<title>nøx — сайт майданчика</title>
 </style>
 
 <canvas id="fx" aria-hidden="true"></canvas>
+<canvas id="wave" aria-hidden="true"></canvas>
 <div class="film" aria-hidden="true"></div>
 <div class="burn" aria-hidden="true"></div>
 <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
