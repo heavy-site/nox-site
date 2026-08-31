@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>nøx — рейв-майданчик у Києві</title>
-<meta name="description" content="nøx — рейв-майданчик на Нижньоюрківській, 31 у Києві. 215 м², 300–350 гостей, власний бар, тераса і парковка. Афіша вечорів та оренда майданчика для організаторів.">
-<link rel="canonical" href="/">
+<title>nøx — майданчик у Києві</title>
+<meta name="description" content="nøx — майданчик для вечорів на Нижньоюрківській, 31 у Києві. Зал 215 м² на 300–350 гостей, бар 9,6 м, тераса і парковка. Оренда під ваш івент.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="nøx">
-<meta property="og:title" content="nøx — рейв-майданчик у Києві">
-<meta property="og:description" content="Нижньоюрківська, 31. 215 м², 300–350 гостей, власний бар, тераса і парковка.">
+<meta property="og:title" content="nøx — майданчик у Києві">
+<meta property="og:description" content="Зал 215 м² на 300–350 гостей. Нижньоюрківська, 31. Оренда під ваш івент.">
 <meta property="og:image" content="/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -24,424 +23,451 @@
   }
 
   :root{
-    --ground:#0C1316; --panel:#111A1E; --panel2:#0F171A;
-    --ink:#E8EFF0; --ink2:#93A7AD; --ink3:#7C919A;
-    --rule:#1E2C32; --rule2:#2B3D44;
-    --na:#5CC3E8; --na-dim:#2C7591;
+    --ground:#070B0D;
+    --raise:#0C1214;
+    --ink:#EDF3F4;
+    --ink2:#8FA4AB;
+    --ink3:#6B8189;
+    --line:#182226;
+    --line2:#243338;
+    --na:#5CC3E8;
+    --na-deep:#2C7591;
     --display:"Yulong","Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
     --sans:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
     --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    --wrap:1060px;
+    --pad:clamp(20px,4vw,56px);
   }
   *{ box-sizing:border-box; }
   html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
   body{
     margin:0; background:var(--ground); color:var(--ink);
-    font-family:var(--sans); font-size:16px; line-height:1.62;
-    -webkit-font-smoothing:antialiased;
+    font-family:var(--sans); font-size:17px; line-height:1.6;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
-  .brand,h1,h2,.stat b,.ev-date,.big{ font-synthesis-weight:none; font-synthesis:none; }
-  img{ max-width:100%; display:block; }
+  h1,h2,.wm,.num,.hl b,.gl-n{ font-synthesis-weight:none; font-synthesis:none; }
+  img{ display:block; max-width:100%; }
   a{ color:var(--na); }
   :focus-visible{ outline:2px solid var(--na); outline-offset:3px; }
-
-  .wrap{ max-width:var(--wrap); margin:0 auto; padding:0 22px; }
-
-  /* ── шапка ─────────────────────────────────────────── */
-  .top{
-    position:sticky; top:0; z-index:20;
-    background:rgba(12,19,22,.86); backdrop-filter:blur(12px);
-    border-bottom:1px solid var(--rule);
-  }
-  .topin{
-    max-width:var(--wrap); margin:0 auto; padding:0 22px;
-    height:60px; display:flex; align-items:center; gap:26px;
-  }
-  .mark{
-    font-family:var(--display); font-size:27px; line-height:1;
-    letter-spacing:.012em; color:var(--ink); text-decoration:none;
-  }
-  .nav{ display:flex; gap:22px; margin-left:auto; flex-wrap:wrap; }
-  .nav a{
-    font-family:var(--mono); font-size:11.5px; letter-spacing:.14em;
-    text-transform:uppercase; color:var(--ink3); text-decoration:none;
-    white-space:nowrap;
-  }
-  .nav a:hover{ color:var(--na); }
-  @media (max-width:640px){
-    .topin{ height:auto; padding-top:12px; padding-bottom:12px; flex-wrap:wrap; gap:12px 18px; }
-    .nav{ margin-left:0; width:100%; gap:16px; }
-  }
-
-  /* ── титул ─────────────────────────────────────────── */
-  .hero{ position:relative; isolation:isolate; padding:clamp(52px,11vw,120px) 0 clamp(34px,6vw,64px); }
-  .rig{ position:absolute; inset:-40% -25% -10%; z-index:-1; pointer-events:none;
-    filter:blur(46px); opacity:.46; mix-blend-mode:screen; }
-  .rig i{ position:absolute; top:0; left:30%; width:13%; height:100%; transform-origin:50% 0;
-    background:linear-gradient(180deg,rgba(92,195,232,.6),rgba(92,195,232,.13) 46%,rgba(92,195,232,0) 78%);
-    animation:sweep 21s ease-in-out infinite; }
-  .rig i:nth-child(1){ --a:-26deg; animation-duration:24s; }
-  .rig i:nth-child(2){ --a:-3deg; animation-duration:18s; animation-delay:-7s; opacity:.82; }
-  .rig i:nth-child(3){ --a:20deg; animation-duration:27s; animation-delay:-12s; }
-  @keyframes sweep{ 0%,100%{ transform:rotate(var(--a)) scaleY(1); } 50%{ transform:rotate(calc(var(--a) + 5deg)) scaleY(1.06); } }
   .eyebrow{
-    font-family:var(--mono); font-size:11px; letter-spacing:.2em;
-    text-transform:uppercase; color:var(--na); margin:0 0 24px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.24em;
+    text-transform:uppercase; color:var(--na); margin:0 0 22px;
   }
-  .brand{
-    font-family:var(--display); font-weight:400;
-    font-size:clamp(84px,19vw,190px); line-height:.84;
-    letter-spacing:.012em; margin:0;
-  }
-  .lede{
-    font-size:clamp(16px,1.85vw,18px); line-height:1.5; font-weight:500;
-    margin:28px 0 0; color:var(--ink);
-  }
-  .lede b{ color:var(--na); font-weight:600; }
 
-  .facts{
-    display:grid; gap:1px; margin:36px 0 0;
-    background:var(--rule); border:1px solid var(--rule);
-    grid-template-columns:1fr;
+  /* ── навігація ─────────────────────────────────────── */
+  .bar{
+    position:fixed; inset:0 0 auto 0; z-index:40; height:62px;
+    display:flex; align-items:center; gap:20px; padding:0 var(--pad);
+    background:linear-gradient(180deg,rgba(7,11,13,.92),rgba(7,11,13,0));
+    transition:background .25s ease, border-color .25s ease;
+    border-bottom:1px solid transparent;
   }
-  @media (min-width:620px){ .facts{ grid-template-columns:2.1fr 1fr 1fr; } }
-  .fact{ background:var(--panel); padding:17px 20px 19px; display:grid; gap:9px; align-content:start; }
-  .fact em{
-    font-family:var(--mono); font-style:normal; font-size:10.5px;
-    letter-spacing:.19em; text-transform:uppercase; color:var(--na);
+  .bar.stuck{ background:rgba(7,11,13,.94); backdrop-filter:blur(14px); border-bottom-color:var(--line); }
+  .wm{ font-family:var(--display); font-size:26px; line-height:1; color:var(--ink); text-decoration:none; letter-spacing:.012em; }
+  .bar nav{ display:flex; gap:20px; margin-left:auto; }
+  .bar nav a{
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink3); text-decoration:none;
   }
-  .fact b{ font-weight:600; font-size:clamp(18px,2.4vw,25px); line-height:1.22; letter-spacing:-.005em; }
-  .fact i{ font-style:normal; font-size:13px; line-height:1.45; color:var(--na); }
+  .bar nav a:hover{ color:var(--ink); }
+  .bar .cta{ color:var(--na); }
+  @media (max-width:720px){ .bar nav a:not(.cta){ display:none; } }
 
-  /* ── секції ────────────────────────────────────────── */
-  .sec{ padding:clamp(46px,7vw,82px) 0; border-top:1px solid var(--rule); scroll-margin-top:70px; }
-  .sechead{ display:flex; align-items:baseline; gap:16px; margin:0 0 32px; flex-wrap:wrap; }
+  /* ── сцена ─────────────────────────────────────────── */
+  .stage{
+    position:relative; min-height:100svh; display:flex; align-items:flex-end;
+    padding:120px var(--pad) clamp(40px,7vh,72px); overflow:hidden;
+  }
+  .stage .room{
+    position:absolute; inset:0; display:grid; place-items:center;
+    padding:92px var(--pad) 38vh; z-index:0; pointer-events:none;
+  }
+  .stage .room svg{ width:min(1020px,100%); height:auto; opacity:.22; }
+  @media (max-width:760px){ .stage .room{ padding-bottom:46vh; } }
+  .beams{ position:absolute; inset:-30% -20% -10%; z-index:1; pointer-events:none;
+    filter:blur(52px); opacity:.5; mix-blend-mode:screen; }
+  .beams i{
+    position:absolute; top:0; left:30%; width:14%; height:100%; transform-origin:50% 0;
+    background:linear-gradient(180deg,rgba(92,195,232,.62),rgba(92,195,232,.12) 48%,rgba(92,195,232,0) 80%);
+    animation:sweep 22s ease-in-out infinite;
+  }
+  .beams i:nth-child(1){ --a:-27deg; left:18%; animation-duration:25s; }
+  .beams i:nth-child(2){ --a:-2deg;  left:44%; animation-duration:19s; animation-delay:-7s; opacity:.85; }
+  .beams i:nth-child(3){ --a:21deg;  left:66%; animation-duration:28s; animation-delay:-13s; }
+  @keyframes sweep{
+    0%,100%{ transform:rotate(var(--a)) scaleY(1); }
+    50%    { transform:rotate(calc(var(--a) + 6deg)) scaleY(1.07); }
+  }
+  .vig{
+    position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:
+      linear-gradient(180deg,transparent 38%,rgba(7,11,13,.72) 68%,var(--ground) 92%),
+      radial-gradient(130% 85% at 50% 26%,transparent 38%,var(--ground) 100%);
+  }
+  .stagein{ position:relative; z-index:3; width:100%; }
+  h1{
+    font-family:var(--display); font-weight:400; margin:0;
+    font-size:clamp(92px,21vw,260px); line-height:.82; letter-spacing:.012em;
+  }
+  .tag{
+    margin:26px 0 0; max-width:30ch;
+    font-size:clamp(17px,2.1vw,22px); line-height:1.42; color:var(--ink);
+  }
+  .tag b{ color:var(--na); font-weight:600; }
+  .where{
+    margin:30px 0 0; font-family:var(--mono); font-size:12px;
+    letter-spacing:.13em; color:var(--ink3);
+  }
+
+  /* ── загальні секції ───────────────────────────────── */
+  section{ padding:clamp(64px,10vw,140px) var(--pad); border-top:1px solid var(--line); scroll-margin-top:62px; }
+  .inner{ max-width:1240px; margin:0 auto; }
   h2{
-    font-family:var(--display); font-weight:400;
-    font-size:clamp(27px,4vw,41px); line-height:1.14;
-    letter-spacing:.008em; margin:0; text-wrap:balance;
+    font-family:var(--display); font-weight:400; margin:0 0 clamp(28px,4vw,48px);
+    font-size:clamp(34px,6vw,68px); line-height:1.04; letter-spacing:.01em;
   }
-  .sechead p{ margin:0; color:var(--ink3); font-size:14px; }
-  p{ margin:0 0 17px; color:var(--ink2); max-width:66ch; }
+  p{ margin:0 0 18px; color:var(--ink2); max-width:62ch; }
+  .lead{ font-size:clamp(18px,2vw,21px); color:var(--ink); max-width:52ch; }
+
+  /* ── цифри ─────────────────────────────────────────── */
+  .hl{ display:grid; gap:clamp(20px,3vw,40px) clamp(24px,4vw,64px); grid-template-columns:repeat(2,1fr); }
+  @media (min-width:900px){ .hl{ grid-template-columns:repeat(4,1fr); } }
+  .hl div{ border-top:1px solid var(--line2); padding-top:16px; }
+  .hl b{
+    display:block; font-family:var(--display); font-weight:400;
+    font-size:clamp(38px,5.6vw,74px); line-height:.98; letter-spacing:.012em;
+  }
+  .hl span{
+    display:block; margin-top:10px; font-family:var(--mono); font-size:11px;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--ink3);
+  }
+
+  /* ── простір: фото або креслення ───────────────────── */
+  .gallery{ display:grid; gap:8px; grid-template-columns:1fr; margin-top:clamp(36px,5vw,64px); }
+  @media (min-width:760px){ .gallery{ grid-template-columns:repeat(2,1fr); } }
+  .gallery figure{ margin:0; position:relative; background:var(--raise); }
+  .gallery figure.wide{ grid-column:1 / -1; }
+  .gallery img{ width:100%; height:100%; object-fit:cover; aspect-ratio:16/10; }
+  .gallery figcaption{
+    position:absolute; left:0; bottom:0; right:0; padding:14px 16px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink); background:linear-gradient(180deg,transparent,rgba(7,11,13,.86));
+  }
+  .planwrap{
+    margin-top:clamp(36px,5vw,64px); border:1px solid var(--line);
+    background:var(--raise); padding:clamp(18px,3vw,40px); overflow-x:auto;
+  }
+  .planwrap svg{ display:block; width:100%; height:auto; min-width:460px; }
+  .plancap{
+    margin:16px 0 0; font-family:var(--mono); font-size:11px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink3);
+  }
+
+  /* ── що входить ────────────────────────────────────── */
+  .cols{ display:grid; gap:clamp(30px,5vw,72px); grid-template-columns:1fr; }
+  @media (min-width:840px){ .cols{ grid-template-columns:1fr 1fr; } }
   h3{
-    font-family:var(--mono); font-weight:500; font-size:11px;
-    letter-spacing:.18em; text-transform:uppercase; color:var(--na); margin:0 0 16px;
+    font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--na); margin:0 0 22px;
   }
+  .list{ list-style:none; margin:0; padding:0; display:grid; }
+  .list li{ padding:16px 0; border-top:1px solid var(--line); }
+  .list li:last-child{ border-bottom:1px solid var(--line); }
+  .list b{ display:block; font-size:17px; font-weight:600; }
+  .list span{ display:block; margin-top:4px; font-size:14.5px; color:var(--ink3); line-height:1.5; }
+
+  /* ── дати ──────────────────────────────────────────── */
+  .book{ display:grid; gap:clamp(30px,5vw,72px); grid-template-columns:1fr; align-items:start; }
+  @media (min-width:900px){ .book{ grid-template-columns:.85fr 1.15fr; } }
+  .fields{ display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:640px){ .fields{ grid-template-columns:1fr 1fr; } }
+  .f{ display:grid; gap:8px; }
+  .f.wide{ grid-column:1 / -1; }
+  label{ font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink3); }
+  input,textarea{
+    font-family:var(--sans); font-size:16px; color:var(--ink);
+    background:transparent; border:0; border-bottom:1px solid var(--line2);
+    padding:10px 0; width:100%; border-radius:0;
+  }
+  input::placeholder,textarea::placeholder{ color:#4E6067; }
+  input:focus,textarea:focus{ outline:none; border-bottom-color:var(--na); }
+  textarea{ min-height:96px; resize:vertical; }
+  .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  .btn{
+    display:inline-block; font-family:var(--mono); font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; text-decoration:none; cursor:pointer;
+    color:var(--ground); background:var(--na); border:0; padding:15px 30px;
+  }
+  .btn:hover{ background:#82D5F2; }
+  .btn:disabled{ opacity:.5; cursor:default; }
+  .btn.ghost{ background:transparent; color:var(--na); box-shadow:inset 0 0 0 1px var(--na-deep); }
+  .btn.ghost:hover{ background:rgba(92,195,232,.09); }
+  .formfoot{ display:flex; align-items:center; gap:20px; margin:30px 0 0; flex-wrap:wrap; }
+  .msg{ font-size:14.5px; color:var(--ink3); }
+  .msg.ok{ color:var(--na); }
+  .msg.err{ color:#EE8FA1; }
 
   /* ── афіша ─────────────────────────────────────────── */
-  .events{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); }
   .ev{
-    background:var(--panel); padding:24px 22px;
-    display:grid; gap:6px 26px; align-items:center;
-    grid-template-columns:1fr;
+    display:grid; gap:6px 28px; grid-template-columns:1fr;
+    padding:24px 0; border-top:1px solid var(--line); align-items:center;
   }
-  @media (min-width:760px){ .ev{ grid-template-columns:190px 1fr auto; gap:4px 26px; } }
-  .ev-date{
-    font-family:var(--display); font-size:20px; letter-spacing:.015em;
-    color:var(--na); line-height:1.2;
-  }
-  .ev-main b{ display:block; font-size:19px; font-weight:600; line-height:1.3; }
-  .ev-main span{ display:block; font-family:var(--mono); font-size:11.5px;
-    letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); margin-top:6px; }
-  .ev.past .ev-date{ color:var(--ink3); }
-  .ev.past .ev-main b{ color:var(--ink2); font-weight:500; }
-  .btn{
-    display:inline-block; font-family:var(--mono); font-size:12px;
-    letter-spacing:.12em; text-transform:uppercase; text-decoration:none;
-    color:var(--ground); background:var(--na); padding:11px 20px; border:0;
-    cursor:pointer; white-space:nowrap;
-  }
-  .btn:hover{ background:#7ED2F0; }
-  .btn.ghost{ background:transparent; color:var(--na); box-shadow:inset 0 0 0 1px var(--na-dim); }
-  .btn.ghost:hover{ background:rgba(92,195,232,.09); }
-  .empty{
-    background:var(--panel); border:1px solid var(--rule);
-    padding:38px 26px; text-align:center;
-  }
-  .empty p{ margin:0 auto 18px; color:var(--ink3); max-width:46ch; }
-  .subhead{
-    font-family:var(--mono); font-size:11px; letter-spacing:.18em;
-    text-transform:uppercase; color:var(--ink3); margin:34px 0 14px;
-  }
-
-  /* ── оренда ────────────────────────────────────────── */
-  .spec{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); grid-template-columns:1fr; }
-  @media (min-width:560px){ .spec{ grid-template-columns:1fr 1fr; } }
-  @media (min-width:880px){ .spec{ grid-template-columns:repeat(4,1fr); } }
-  .sp{ background:var(--panel); padding:18px 20px; display:grid; gap:5px; align-content:start; }
-  .sp em{ font-family:var(--mono); font-style:normal; font-size:10.5px;
-    letter-spacing:.18em; text-transform:uppercase; color:var(--ink3); }
-  .sp b{ font-size:17px; font-weight:600; line-height:1.25; }
-  .sp i{ font-style:normal; font-size:12.5px; color:var(--ink3); line-height:1.4; }
-
-  .planbox{
-    border:1px solid var(--rule); background:var(--panel2);
-    padding:clamp(14px,3vw,28px); overflow-x:auto; margin:16px 0 0;
-  }
-  .planbox svg{ display:block; width:100%; height:auto; min-width:420px; }
-
-  form{ margin:26px 0 0; }
-  .fields{ display:grid; gap:14px; grid-template-columns:1fr; }
-  @media (min-width:700px){ .fields{ grid-template-columns:1fr 1fr; } }
-  .f{ display:grid; gap:7px; }
-  .f.wide{ grid-column:1 / -1; }
-  label{ font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--ink3); }
-  input,textarea{
-    font-family:var(--sans); font-size:15px; color:var(--ink);
-    background:var(--panel); border:1px solid var(--rule2);
-    padding:12px 14px; width:100%;
-  }
-  input:focus,textarea:focus{ outline:none; border-color:var(--na-dim); }
-  textarea{ min-height:104px; resize:vertical; }
-  .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
-  .formfoot{ display:flex; align-items:center; gap:18px; margin:20px 0 0; flex-wrap:wrap; }
-  .msg{ font-size:14px; color:var(--ink3); }
-  .msg.ok{ color:var(--na); }
-  .msg.err{ color:#E8899B; }
+  @media (min-width:760px){ .ev{ grid-template-columns:210px 1fr auto; gap:4px 28px; } }
+  .ev:last-child{ border-bottom:1px solid var(--line); }
+  .ev .d{ font-family:var(--display); font-size:22px; letter-spacing:.015em; color:var(--na); }
+  .ev .t{ font-size:20px; font-weight:600; }
+  .ev .p{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink3); margin-top:5px; }
+  .ev.past .d{ color:var(--ink3); }
+  .ev.past .t{ color:var(--ink2); font-weight:500; }
+  .none{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:44px 0; }
+  .none p{ margin:0 0 20px; color:var(--ink3); }
+  .subcap{ margin:clamp(36px,5vw,60px) 0 0; font-family:var(--mono); font-size:11px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--ink3); }
 
   /* ── гостям ────────────────────────────────────────── */
-  .info{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); grid-template-columns:1fr; }
-  @media (min-width:700px){ .info{ grid-template-columns:1fr 1fr; } }
-  .inf{ background:var(--panel); padding:22px; display:grid; gap:8px; align-content:start; }
-  .inf b{ font-size:15px; font-weight:600; }
-  .inf span{ font-size:14.5px; color:var(--ink2); line-height:1.55; }
+  .grid4{ display:grid; gap:clamp(24px,3vw,44px); grid-template-columns:1fr; }
+  @media (min-width:680px){ .grid4{ grid-template-columns:1fr 1fr; } }
+  @media (min-width:1020px){ .grid4{ grid-template-columns:repeat(4,1fr); } }
+  .g{ border-top:1px solid var(--line2); padding-top:16px; }
+  .g b{ display:block; font-size:16px; font-weight:600; margin-bottom:7px; }
+  .g span{ font-size:15px; color:var(--ink2); line-height:1.55; }
 
   /* ── підвал ────────────────────────────────────────── */
-  .foot{ border-top:1px solid var(--rule); padding:clamp(44px,7vw,72px) 0 46px; }
-  .footgrid{ display:grid; gap:28px; grid-template-columns:1fr; align-items:end; }
-  @media (min-width:700px){ .footgrid{ grid-template-columns:1fr auto; } }
-  .footname{ font-family:var(--display); font-weight:400; font-size:clamp(23px,3.2vw,31px);
-    letter-spacing:.012em; margin:0 0 15px; }
-  .footlinks{ display:grid; gap:7px; justify-items:start; font-family:var(--mono); font-size:14px; }
-  .footlinks a{ text-decoration:none; border-bottom:1px solid var(--na-dim); }
-  .footmark{ font-family:var(--display); font-size:38px; letter-spacing:.012em;
-    color:var(--rule2); line-height:1; }
-  .footaddr{ font-family:var(--mono); font-size:12px; color:var(--ink3); line-height:1.8; }
-  @media (min-width:700px){ .footaddr{ text-align:right; } }
+  footer{ padding:clamp(64px,9vw,120px) var(--pad) clamp(40px,6vw,70px); border-top:1px solid var(--line); }
+  .fgrid{ max-width:1240px; margin:0 auto; display:grid; gap:36px; grid-template-columns:1fr; align-items:end; }
+  @media (min-width:760px){ .fgrid{ grid-template-columns:1fr auto; } }
+  .fname{ font-family:var(--display); font-weight:400; font-size:clamp(30px,5vw,54px);
+    letter-spacing:.012em; margin:0 0 20px; line-height:1; }
+  .flinks{ display:grid; gap:9px; justify-items:start; font-family:var(--mono); font-size:15px; }
+  .flinks a{ text-decoration:none; border-bottom:1px solid var(--na-deep); }
+  .fright{ font-family:var(--mono); font-size:12px; color:var(--ink3); line-height:1.9; }
+  @media (min-width:760px){ .fright{ text-align:right; } }
 
   @media (prefers-reduced-motion:reduce){
     html{ scroll-behavior:auto; }
-    .rig i{ animation:none; }
+    .beams i{ animation:none; }
   }
 </style>
 </head>
 <body>
 
-<header class="top">
-  <div class="topin">
-    <a class="mark" href="#top">nøx</a>
-    <nav class="nav">
-      <a href="#afisha">Афіша</a>
-      <a href="#orenda">Оренда</a>
-      <a href="#gostyam">Гостям</a>
-      <a href="#kontakty">Контакти</a>
-    </nav>
-  </div>
-</header>
+<div class="bar" id="bar">
+  <a class="wm" href="#top">nøx</a>
+  <nav>
+    <a href="#prostir">Простір</a>
+    <a href="#orenda">Оренда</a>
+    <a href="#afisha">Афіша</a>
+    <a href="#gostyam">Гостям</a>
+    <a class="cta" href="#dati">Забронювати дату</a>
+  </nav>
+</div>
 
 <main id="top">
 
-  <section class="hero">
-    <div class="rig" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="wrap">
-      <p class="eyebrow">Рейв-майданчик · Київ</p>
-      <h1 class="brand">nøx</h1>
-      <p class="lede">Майданчик на <b>300–350 гостей</b> на Нижньоюрківській. Тестовий режим, повне відкриття — листопад 2026.</p>
-      <div class="facts">
-        <div class="fact"><em>Адреса</em><b>Нижньоюрківська 31, Київ</b><i>Початок вулиці — найпрохідніше місце</i></div>
-        <div class="fact"><em>Площа</em><b>215 м²</b><i>Плюс тераса і парковка</i></div>
-        <div class="fact"><em>Вік</em><b>18+</b></div>
+  <div class="stage">
+    <div class="room" aria-hidden="true">
+      <svg viewBox="-700 -700 20200 13400" role="img" aria-label="План клубу nøx: барна стійка 9,6 м виділена в центрі внизу, танцювальна зона з колонами, санвузол на сім кабін, гардероб">
+      <rect x="0" y="0" width="18000" height="12000" fill="#0B1215"/>
+      <defs>
+      <radialGradient id="floorlight" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#5CC8E8" stop-opacity=".20"/>
+      <stop offset=".55" stop-color="#5CC8E8" stop-opacity=".07"/>
+      <stop offset="1" stop-color="#5CC8E8" stop-opacity="0"/>
+      </radialGradient>
+      </defs>
+      <ellipse cx="5450" cy="5750" rx="5300" ry="2750" fill="url(#floorlight)"/>
+
+      <path d="M0,0H18000V12000H0Z M250,250H17750V11750H250Z" fill-rule="evenodd" fill="#BDC8C9"/>
+      <rect x="0" y="2950" width="10650" height="150" fill="#BDC8C9"/>
+      <rect x="10490" y="250" width="160" height="2700" fill="#BDC8C9"/>
+      <rect x="2500" y="250" width="150" height="2700" fill="#BDC8C9"/>
+      <rect x="10700" y="8400" width="160" height="3350" fill="#BDC8C9"/>
+      <rect x="8960" y="834" width="250" height="2111" fill="#BDC8C9"/>
+
+      <rect x="780" y="2950" width="820" height="150" fill="#0B1215"/>
+      <rect x="3030" y="2950" width="820" height="150" fill="#0B1215"/>
+      <rect x="8470" y="2950" width="820" height="150" fill="#0B1215"/>
+      <rect x="0" y="4500" width="250" height="1400" fill="#0B1215"/>
+
+      <g fill="#DDE5E5" fill-opacity=".12" stroke="#DB92A5" stroke-width="24">
+      <rect x="2650" y="250" width="700" height="1300"/><rect x="3410" y="250" width="700" height="1300"/><rect x="4200" y="250" width="700" height="1300"/>
+      <rect x="4975" y="250" width="700" height="1300"/><rect x="5767" y="250" width="700" height="1300"/><rect x="6563" y="250" width="700" height="1300"/>
+      <rect x="7348" y="250" width="700" height="1300"/>
+      </g>
+      <g fill="#DB92A5" fill-opacity=".62" stroke="none">
+      <rect x="2780" y="331" width="450" height="550"/><rect x="3540" y="331" width="450" height="550"/><rect x="4330" y="331" width="450" height="550"/>
+      <rect x="5105" y="331" width="450" height="550"/><rect x="5897" y="331" width="450" height="550"/><rect x="6693" y="331" width="450" height="550"/>
+      <rect x="7478" y="331" width="450" height="550"/>
+      </g>
+      <rect x="10222" y="446" width="268" height="2317" fill="#DDAE6E" fill-opacity=".55" stroke="#DDAE6E" stroke-width="26"/>
+      <rect x="4738" y="2588" width="2490" height="360" fill="#DB92A5" fill-opacity=".34" stroke="#DB92A5" stroke-width="24"/>
+
+      <rect x="5290" y="9550" width="600" height="2200" fill="#B597CE" fill-opacity=".30" stroke="#B597CE" stroke-width="26"/>
+      <g stroke="#B597CE" stroke-width="26">
+      <rect x="5890" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
+      <rect x="7490" y="9550" width="1600" height="600" fill="#B597CE" fill-opacity=".30"/>
+      <rect x="9100" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
+      </g>
+      <g stroke="#B597CE" stroke-width="26">
+      <rect x="5890" y="11148" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
+      <rect x="6590" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
+      <rect x="7990" y="11148" width="600" height="560" fill="#5CC8E8" fill-opacity=".45"/>
+      <rect x="8588" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
+      <rect x="10000" y="11150" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
+      </g>
+
+      <rect x="250" y="9000" width="2500" height="2748" fill="#68C2B2" fill-opacity=".18"
+      stroke="#68C2B2" stroke-width="26" stroke-dasharray="220 140"/>
+
+      <g fill="#BDC8C9" stroke="none">
+      <rect x="3090" y="5950" width="320" height="360"/><rect x="4550" y="5950" width="320" height="360"/>
+      <rect x="6030" y="5950" width="320" height="360"/><rect x="7490" y="5950" width="320" height="360"/>
+      <rect x="8950" y="5950" width="320" height="360"/><rect x="10430" y="5950" width="320" height="360"/>
+      </g>
+
+      <g fill="none" stroke="#5CC8E8" stroke-width="46" stroke-dasharray="200 120" opacity=".95">
+      <rect x="5120" y="9390" width="5640" height="2400" rx="170"/>
+      </g>
+      <g text-anchor="middle" fill="#5CC8E8">
+      <text x="7940" y="8760" font-family="ui-monospace, Menlo, monospace"
+      font-size="700" letter-spacing="90">БАР</text>
+      <text x="7940" y="9130" font-family="ui-monospace, Menlo, monospace"
+      font-size="300" letter-spacing="28" opacity=".8">9,6 м стійки</text>
+      </g>
+
+      <g stroke="#8B999C" stroke-width="24" fill="none">
+      <line x1="0" y1="-330" x2="18000" y2="-330"/>
+      <line x1="18330" y1="0" x2="18330" y2="12000"/>
+      </g>
+      <g font-family="ui-monospace, Menlo, monospace" font-size="290" fill="#8B999C" text-anchor="middle">
+      <text x="9000" y="-450">18,00 м</text>
+      <text x="18800" y="6000" transform="rotate(-90 18800 6000)">12,00 м</text>
+      </g>
+      </svg>
+    </div>
+    <div class="beams" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="vig" aria-hidden="true"></div>
+    <div class="stagein">
+      <h1>nøx</h1>
+      <p class="tag">Майданчик для вечорів у Києві. Зал на <b>300–350 гостей</b>, власний бар, тераса.</p>
+      <p class="where">Нижньоюрківська 31 · 18+</p>
+    </div>
+  </div>
+
+  <section id="prostir">
+    <div class="inner">
+      <h2>Простір</h2>
+      <p class="lead">Один зал 18 на 12 метрів без колон посередині — планування не диктує вам сценарій вечора.</p>
+      <div class="hl" id="headline"></div>
+      <div id="visual"></div>
+    </div>
+  </section>
+
+  <section id="orenda">
+    <div class="inner">
+      <h2>Що ви отримуєте</h2>
+      <div class="cols">
+        <div>
+          <h3>Уже на майданчику</h3>
+          <ul class="list" id="included"></ul>
+        </div>
+        <div>
+          <h3>Домовляємось окремо</h3>
+          <ul class="list" id="arranged"></ul>
+          <p style="margin-top:26px">Ціна залежить від дати, тривалості й того, що саме потрібно від нас. Напишіть — порахуємо під ваш вечір.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="sec" id="afisha">
-    <div class="wrap">
-      <div class="sechead"><h2>Афіша</h2></div>
+  <section id="dati">
+    <div class="inner">
+      <h2>Забронювати дату</h2>
+      <div class="book">
+        <div>
+          <p class="lead">Розкажіть про вечір — відповімо, чи вільна дата, і що можемо взяти на себе.</p>
+          <p>Якщо зручніше голосом — <a href="tel:+380633098621">+380&nbsp;63&nbsp;309&nbsp;8621</a>.</p>
+        </div>
+        <form id="rentform" autocomplete="on">
+          <div class="fields">
+            <div class="f">
+              <label for="r-name">Хто ви *</label>
+              <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди">
+            </div>
+            <div class="f">
+              <label for="r-contact">Звʼязок *</label>
+              <input id="r-contact" name="contact" required maxlength="200" placeholder="Telegram, телефон або пошта">
+            </div>
+            <div class="f">
+              <label for="r-date">Дата *</label>
+              <input id="r-date" name="date" required maxlength="200" placeholder="15 листопада">
+            </div>
+            <div class="f">
+              <label for="r-guests">Скільки гостей чекаєте</label>
+              <input id="r-guests" name="guests" maxlength="200" placeholder="200–300">
+            </div>
+            <div class="f wide">
+              <label for="r-event">Що за вечір</label>
+              <input id="r-event" name="event" maxlength="200" placeholder="Назва, формат, музика">
+            </div>
+            <div class="f wide">
+              <label for="r-comment">Що потрібно від нас</label>
+              <textarea id="r-comment" name="comment" maxlength="2000" placeholder="Звук, світло, бармени, тайминг"></textarea>
+            </div>
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="r-website">Не заповнюйте</label>
+            <input id="r-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="formfoot">
+            <button class="btn" type="submit" id="rentbtn">Надіслати</button>
+            <span class="msg" id="rentmsg" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="afisha">
+    <div class="inner">
+      <h2>Афіша</h2>
       <div id="upcoming"></div>
       <div id="pastwrap" hidden>
-        <p class="subhead">Що вже було</p>
-        <div class="events" id="past"></div>
+        <p class="subcap">Що вже було</p>
+        <div id="past"></div>
       </div>
     </div>
   </section>
 
-  <section class="sec" id="orenda">
-    <div class="wrap">
-      <div class="sechead">
-        <h2>Оренда майданчика</h2>
-        <p>Для організаторів</p>
-      </div>
-      <p>Зал, бар, гардероб і санвузол. Свій звук і світло привозите або орендуєте — розкажемо, з ким працюємо.</p>
-
-      <div class="spec" id="spec"></div>
-
-      <div class="planbox">
-        <svg viewBox="-700 -700 20200 13400" role="img" aria-label="План клубу nøx: барна стійка 9,6 м виділена в центрі внизу, танцювальна зона з колонами, санвузол на сім кабін, гардероб">
-        <rect x="0" y="0" width="18000" height="12000" fill="#0B1215"/>
-        <defs>
-        <radialGradient id="floorlight" cx="50%" cy="50%" r="50%">
-        <stop offset="0" stop-color="#5CC8E8" stop-opacity=".20"/>
-        <stop offset=".55" stop-color="#5CC8E8" stop-opacity=".07"/>
-        <stop offset="1" stop-color="#5CC8E8" stop-opacity="0"/>
-        </radialGradient>
-        </defs>
-        <ellipse cx="5450" cy="5750" rx="5300" ry="2750" fill="url(#floorlight)"/>
-
-        <path d="M0,0H18000V12000H0Z M250,250H17750V11750H250Z" fill-rule="evenodd" fill="#BDC8C9"/>
-        <rect x="0" y="2950" width="10650" height="150" fill="#BDC8C9"/>
-        <rect x="10490" y="250" width="160" height="2700" fill="#BDC8C9"/>
-        <rect x="2500" y="250" width="150" height="2700" fill="#BDC8C9"/>
-        <rect x="10700" y="8400" width="160" height="3350" fill="#BDC8C9"/>
-        <rect x="8960" y="834" width="250" height="2111" fill="#BDC8C9"/>
-
-        <rect x="780" y="2950" width="820" height="150" fill="#0B1215"/>
-        <rect x="3030" y="2950" width="820" height="150" fill="#0B1215"/>
-        <rect x="8470" y="2950" width="820" height="150" fill="#0B1215"/>
-        <rect x="0" y="4500" width="250" height="1400" fill="#0B1215"/>
-
-        <g fill="#DDE5E5" fill-opacity=".12" stroke="#DB92A5" stroke-width="24">
-        <rect x="2650" y="250" width="700" height="1300"/><rect x="3410" y="250" width="700" height="1300"/><rect x="4200" y="250" width="700" height="1300"/>
-        <rect x="4975" y="250" width="700" height="1300"/><rect x="5767" y="250" width="700" height="1300"/><rect x="6563" y="250" width="700" height="1300"/>
-        <rect x="7348" y="250" width="700" height="1300"/>
-        </g>
-        <g fill="#DB92A5" fill-opacity=".62" stroke="none">
-        <rect x="2780" y="331" width="450" height="550"/><rect x="3540" y="331" width="450" height="550"/><rect x="4330" y="331" width="450" height="550"/>
-        <rect x="5105" y="331" width="450" height="550"/><rect x="5897" y="331" width="450" height="550"/><rect x="6693" y="331" width="450" height="550"/>
-        <rect x="7478" y="331" width="450" height="550"/>
-        </g>
-        <rect x="10222" y="446" width="268" height="2317" fill="#DDAE6E" fill-opacity=".55" stroke="#DDAE6E" stroke-width="26"/>
-        <rect x="4738" y="2588" width="2490" height="360" fill="#DB92A5" fill-opacity=".34" stroke="#DB92A5" stroke-width="24"/>
-
-        <rect x="5290" y="9550" width="600" height="2200" fill="#B597CE" fill-opacity=".30" stroke="#B597CE" stroke-width="26"/>
-        <g stroke="#B597CE" stroke-width="26">
-        <rect x="5890" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
-        <rect x="7490" y="9550" width="1600" height="600" fill="#B597CE" fill-opacity=".30"/>
-        <rect x="9100" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
-        </g>
-        <g stroke="#B597CE" stroke-width="26">
-        <rect x="5890" y="11148" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
-        <rect x="6590" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
-        <rect x="7990" y="11148" width="600" height="560" fill="#5CC8E8" fill-opacity=".45"/>
-        <rect x="8588" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
-        <rect x="10000" y="11150" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
-        </g>
-
-        <rect x="250" y="9000" width="2500" height="2748" fill="#68C2B2" fill-opacity=".18"
-        stroke="#68C2B2" stroke-width="26" stroke-dasharray="220 140"/>
-
-        <g fill="#BDC8C9" stroke="none">
-        <rect x="3090" y="5950" width="320" height="360"/><rect x="4550" y="5950" width="320" height="360"/>
-        <rect x="6030" y="5950" width="320" height="360"/><rect x="7490" y="5950" width="320" height="360"/>
-        <rect x="8950" y="5950" width="320" height="360"/><rect x="10430" y="5950" width="320" height="360"/>
-        </g>
-
-        <g fill="none" stroke="#5CC8E8" stroke-width="46" stroke-dasharray="200 120" opacity=".95">
-        <rect x="5120" y="9390" width="5640" height="2400" rx="170"/>
-        </g>
-        <g text-anchor="middle" fill="#5CC8E8">
-        <text x="7940" y="8760" font-family="ui-monospace, Menlo, monospace"
-        font-size="700" letter-spacing="90">БАР</text>
-        <text x="7940" y="9130" font-family="ui-monospace, Menlo, monospace"
-        font-size="300" letter-spacing="28" opacity=".8">9,6 м стійки</text>
-        </g>
-
-        <g stroke="#8B999C" stroke-width="24" fill="none">
-        <line x1="0" y1="-330" x2="18000" y2="-330"/>
-        <line x1="18330" y1="0" x2="18330" y2="12000"/>
-        </g>
-        <g font-family="ui-monospace, Menlo, monospace" font-size="290" fill="#8B999C" text-anchor="middle">
-        <text x="9000" y="-450">18,00 м</text>
-        <text x="18800" y="6000" transform="rotate(-90 18800 6000)">12,00 м</text>
-        </g>
-        </svg>
-      </div>
-
-      <form id="rentform" autocomplete="on">
-        <h3>Заявка на дату</h3>
-        <div class="fields">
-          <div class="f">
-            <label for="r-name">Хто ви <span aria-hidden="true">*</span></label>
-            <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди">
-          </div>
-          <div class="f">
-            <label for="r-contact">Звʼязок <span aria-hidden="true">*</span></label>
-            <input id="r-contact" name="contact" required maxlength="200" placeholder="Telegram, телефон або пошта">
-          </div>
-          <div class="f">
-            <label for="r-event">Подія</label>
-            <input id="r-event" name="event" maxlength="200" placeholder="Назва або формат вечора">
-          </div>
-          <div class="f">
-            <label for="r-date">Дата <span aria-hidden="true">*</span></label>
-            <input id="r-date" name="date" required maxlength="200" placeholder="Наприклад, 15 листопада">
-          </div>
-          <div class="f">
-            <label for="r-guests">Скільки гостей очікуєте</label>
-            <input id="r-guests" name="guests" maxlength="200" placeholder="200–300">
-          </div>
-          <div class="f wide">
-            <label for="r-comment">Що потрібно від майданчика</label>
-            <textarea id="r-comment" name="comment" maxlength="2000" placeholder="Звук, світло, бар, тайминг, кількість барменів — усе, що важливо"></textarea>
-          </div>
-        </div>
-        <div class="hp" aria-hidden="true">
-          <label for="r-website">Не заповнюйте це поле</label>
-          <input id="r-website" name="website" tabindex="-1" autocomplete="off">
-        </div>
-        <div class="formfoot">
-          <button class="btn" type="submit" id="rentbtn">Надіслати заявку</button>
-          <span class="msg" id="rentmsg" role="status" aria-live="polite"></span>
-        </div>
-      </form>
-    </div>
-  </section>
-
-  <section class="sec" id="gostyam">
-    <div class="wrap">
-      <div class="sechead"><h2>Гостям</h2></div>
-      <div class="info">
-        <div class="inf">
-          <b>Як дістатися</b>
-          <span>Нижньоюрківська 31, Київ. Ми на самому початку вулиці.</span>
-          <span><a href="https://maps.google.com/?q=50.466564192974495,30.499941806080255" target="_blank" rel="noopener">Відкрити на мапі</a></span>
-        </div>
-        <div class="inf">
-          <b>Парковка</b>
-          <span>Своя парковка біля входу.</span>
-        </div>
-        <div class="inf">
-          <b>Вік</b>
-          <span>18+. На вході перевіряємо документи, тож візьміть із собою.</span>
-        </div>
-        <div class="inf">
-          <b>Всередині</b>
-          <span>Танцювальна зона, бар на 9,6 м стійки, гардероб, тераса.</span>
-        </div>
+  <section id="gostyam">
+    <div class="inner">
+      <h2>Гостям</h2>
+      <div class="grid4">
+        <div class="g"><b>Де це</b><span>Нижньоюрківська 31, на самому початку вулиці.<br><a href="https://maps.google.com/?q=50.466564192974495,30.499941806080255" target="_blank" rel="noopener">Відкрити мапу</a></span></div>
+        <div class="g"><b>Парковка</b><span>Своя, біля входу.</span></div>
+        <div class="g"><b>Вік</b><span>18+. Документи перевіряємо на вході.</span></div>
+        <div class="g"><b>Всередині</b><span>Танцпол, бар, гардероб, тераса.</span></div>
       </div>
     </div>
   </section>
-
-  <footer class="foot" id="kontakty">
-    <div class="wrap footgrid">
-      <div>
-        <p class="eyebrow">Звʼязатися</p>
-        <p class="footname">Євген Пивовар</p>
-        <div class="footlinks">
-          <a href="tel:+380633098621">+380 63 309 8621</a>
-          <a href="mailto:e.pyvovar@gmail.com">e.pyvovar@gmail.com</a>
-        </div>
-      </div>
-      <div class="footaddr">
-        <div class="footmark">nøx</div>
-        Нижньоюрківська 31, Київ<br>
-        215 м² · 300–350 гостей · 18+
-      </div>
-    </div>
-  </footer>
 
 </main>
+
+<footer id="kontakty">
+  <div class="fgrid">
+    <div>
+      <p class="eyebrow">Звʼязатися</p>
+      <p class="fname">Євген Пивовар</p>
+      <div class="flinks">
+        <a href="tel:+380633098621">+380 63 309 8621</a>
+        <a href="mailto:e.pyvovar@gmail.com">e.pyvovar@gmail.com</a>
+      </div>
+    </div>
+    <div class="fright">
+      Нижньоюрківська 31, Київ<br>
+      215 м² · 300–350 гостей · 18+
+    </div>
+  </div>
+</footer>
 
 <script>
 (function(){
@@ -452,85 +478,112 @@
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
   };
+  var $ = function(id){ return document.getElementById(id); };
 
-  function eventRow(e, isPast){
-    var cls = isPast ? "ev past" : "ev";
-    var right = "";
-    if (!isPast && e.tickets) {
-      right = '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>';
-    }
-    var promoter = e.promoter ? '<span>' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + '</span>' : "";
-    return '<div class="' + cls + '">'
-      + '<div class="ev-date">' + esc(e.dateText || e.date) + '</div>'
-      + '<div class="ev-main"><b>' + esc(e.title) + '</b>' + promoter + '</div>'
-      + '<div>' + right + '</div>'
-      + '</div>';
-  }
+  var bar = $("bar");
+  var onScroll = function(){ bar.classList.toggle("stuck", window.scrollY > 40); };
+  addEventListener("scroll", onScroll, { passive:true }); onScroll();
 
-  function renderSpec(spec){
-    var host = document.getElementById("spec");
-    if (!host || !spec || !spec.length) return;
-    host.innerHTML = spec.map(function(s){
-      return '<div class="sp"><em>' + esc(s.label) + '</em><b>' + esc(s.value) + '</b>'
-        + (s.note ? '<i>' + esc(s.note) + '</i>' : "") + '</div>';
+  function headline(items){
+    $("headline").innerHTML = items.map(function(h){
+      return "<div><b>" + esc(h.value) + "</b><span>" + esc(h.label) + "</span></div>";
     }).join("");
   }
 
-  function renderEvents(data){
-    var up = document.getElementById("upcoming");
-    if (data.upcoming && data.upcoming.length) {
-      up.innerHTML = '<div class="events">'
-        + data.upcoming.map(function(e){ return eventRow(e, false); }).join("")
-        + '</div>';
-    } else {
-      up.innerHTML = '<div class="empty">'
-        + '<p>Найближчі вечори зʼявляться тут. Якщо хочете провести свій — напишіть, календар відкритий.</p>'
-        + '<a class="btn ghost" href="#orenda">Орендувати майданчик</a>'
-        + '</div>';
+  // Photos when there are photos; the drawing of the room until then.
+  function visual(media){
+    var host = $("visual");
+    if (media && media.length) {
+      var figs = media.map(function(m, i){
+        var wide = (media.length % 2 === 1 && i === 0) ? " wide" : "";
+        return '<figure class="' + wide.trim() + '">'
+          + '<img src="' + esc(m.src) + '" alt="' + esc(m.alt) + '" loading="lazy" decoding="async">'
+          + (m.caption ? "<figcaption>" + esc(m.caption) + "</figcaption>" : "")
+          + "</figure>";
+      }).join("");
+      host.innerHTML = '<div class="gallery">' + figs + "</div>";
+      return;
     }
+    var plan = document.querySelector(".room svg");
+    if (!plan) return;
+    var copy = plan.cloneNode(true);
+    copy.removeAttribute("aria-hidden");
+    copy.setAttribute("role", "img");
+    var box = document.createElement("div");
+    box.className = "planwrap";
+    box.appendChild(copy);
+    host.appendChild(box);
+    var cap = document.createElement("p");
+    cap.className = "plancap";
+    cap.textContent = "План залу · 18,00 × 12,00 м · бар 9,6 м";
+    host.appendChild(cap);
+  }
+
+  function rent(data){
+    var row = function(x){
+      return "<li><b>" + esc(x.title) + "</b>"
+        + (x.note ? "<span>" + esc(x.note) + "</span>" : "") + "</li>";
+    };
+    $("included").innerHTML = data.included.map(row).join("");
+    $("arranged").innerHTML = data.arranged.map(row).join("");
+  }
+
+  function evRow(e, past){
+    var when = esc(e.dateText || e.date) + (e.year ? " " + esc(e.year) : "");
+    var right = (!past && e.tickets)
+      ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>' : "";
+    return '<div class="ev' + (past ? " past" : "") + '">'
+      + '<div class="d">' + when + "</div>"
+      + '<div><div class="t">' + esc(e.title) + "</div>"
+      + (e.promoter ? '<div class="p">' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + "</div>" : "")
+      + "</div><div>" + right + "</div></div>";
+  }
+
+  function events(data){
+    $("upcoming").innerHTML = (data.upcoming && data.upcoming.length)
+      ? data.upcoming.map(function(e){ return evRow(e, false); }).join("")
+      : '<div class="none"><p>Найближчі вечори зʼявляться тут. Дати ще вільні.</p>'
+        + '<a class="btn ghost" href="#dati">Забронювати дату</a></div>';
 
     if (data.past && data.past.length) {
-      document.getElementById("past").innerHTML =
-        data.past.map(function(e){ return eventRow(e, true); }).join("");
-      document.getElementById("pastwrap").hidden = false;
+      $("past").innerHTML = data.past.map(function(e){ return evRow(e, true); }).join("");
+      $("pastwrap").hidden = false;
     }
   }
 
-  fetch("/api/events", { headers: { "Accept": "application/json" } })
-    .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-    .then(function(data){ renderEvents(data); renderSpec(data.spec); })
+  fetch("/api/site", { headers:{ Accept:"application/json" } })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(d){ headline(d.headline); visual(d.media); rent(d.rent); events(d); })
     .catch(function(){
-      document.getElementById("upcoming").innerHTML =
-        '<div class="empty"><p>Не вдалося завантажити афішу. Оновіть сторінку або напишіть нам.</p>'
-        + '<a class="btn ghost" href="#kontakty">Контакти</a></div>';
+      // The page must still say what the venue is if the backend is down.
+      headline([
+        { value:"215 м²",  label:"зал" },
+        { value:"300–350", label:"гостей" },
+        { value:"9,6 м",   label:"барна стійка" },
+        { value:"18 × 12", label:"метрів, без колон по центру" }
+      ]);
+      visual([]);
+      events({ upcoming:[], past:[] });
     });
 
-  var form = document.getElementById("rentform");
+  var form = $("rentform");
   form.addEventListener("submit", function(ev){
     ev.preventDefault();
-    var btn = document.getElementById("rentbtn");
-    var msg = document.getElementById("rentmsg");
-    var body = {};
+    var btn = $("rentbtn"), msg = $("rentmsg"), body = {};
     ["name","contact","event","date","guests","comment","website"].forEach(function(k){
-      var el = form.elements[k];
-      if (el) body[k] = el.value.trim();
+      if (form.elements[k]) body[k] = form.elements[k].value.trim();
     });
-
-    btn.disabled = true;
-    msg.className = "msg";
-    msg.textContent = "Надсилаємо…";
+    btn.disabled = true; msg.className = "msg"; msg.textContent = "Надсилаємо…";
 
     fetch("/api/rent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body)
     })
-      .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+      .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
       .then(function(res){
         if (res.ok && res.j.ok) {
           form.reset();
           msg.className = "msg ok";
-          msg.textContent = "Заявку отримано. Звʼяжемося найближчим часом.";
+          msg.textContent = "Заявку отримано. Відповімо найближчим часом.";
         } else {
           msg.className = "msg err";
           msg.textContent = (res.j && res.j.error) || "Не вдалося надіслати. Спробуйте ще раз.";
@@ -538,7 +591,7 @@
       })
       .catch(function(){
         msg.className = "msg err";
-        msg.textContent = "Немає звʼязку з сервером. Спробуйте ще раз або напишіть нам.";
+        msg.textContent = "Немає звʼязку. Спробуйте ще раз або подзвоніть.";
       })
       .then(function(){ btn.disabled = false; });
   });

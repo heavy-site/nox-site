@@ -4,7 +4,7 @@
   RewriteEngine On
 
   # Extensionless API routes → PHP files
-  RewriteRule ^api/events/?$ /api/events.php [L,QSA]
+  RewriteRule ^api/site/?$   /api/site.php   [L,QSA]
   RewriteRule ^api/rent/?$   /api/rent.php   [L,QSA]
 </IfModule>
 
