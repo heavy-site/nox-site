@@ -45,13 +45,15 @@ a{ color:var(--pale); }
 /* ── фон: шейдер + плівка ──────────────────────────────────────────── */
 #fx{ position:fixed; inset:0; z-index:-3; display:block; width:100%; height:100%; }
 
-/* Хвиля живе тільки у лівому полі: ширина — це половина того, що лишається
-   від вікна поза межами колонки контенту. Немає поля — немає хвилі. */
+/* Хвиля живе у порожній смузі ліворуч від тексту. Ця смуга — те, що більше:
+   бічний відступ сторінки чи поле поза колонкою контенту; мінус 10px, щоб
+   штрихи не дотикались до літер. На вузьких екранах смуги немає — і хвилі теж. */
 #wave{
   position:fixed; left:0; top:60px; z-index:1; pointer-events:none;
-  width:clamp(0px, calc((100vw - 1300px) / 2), 96px);
+  width:min(96px, calc(max(var(--pad), (100vw - var(--wrap)) / 2) - 10px));
   height:calc(100svh - 60px);
 }
+@media (max-width:820px){ #wave{ display:none; } }
 .film{
   position:fixed; inset:0; z-index:-2; pointer-events:none;
   background:

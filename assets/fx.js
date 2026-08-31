@@ -398,7 +398,8 @@
 
     var LINES = 110,      // how many dashes fill the gutter
         SPREAD = 9,       // how many lines either side of the playhead react
-        REST = 0.13;      // length at rest, as a fraction of the gutter
+        REST = 0.30,      // length at rest, as a fraction of the gutter
+        REST_MIN = 12;    // …but never shorter than this, the gutter is narrow
     var dpr = Math.min(devicePixelRatio || 1, 2);
     var W = 0, H = 0;
 
@@ -439,6 +440,7 @@
 
       var gap = H / (LINES + 1);
       var focus = p * (LINES - 1);           // which line the reader is level with
+      var rest = Math.min(W * 0.62, Math.max(REST_MIN, W * REST));
 
       for (var i = 0; i < LINES; i++) {
         var y = Math.round(gap * (i + 1)) + 0.5;   // crisp hairlines
@@ -447,13 +449,13 @@
         var beat = REDUCED ? 1 : 0.80 + 0.20 * Math.sin(t * 2.3 + i * 0.42);
         var breath = REDUCED ? 0 : 0.018 * Math.sin(t * 1.4 + i * 0.9);
 
-        var len = W * (REST + breath + (1 - REST) * env * beat * jitter[i]);
+        var len = rest * (1 + breath) + (W - rest) * env * beat * jitter[i];
         if (len < 2) len = 2;
 
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(len, y);
-        ctx.strokeStyle = "rgba(46,155,240," + (0.13 + 0.52 * env).toFixed(3) + ")";
+        ctx.strokeStyle = "rgba(46,155,240," + (0.22 + 0.58 * env).toFixed(3) + ")";
         ctx.stroke();
       }
     })(performance.now());
