@@ -92,6 +92,11 @@ site = site.replace('href="/booking"', 'href="#/booking"')
 pages = {"home": body_of("index.html"), "events": body_of("events.html"), "booking": body_of("booking.html")}
 for key, html in pages.items():
     html = html.replace('src="/assets/logo.svg"', 'src="%s"' % logo_inline_uri)
+    # The sandbox loads no third-party frames, so the map says where it is
+    # rather than sitting there as an empty rectangle.
+    html = re.sub(r"<iframe class=\"mapframe\".*?</iframe>",
+                  '<p class="mapnote">Мапа працює на самому сайті —<br>у цьому превʼю сторонні фрейми не вантажаться.</p>',
+                  html, flags=re.S)
     html = html.replace('href="/booking"', 'href="#/booking"').replace('href="/events"', 'href="#/events"')
     html = html.replace('href="/"', 'href="#/"')
     pages[key] = html

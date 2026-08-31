@@ -314,6 +314,28 @@ h3{
 .next .d{ font-family:var(--rite); font-weight:400; font-size:26px; color:var(--gas); letter-spacing:.015em; }
 .next .t{ font-family:var(--rite); font-size:clamp(26px,3.4vw,40px); text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
 
+/* ── мапа ──────────────────────────────────────────────────────────────
+   Плитки OpenStreetMap світлі, тож їх вивертає у темне й зводить у синь
+   сайта — інакше на чорній сторінці був би білий прямокутник. */
+.map{ margin-top:clamp(40px,5vw,72px); }
+.mapframe{
+  display:block; width:100%; height:clamp(300px,42vh,480px); border:1px solid var(--line2);
+  filter:invert(1) hue-rotate(188deg) saturate(.55) brightness(.92) contrast(1.05);
+}
+.mapnote{
+  display:grid; place-items:center; height:clamp(300px,42vh,480px); margin:0;
+  border:1px solid var(--line2); background:var(--pit); text-align:center;
+  padding:0 var(--pad); color:var(--dust); font-family:var(--hud); font-size:11px;
+  letter-spacing:.18em; text-transform:uppercase; line-height:2;
+}
+.mapfoot{
+  display:flex; flex-wrap:wrap; gap:8px 24px; justify-content:space-between;
+  margin:14px 0 0; font-family:var(--hud); font-size:11px;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--dust);
+}
+.mapfoot a{ color:var(--pale); text-decoration:none; border-bottom:1px solid var(--line2); }
+.mapfoot a:hover{ border-bottom-color:var(--pale); }
+
 /* ── афіша: головний вечір ─────────────────────────────────────────── */
 .feat{ display:grid; gap:clamp(26px,3.4vw,52px); grid-template-columns:1fr; align-items:start; }
 @media (min-width:860px){ .feat{ grid-template-columns:minmax(0,440px) 1fr; } }
