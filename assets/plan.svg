@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-700 -700 20200 13400" role="img" aria-label="План клубу nøx: обведені й підписані санвузол на сім кабін, гардероб і танцпол 7,35 × 12 м; у центрі внизу барна стійка 9,6 м, у залі шість колон">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-700 -700 20200 13400" role="img" aria-label="План клубу nøx: обведені й підписані санвузол, гардероб і танцпол 7,35 × 12 м; у центрі внизу барна стійка 9,6 м, у залі шість колон">
   <rect x="0" y="0" width="18000" height="12000" fill="#06070A"/>
   <defs>
   <radialGradient id="floorlight" cx="50%" cy="50%" r="50%">
@@ -61,8 +61,7 @@
   <rect x="5120" y="9390" width="5640" height="2400" rx="170"/>
   </g>
   <g text-anchor="middle" fill="#B9E2FF" font-family="ui-monospace, Menlo, monospace">
-  <text x="5805" y="2180" font-size="420" letter-spacing="46">САНВУЗОЛ</text>
-  <text x="5805" y="2620" font-size="260" letter-spacing="24" opacity=".72">сім кабін</text>
+  <text x="5805" y="2400" font-size="420" letter-spacing="46">САНВУЗОЛ</text>
   <text x="1500" y="10310" font-size="360" letter-spacing="30">ГАРДЕРОБ</text>
   <text x="14200" y="5820" font-size="760" letter-spacing="96">ТАНЦПОЛ</text>
   <text x="14200" y="6280" font-size="300" letter-spacing="28" opacity=".72">7,35 × 12 м · 88,2 м²</text>
