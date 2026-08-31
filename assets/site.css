@@ -420,19 +420,9 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
   image-rendering:pixelated; image-rendering:crisp-edges;
   filter:drop-shadow(0 0 22px rgba(46,155,240,.55)) drop-shadow(0 0 70px rgba(46,155,240,.30)) drop-shadow(0 0 160px rgba(46,155,240,.16));
 }
-.mark .dith{ opacity:1; }
-/* Once the mark is whole it dips briefly, twice, the way a jet catches.
-   It flickers around being visible — it never goes dark. */
-@keyframes catch{
-  0%,84%  { opacity:1; }
-  85%     { opacity:.34; }
-  86.5%   { opacity:1; }
-  88%     { opacity:.52; }
-  90%,100%{ opacity:1; }
-}
-@media (prefers-reduced-motion:reduce){
-  .mark .dith{ animation:none; opacity:1; }
-}
+/* Знак не мерехтить: він горить. Пульсацію прозорості всього знака прибрано —
+   рух живе всередині самих пікселів, у полум'ї дизерингу. */
+.mark .dith{ opacity:1; animation:none; }
 
 /* ── поява знака за прокруткою ─────────────────────────────────────── */
 /* Кільця проступають за прокруткою; сам знак нею не гаситься — його появу
@@ -450,6 +440,5 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 }
 .pin .scroll{ opacity:clamp(0, calc(1 - var(--p, 0) * 3.2), 1); }
 
-/* while assembling, the canvas is redrawn per scroll step — no animation */
+/* Полотно перемальовується власним циклом — жодної CSS-анімації на ньому. */
 .mark.scrolled .dith{ animation:none; }
-.mark.scrolled.done .dith{ animation:catch 8.5s steps(1,end) infinite; }

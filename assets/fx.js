@@ -279,8 +279,39 @@
     [10,58, 6,54, 9,57, 5,53],
     [42,26,38,22,41,25,37,21]
   ];
-  var GAS = [46, 155, 240];
+  var GAS = [46, 155, 240];    // the body of the flame
+  var HOT = [127, 212, 255];   // where it is burning
+  var TIP = [214, 240, 255];   // the very edge of the burn
   var SIZE = 300;
+
+  /* A tileable field of soft blobs. White noise smoothed a few times with a
+     wrap at every edge, so it can be sampled with a bitmask and drift for
+     ever without a seam. Two of these at different scales, drifting upward at
+     different speeds, are what makes the mark look like it is burning. */
+  function tileNoise(size, seed) {
+    var n = size * size, a = new Float32Array(n), b = new Float32Array(n), i;
+    var s = seed >>> 0;
+    for (i = 0; i < n; i++) { s = (s * 1664525 + 1013904223) >>> 0; a[i] = s / 4294967296; }
+    for (var pass = 0; pass < 3; pass++) {
+      for (var y = 0; y < size; y++) {
+        var yc = y * size,
+            yn = ((y - 1 + size) % size) * size,
+            yp = ((y + 1) % size) * size;
+        for (var x = 0; x < size; x++) {
+          var xn = (x - 1 + size) % size, xp = (x + 1) % size;
+          b[yc + x] = (a[yc + x] * 4 + a[yc + xn] + a[yc + xp] + a[yn + x] + a[yp + x]) / 8;
+        }
+      }
+      a.set(b);
+    }
+    var lo = Infinity, hi = -Infinity;
+    for (i = 0; i < n; i++) { if (a[i] < lo) lo = a[i]; if (a[i] > hi) hi = a[i]; }
+    var k = hi > lo ? 1 / (hi - lo) : 1;
+    for (i = 0; i < n; i++) a[i] = (a[i] - lo) * k;
+    return a;
+  }
+  var FLAME = tileNoise(128, 20260831);   // the tongues
+  var EMBER = tileNoise(32, 7734);        // the finer crawl inside them
 
   // Builds a paint(progress) for one canvas. The source alpha and each cell's
   // distance from the centre are measured once; a repaint is then just a
@@ -299,7 +330,6 @@
       var alpha = new Float32Array(n);
       var rad = new Float32Array(n);
       var thr = new Float32Array(n);
-      var phase = new Uint8Array(n);   // where each cell sits in the shimmer
       var half = SIZE / 2;
       for (var y = 0; y < SIZE; y++) {
         for (var x = 0; x < SIZE; x++) {
@@ -307,8 +337,6 @@
           alpha[i] = src[i * 4 + 3] / 255;
           rad[i] = Math.sqrt((x - half) * (x - half) + (y - half) * (y - half)) / half;
           thr[i] = (BAYER[y & 7][x & 7] + 0.5) / 64;
-          var h = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-          phase[i] = ((h - Math.floor(h)) * 256) | 0;
         }
       }
 
@@ -317,31 +345,53 @@
       var out = ctx.createImageData(SIZE, SIZE);
       var od = out.data;
 
-      // The shimmer is a 256-entry sine sampled by each cell's phase, so a
-      // living frame costs one array lookup per cell rather than a sine.
-      var WAVE = new Float32Array(256);
+      /* The mark burns. Two fields of soft blobs drift upward at different
+         speeds and push each cell's threshold about; the deeper a cell sits
+         inside the solid, the less the flame can touch it, so the core holds
+         while the rim is eaten and given back in rising tongues. Cells that
+         only just survive are painted hot, which puts a live ember edge along
+         everything the flame is working on.
+
+         Nothing is ever lit below FLOOR. Without it the flame could push a
+         threshold under zero and the mark would show through before the
+         scroll had begun to assemble it. */
+      var FLOOR = 0.02, BURN = 0.30;
 
       function paint(p, t) {
         var eased = p * p * (3 - 2 * p);
-        // A steady tremble at the dissolving rim, and every fourteen seconds
-        // or so a swell that eats further into the mark and lets it back.
-        var surge = Math.pow(Math.max(0, Math.sin(t * 0.45)), 12);
-        var amp = 0.05 + 0.10 * surge;
-        for (var k = 0; k < 256; k++) WAVE[k] = amp * Math.sin(t * 2.4 + k * 0.0245437);
+        var o1 = (t * 34) | 0, o2 = (t * 13) | 0;
 
-        for (var i = 0; i < n; i++) {
-          var a = alpha[i], j = i * 4;
-          if (a === 0) { od[j + 3] = 0; continue; }
-          var r = rad[i];
-          // settled shape: solid core, dissolving rim
-          var settled = 1 - Math.min(1, Math.max(0, (r - 0.46) / 0.60)) * 0.58;
-          // arrival: the centre clears the threshold first
-          var arriving = eased * (1.35 - 0.55 * r);
-          var keep = a * Math.min(arriving, settled);
-          if (keep > thr[i] + WAVE[phase[i]]) {
-            od[j] = GAS[0]; od[j + 1] = GAS[1]; od[j + 2] = GAS[2]; od[j + 3] = 255;
-          } else {
-            od[j + 3] = 0;
+        for (var y = 0; y < SIZE; y++) {
+          var row = y * SIZE;
+          var r1 = (((y + o1) & 127) << 7), r2 = (((y + o2) & 31) << 5);
+          for (var x = 0; x < SIZE; x++) {
+            var i = row + x, j = i << 2;
+            var a = alpha[i];
+            if (a === 0) { od[j + 3] = 0; continue; }
+
+            var r = rad[i];
+            // settled shape: solid core, dissolving rim
+            var settled = 1 - Math.min(1, Math.max(0, (r - 0.46) / 0.60)) * 0.58;
+            // arrival: the centre clears the threshold first
+            var arriving = eased * (1.35 - 0.55 * r);
+            var keep = a * Math.min(arriving, settled);
+
+            var flame = FLAME[r1 + (x & 127)] * 0.64 + EMBER[r2 + (x & 31)] * 0.36;
+            var edge = 1 - keep; if (edge < 0) edge = 0;
+            var lim = thr[i] + BURN * edge * edge * (flame - 0.42);
+            if (lim < FLOOR) lim = FLOOR;
+
+            if (keep > lim) {
+              // Hot only where the flame is actually working. Judging by the
+              // margin alone would pepper the solid core with embers, because
+              // a Bayer cell with a high threshold always survives by a hair.
+              var margin = keep - lim;
+              var c = GAS;
+              if (edge > 0.12 && margin < 0.10) c = margin < 0.035 ? TIP : HOT;
+              od[j] = c[0]; od[j + 1] = c[1]; od[j + 2] = c[2]; od[j + 3] = 255;
+            } else {
+              od[j + 3] = 0;
+            }
           }
         }
         ctx.putImageData(out, 0, 0);
