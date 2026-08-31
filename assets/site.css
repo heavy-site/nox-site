@@ -413,7 +413,9 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
    and this rule used to catch those too and rip them out of the flow. */
 .sigil .mark{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:84%; aspect-ratio:1; z-index:1; pointer-events:none;
+  /* Полотно ширше за сам знак: усередині нього залишене поле, у якому живуть
+     язики й іскри. Знак від цього не більшає — він намальований із відступом. */
+  width:100%; aspect-ratio:1; z-index:1; pointer-events:none;
 }
 .mark .dith{
   position:absolute; inset:0; width:100%; height:100%;

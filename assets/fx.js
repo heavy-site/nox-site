@@ -282,7 +282,7 @@
   var GAS = [46, 155, 240];    // the body of the flame
   var HOT = [127, 212, 255];   // where it is burning
   var TIP = [214, 240, 255];   // the very edge of the burn
-  var SIZE = 300;
+  var SIZE = 300, PAD = 26;   // room around the mark for the flame to work in
 
   /* A tileable field of soft blobs. White noise smoothed a few times with a
      wrap at every edge, so it can be sampled with a bitmask and drift for
@@ -320,22 +320,26 @@
     var img = new Image();
     img.decoding = "async";
     img.onload = function () {
+      // The mark is drawn inset, not edge to edge: the artwork all but touches
+      // the top of its own viewBox, and tongues and sparks need somewhere to
+      // go. The canvas is shown correspondingly larger, so the mark itself is
+      // the same size on the screen as it ever was.
       var g = document.createElement("canvas");
       g.width = g.height = SIZE;
       var gx = g.getContext("2d");
-      gx.drawImage(img, 0, 0, SIZE, SIZE);
+      gx.drawImage(img, PAD, PAD, SIZE - PAD * 2, SIZE - PAD * 2);
       var src = gx.getImageData(0, 0, SIZE, SIZE).data;
 
       var n = SIZE * SIZE;
       var alpha = new Float32Array(n);
       var rad = new Float32Array(n);
       var thr = new Float32Array(n);
-      var half = SIZE / 2;
+      var mid = SIZE / 2, half = (SIZE - PAD * 2) / 2;
       for (var y = 0; y < SIZE; y++) {
         for (var x = 0; x < SIZE; x++) {
           var i = y * SIZE + x;
           alpha[i] = src[i * 4 + 3] / 255;
-          rad[i] = Math.sqrt((x - half) * (x - half) + (y - half) * (y - half)) / half;
+          rad[i] = Math.sqrt((x - mid) * (x - mid) + (y - mid) * (y - mid)) / half;
           thr[i] = (BAYER[y & 7][x & 7] + 0.5) / 64;
         }
       }
@@ -352,15 +356,16 @@
       }
       var RIM = new Int32Array(rimList);
 
-      // A short halo just outside the mark. The tongues can only reach where
-      // this still has some value, which is what keeps them small.
+      // The halo the tongues stand in. It leans upward: each pass draws more
+      // from the cell below than the one above, so the reach above the mark is
+      // roughly three times the reach beneath it. Flames rise.
       var spill = new Float32Array(alpha), sTmp = new Float32Array(n);
-      for (var sp = 0; sp < 4; sp++) {
+      for (var sp = 0; sp < 8; sp++) {
         for (var sy = 1; sy < SIZE - 1; sy++) {
           for (var sx = 1; sx < SIZE - 1; sx++) {
             var si = sy * SIZE + sx;
             sTmp[si] = (spill[si] * 2 + spill[si - 1] + spill[si + 1]
-                      + spill[si - SIZE] + spill[si + SIZE]) / 6;
+                      + spill[si - SIZE] * 0.45 + spill[si + SIZE] * 2.1) / 6.55;
           }
         }
         spill.set(sTmp);
@@ -384,8 +389,8 @@
          Nothing is ever lit below FLOOR. Without it the flame could push a
          threshold under zero and the mark would show through before the
          scroll had begun to assemble it. */
-      var FLOOR = 0.02, BURN = 0.22, TONGUE = 7.6;
-      var SPARKS = 70, spark = [], spawn = 0, tPrev = -1;
+      var FLOOR = 0.02, BURN = 0.22, TONGUE = 11.5;
+      var SPARKS = 130, spark = [], spawn = 0, tPrev = -1;
 
       function paint(p, t) {
         var eased = p * p * (3 - 2 * p);
@@ -404,7 +409,7 @@
             if (a === 0) {
               // a tongue: only where the halo still reaches and the field is
               // near its crest, so they stay short and come in patches
-              var lick = spill[i] * TONGUE * Math.max(0, flame - 0.58) * eased;
+              var lick = spill[i] * TONGUE * Math.max(0, flame - 0.46) * eased;
               if (lick > thr[i]) {
                 var ct = lick > thr[i] * 2.2 ? TIP : HOT;
                 od[j] = ct[0]; od[j + 1] = ct[1]; od[j + 2] = ct[2]; od[j + 3] = 255;
@@ -427,7 +432,7 @@
 
             if (keep > lim) {
               var c = GAS;
-              if (edge > 0.24 && flame > 0.70 && keep - lim < 0.07) c = HOT;
+              if (edge > 0.20 && flame > 0.62 && keep - lim < 0.09) c = HOT;
               od[j] = c[0]; od[j + 1] = c[1]; od[j + 2] = c[2]; od[j + 3] = 255;
             } else {
               od[j + 3] = 0;
@@ -440,16 +445,16 @@
         // cell: at this scale that is a couple of screen pixels, which is the
         // whole point — it should read as an ember, not as a dot of paint.
         if (RIM.length && eased > 0.35) {
-          spawn += dt * (6 + 22 * eased);
+          spawn += dt * (12 + 46 * eased);
           while (spawn >= 1) {
             spawn -= 1;
             if (spark.length >= SPARKS) break;
             var seed = RIM[(Math.random() * RIM.length) | 0];
             spark.push({
               x: seed % SIZE, y: (seed / SIZE) | 0,
-              vx: (Math.random() - 0.5) * 12,
-              vy: -(16 + Math.random() * 30),
-              age: 0, life: 0.8 + Math.random() * 1.5,
+              vx: (Math.random() - 0.5) * 14,
+              vy: -(22 + Math.random() * 44),
+              age: 0, life: 1.0 + Math.random() * 1.9,
               wob: Math.random() * 6.28
             });
           }
