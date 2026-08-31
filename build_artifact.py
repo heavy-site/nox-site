@@ -28,8 +28,7 @@ def data_uri_jpeg(path):
 
 def body_of(page):
     html = read(page)
-    # everything between <main> and the closing </footer>
-    m = re.search(r"(<main>.*?</footer>)", html, re.S)
+    m = re.search(r"(<main>.*?</main>)", html, re.S)
     return m.group(1)
 
 
