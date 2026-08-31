@@ -280,8 +280,8 @@
     [42,26,38,22,41,25,37,21]
   ];
   var GAS = [46, 155, 240];    // the body of the flame
-  var HOT = [127, 212, 255];   // where it is burning
-  var TIP = [214, 240, 255];   // the very edge of the burn
+  var HOT = [96, 178, 236];    // where it is burning
+  var TIP = [158, 214, 250];   // the very edge of the burn
   var SIZE = 300, PAD = 26;   // room around the mark for the flame to work in
 
   /* A tileable field of soft blobs. White noise smoothed a few times with a
@@ -394,7 +394,7 @@
 
       function paint(p, t) {
         var eased = p * p * (3 - 2 * p);
-        var o1 = (t * 34) | 0, o2 = (t * 13) | 0;
+        var o1 = (t * 13) | 0, o2 = (t * 5) | 0;
         var dt = tPrev < 0 ? 0 : Math.min(0.12, t - tPrev);
         tPrev = t;
 
@@ -432,7 +432,7 @@
 
             if (keep > lim) {
               var c = GAS;
-              if (edge > 0.20 && flame > 0.62 && keep - lim < 0.09) c = HOT;
+              if (edge > 0.24 && flame > 0.70 && keep - lim < 0.07) c = HOT;
               od[j] = c[0]; od[j + 1] = c[1]; od[j + 2] = c[2]; od[j + 3] = 255;
             } else {
               od[j + 3] = 0;
@@ -445,16 +445,16 @@
         // cell: at this scale that is a couple of screen pixels, which is the
         // whole point — it should read as an ember, not as a dot of paint.
         if (RIM.length && eased > 0.35) {
-          spawn += dt * (12 + 46 * eased);
+          spawn += dt * (7 + 22 * eased);
           while (spawn >= 1) {
             spawn -= 1;
             if (spark.length >= SPARKS) break;
             var seed = RIM[(Math.random() * RIM.length) | 0];
             spark.push({
               x: seed % SIZE, y: (seed / SIZE) | 0,
-              vx: (Math.random() - 0.5) * 14,
-              vy: -(22 + Math.random() * 44),
-              age: 0, life: 1.0 + Math.random() * 1.9,
+              vx: (Math.random() - 0.5) * 7,
+              vy: -(9 + Math.random() * 19),
+              age: 0, life: 1.8 + Math.random() * 2.6,
               wob: Math.random() * 6.28
             });
           }
@@ -462,8 +462,8 @@
         for (var k = spark.length - 1; k >= 0; k--) {
           var s = spark[k];
           s.age += dt;
-          s.vy -= 9 * dt;                       // they keep gathering height
-          s.x += (s.vx + Math.sin(t * 2.4 + s.wob) * 9) * dt;
+          s.vy -= 3.5 * dt;                     // they keep gathering height
+          s.x += (s.vx + Math.sin(t * 1.05 + s.wob) * 5) * dt;
           s.y += s.vy * dt;
           var sxi = s.x | 0, syi = s.y | 0;
           if (s.age >= s.life || sxi < 0 || syi < 0 || sxi >= SIZE || syi >= SIZE) {
@@ -472,7 +472,7 @@
           }
           var u = s.age / s.life;
           // an ember does not fade, it starts missing beats and then stops
-          if (u > 0.5 && (((t * 26 + k) | 0) & 1)) continue;
+          if (u > 0.5 && (((t * 11 + k) | 0) & 1)) continue;
           var cs = u < 0.28 ? TIP : u < 0.68 ? HOT : GAS;
           var js = ((syi * SIZE) + sxi) << 2;
           od[js] = cs[0]; od[js + 1] = cs[1]; od[js + 2] = cs[2]; od[js + 3] = 255;
