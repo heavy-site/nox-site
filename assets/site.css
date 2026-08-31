@@ -317,10 +317,19 @@ h3{
 /* ── мапа ──────────────────────────────────────────────────────────────
    Плитки OpenStreetMap світлі, тож їх вивертає у темне й зводить у синь
    сайта — інакше на чорній сторінці був би білий прямокутник. */
-/* Адреса ліворуч, мапа праворуч і ширша за неї втричі; на вузькому — одна
-   під одною, адреса першою. */
+/* Адреса ліворуч у своїй вузькій колонці, мапа праворуч — і вона виходить за
+   колонку контенту до самого краю екрана. .where лежить просто в .inner, а
+   .inner центрований у вікні, тож 50% від нього мінус 50vw — це рівно та
+   відстань, якої бракує до правого краю. */
 .where{ display:grid; gap:clamp(26px,3.4vw,54px); grid-template-columns:1fr; align-items:start; }
-@media (min-width:900px){ .where{ grid-template-columns:minmax(0,1fr) minmax(0,3fr); } }
+@media (min-width:900px){
+  .where{
+    grid-template-columns:minmax(200px,26ch) minmax(0,1fr);
+    margin-right:calc(50% - 50vw);
+  }
+  /* підпис під мапою лишається в межах сторінки, а не тікає за край */
+  .where .mapfoot{ padding-right:var(--pad); }
+}
 .mapframe{
   display:block; width:100%; height:clamp(360px,60vh,640px); border:1px solid var(--line2);
   filter:invert(1) hue-rotate(188deg) saturate(.55) brightness(.92) contrast(1.05);
