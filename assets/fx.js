@@ -340,34 +340,79 @@
         }
       }
 
+      // The silhouette: solid cells with a hollow neighbour. This is where the
+      // tongues stand and where the sparks leave from.
+      var rimList = [];
+      for (var ry = 1; ry < SIZE - 1; ry++) {
+        for (var rx = 1; rx < SIZE - 1; rx++) {
+          var ri = ry * SIZE + rx;
+          if (alpha[ri] > 0.5 && (alpha[ri - 1] < 0.5 || alpha[ri + 1] < 0.5 ||
+                                  alpha[ri - SIZE] < 0.5 || alpha[ri + SIZE] < 0.5)) rimList.push(ri);
+        }
+      }
+      var RIM = new Int32Array(rimList);
+
+      // A short halo just outside the mark. The tongues can only reach where
+      // this still has some value, which is what keeps them small.
+      var spill = new Float32Array(alpha), sTmp = new Float32Array(n);
+      for (var sp = 0; sp < 4; sp++) {
+        for (var sy = 1; sy < SIZE - 1; sy++) {
+          for (var sx = 1; sx < SIZE - 1; sx++) {
+            var si = sy * SIZE + sx;
+            sTmp[si] = (spill[si] * 2 + spill[si - 1] + spill[si + 1]
+                      + spill[si - SIZE] + spill[si + SIZE]) / 6;
+          }
+        }
+        spill.set(sTmp);
+      }
+
       canvas.width = canvas.height = SIZE;
       var ctx = canvas.getContext("2d");
       var out = ctx.createImageData(SIZE, SIZE);
       var od = out.data;
 
-      /* The mark burns. Two fields of soft blobs drift upward at different
-         speeds and push each cell's threshold about; the deeper a cell sits
-         inside the solid, the less the flame can touch it, so the core holds
-         while the rim is eaten and given back in rising tongues. Cells that
-         only just survive are painted hot, which puts a live ember edge along
-         everything the flame is working on.
+      /* The mark burns at its edge. Two tileable fields of soft blobs drift
+         upward at different speeds; how deep a cell sits inside the solid
+         decides how much they can move its threshold, so the body of the mark
+         holds its own colour and only the rim is worked on.
+
+         Above the silhouette the same fields light small tongues in the halo,
+         and sparks leave the rim and rise until they go out. The hot colours
+         are kept to where a tongue is actually passing — judging by the margin
+         alone peppered the whole mark with embers and turned it white.
 
          Nothing is ever lit below FLOOR. Without it the flame could push a
          threshold under zero and the mark would show through before the
          scroll had begun to assemble it. */
-      var FLOOR = 0.02, BURN = 0.30;
+      var FLOOR = 0.02, BURN = 0.22, TONGUE = 7.6;
+      var SPARKS = 70, spark = [], spawn = 0, tPrev = -1;
 
       function paint(p, t) {
         var eased = p * p * (3 - 2 * p);
         var o1 = (t * 34) | 0, o2 = (t * 13) | 0;
+        var dt = tPrev < 0 ? 0 : Math.min(0.12, t - tPrev);
+        tPrev = t;
 
         for (var y = 0; y < SIZE; y++) {
           var row = y * SIZE;
-          var r1 = (((y + o1) & 127) << 7), r2 = (((y + o2) & 31) << 5);
+          var r1 = ((y + o1) & 127) << 7, r2 = ((y + o2) & 31) << 5;
           for (var x = 0; x < SIZE; x++) {
             var i = row + x, j = i << 2;
+            var flame = FLAME[r1 + (x & 127)] * 0.64 + EMBER[r2 + (x & 31)] * 0.36;
             var a = alpha[i];
-            if (a === 0) { od[j + 3] = 0; continue; }
+
+            if (a === 0) {
+              // a tongue: only where the halo still reaches and the field is
+              // near its crest, so they stay short and come in patches
+              var lick = spill[i] * TONGUE * Math.max(0, flame - 0.58) * eased;
+              if (lick > thr[i]) {
+                var ct = lick > thr[i] * 2.2 ? TIP : HOT;
+                od[j] = ct[0]; od[j + 1] = ct[1]; od[j + 2] = ct[2]; od[j + 3] = 255;
+              } else {
+                od[j + 3] = 0;
+              }
+              continue;
+            }
 
             var r = rad[i];
             // settled shape: solid core, dissolving rim
@@ -376,24 +421,58 @@
             var arriving = eased * (1.35 - 0.55 * r);
             var keep = a * Math.min(arriving, settled);
 
-            var flame = FLAME[r1 + (x & 127)] * 0.64 + EMBER[r2 + (x & 31)] * 0.36;
             var edge = 1 - keep; if (edge < 0) edge = 0;
             var lim = thr[i] + BURN * edge * edge * (flame - 0.42);
             if (lim < FLOOR) lim = FLOOR;
 
             if (keep > lim) {
-              // Hot only where the flame is actually working. Judging by the
-              // margin alone would pepper the solid core with embers, because
-              // a Bayer cell with a high threshold always survives by a hair.
-              var margin = keep - lim;
               var c = GAS;
-              if (edge > 0.12 && margin < 0.10) c = margin < 0.035 ? TIP : HOT;
+              if (edge > 0.24 && flame > 0.70 && keep - lim < 0.07) c = HOT;
               od[j] = c[0]; od[j + 1] = c[1]; od[j + 2] = c[2]; od[j + 3] = 255;
             } else {
               od[j + 3] = 0;
             }
           }
         }
+
+        // ── sparks ────────────────────────────────────────────────────────
+        // They leave the silhouette, rise, wander, and go out. A spark is one
+        // cell: at this scale that is a couple of screen pixels, which is the
+        // whole point — it should read as an ember, not as a dot of paint.
+        if (RIM.length && eased > 0.35) {
+          spawn += dt * (6 + 22 * eased);
+          while (spawn >= 1) {
+            spawn -= 1;
+            if (spark.length >= SPARKS) break;
+            var seed = RIM[(Math.random() * RIM.length) | 0];
+            spark.push({
+              x: seed % SIZE, y: (seed / SIZE) | 0,
+              vx: (Math.random() - 0.5) * 12,
+              vy: -(16 + Math.random() * 30),
+              age: 0, life: 0.8 + Math.random() * 1.5,
+              wob: Math.random() * 6.28
+            });
+          }
+        }
+        for (var k = spark.length - 1; k >= 0; k--) {
+          var s = spark[k];
+          s.age += dt;
+          s.vy -= 9 * dt;                       // they keep gathering height
+          s.x += (s.vx + Math.sin(t * 2.4 + s.wob) * 9) * dt;
+          s.y += s.vy * dt;
+          var sxi = s.x | 0, syi = s.y | 0;
+          if (s.age >= s.life || sxi < 0 || syi < 0 || sxi >= SIZE || syi >= SIZE) {
+            spark.splice(k, 1);
+            continue;
+          }
+          var u = s.age / s.life;
+          // an ember does not fade, it starts missing beats and then stops
+          if (u > 0.5 && (((t * 26 + k) | 0) & 1)) continue;
+          var cs = u < 0.28 ? TIP : u < 0.68 ? HOT : GAS;
+          var js = ((syi * SIZE) + sxi) << 2;
+          od[js] = cs[0]; od[js + 1] = cs[1]; od[js + 2] = cs[2]; od[js + 3] = 255;
+        }
+
         ctx.putImageData(out, 0, 0);
       }
 
