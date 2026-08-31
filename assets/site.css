@@ -325,12 +325,31 @@ h3{
 .next .d{ font-family:var(--rite); font-weight:400; font-size:26px; color:var(--gas); letter-spacing:.015em; }
 .next .t{ font-family:var(--rite); font-size:clamp(26px,3.4vw,40px); text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
 
-/* ── афіша: сам плакат і більше нічого ─────────────────────────────── */
-.poster{ margin:0 auto; max-width:620px; }
-.poster img{
-  width:100%; height:auto; border:1px solid var(--line2);
-  box-shadow:0 30px 90px rgba(0,0,0,.55);
+/* ── афіша: головний вечір ─────────────────────────────────────────── */
+.feat{ display:grid; gap:clamp(26px,3.4vw,52px); grid-template-columns:1fr; align-items:start; }
+@media (min-width:860px){ .feat{ grid-template-columns:minmax(0,440px) 1fr; } }
+.fposter img{
+  display:block; width:100%; height:auto;
+  border:1px solid var(--line2); box-shadow:0 30px 90px rgba(0,0,0,.55);
 }
+.feat .d{
+  font-family:var(--hud); font-size:11px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--gas);
+}
+.feat .t{
+  font-family:var(--rite); font-weight:400; margin:12px 0 0;
+  font-size:clamp(36px,5.2vw,66px); line-height:1.02;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.feat .p{
+  font-family:var(--hud); font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--dust); margin-top:14px;
+}
+.feat .line{ margin:20px 0 0; color:var(--ash); max-width:34ch; }
+.feat .btn{ margin-top:28px; }
+/* вечір, який уже минув: та сама верстка, приглушений акцент */
+.feat.over .d{ color:var(--dust); }
+.feat.over .fposter img{ opacity:.82; }
 
 /* ── шапка внутрішньої сторінки ────────────────────────────────────── */
 .phead{ position:relative; padding:calc(60px + clamp(56px,9vw,120px)) var(--pad) clamp(40px,5vw,70px); }

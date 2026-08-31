@@ -97,18 +97,59 @@
       "</div><div>" + right + "</div></div>";
   }
 
+  function empty(text) {
+    return '<div class="none"><p>' + text + "</p>" +
+      '<a class="btn machine" href="/booking">Забронювати дату</a></div>';
+  }
+
+  // The head of the calendar: one night, given the whole width, with its
+  // poster. When nothing is booked ahead it holds the last night that
+  // happened rather than going blank — and says so, instead of calling a
+  // night that is over the nearest one.
+  function feature(data) {
+    var host = $("feature"), cap = $("featurecap");
+    if (!host) return;
+
+    var up = data.upcoming || [], past = data.past || [];
+    var e = up[0] || past[0];               // past comes newest first
+    if (!e) {
+      if (cap) cap.textContent = "Афіша";
+      host.innerHTML = empty("Найближчі вечори зʼявляться тут. Дати ще вільні.");
+      return;
+    }
+
+    var ahead = up.length > 0;
+    if (cap) cap.textContent = ahead ? "Найближчий вечір" : "Останній вечір";
+
+    var poster = "";
+    if (e.poster) {
+      poster = '<div class="fposter"><img src="' + esc(e.poster) + '"' +
+        (e.posterSmall
+          ? ' srcset="' + esc(e.posterSmall) + " 720w, " + esc(e.poster) + ' 1080w"' +
+            ' sizes="(max-width:860px) 92vw, 440px"'
+          : "") +
+        ' alt="' + esc(e.title) + ' — афіша" loading="lazy"></div>';
+    }
+
+    host.innerHTML = '<div class="feat' + (ahead ? "" : " over") + '">' + poster +
+      '<div class="fbody">' +
+        '<div class="d">' + esc(e.dateText || e.date) + (e.year ? " " + esc(e.year) : "") + "</div>" +
+        '<div class="t">' + esc(e.title) + "</div>" +
+        (e.promoter ? '<div class="p">' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + "</div>" : "") +
+        (e.lineup ? '<p class="line">' + esc(e.lineup) + "</p>" : "") +
+        (ahead && e.tickets
+          ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>' : "") +
+      "</div></div>";
+  }
+
+  // Everything booked after that one.
   function events(data) {
-    var up = $("upcoming");
-    if (up) {
-      up.innerHTML = (data.upcoming && data.upcoming.length)
-        ? data.upcoming.map(function (e) { return evRow(e, false); }).join("")
-        : '<div class="none"><p>Найближчі вечори зʼявляться тут. Дати ще вільні.</p>' +
-          '<a class="btn machine" href="/booking">Забронювати дату</a></div>';
-    }
-    if ($("past") && data.past && data.past.length) {
-      $("past").innerHTML = data.past.map(function (e) { return evRow(e, true); }).join("");
-      if ($("pastwrap")) $("pastwrap").hidden = false;
-    }
+    var host = $("later");
+    if (!host) return;
+    var rest = (data.upcoming || []).slice(1);
+    host.innerHTML = rest.length
+      ? rest.map(function (e) { return evRow(e, false); }).join("")
+      : empty("Далі поки порожньо — дати вільні.");
   }
 
   // Compact "next night" block for the home page.
@@ -162,6 +203,7 @@
     headline(d.headline || FALLBACK.headline);
     visual(d.media || []);
     rent(d.rent || FALLBACK.rent);
+    feature(d);
     events(d);
     nextNight(d);
   }

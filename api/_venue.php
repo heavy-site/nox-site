@@ -49,15 +49,20 @@ function nox_included(): array {
 function nox_events(): array {
     return [
         [
-            'id'       => 'insane-rave',
-            'title'    => 'Insane Rave',
-            'promoter' => 'HEAVY',
-            'date'     => '2026-08-29',
-            'dateEnd'  => '2026-08-30',
-            'dateText' => '29–30 серпня',
-            'year'     => '2026',
-            'time'     => '',
-            'tickets'  => 'https://he4vy.com/tickets',
+            'id'          => 'insane-rave',
+            'title'       => 'Insane Rave',
+            'promoter'    => 'HEAVY',
+            'date'        => '2026-08-29',
+            'dateEnd'     => '2026-08-30',
+            'dateText'    => '29–30 серпня',
+            'year'        => '2026',
+            'time'        => '',
+            'tickets'     => 'https://he4vy.com/tickets',
+            'lineup'      => 'Mr.bilich, kaplini, MRX, mad cult, secret guest',
+            // Афіша вечора. Два розрізи: широкий і той, що віддається малим
+            // екранам. Кладіть у /assets, до 500 КБ, вертикальні 9:16.
+            'poster'      => '/assets/insane-poster.jpg',
+            'posterSmall' => '/assets/insane-poster-720.jpg',
         ],
     ];
 }
