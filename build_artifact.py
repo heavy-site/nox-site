@@ -83,6 +83,10 @@ logo_inline_uri = data_uri_svg("assets/logo.svg")
 
 fx = fx.replace('"/assets/logo-mark.svg"', json.dumps(logo_uri)).replace('"/assets/plan.svg"', json.dumps(plan_uri))
 site = site.replace("'/assets/plan.svg'", json.dumps(plan_uri)).replace('"/assets/plan.svg"', json.dumps(plan_uri))
+# The painter writes its own links — the empty-state "Забронювати дату" button
+# among them. Rewriting only the pages left those pointing at /booking, which
+# is nothing at all inside a hash-routed bundle.
+site = site.replace('href="/booking"', 'href="#/booking"')
 
 # ── pages ──────────────────────────────────────────────────────────────
 pages = {"home": body_of("index.html"), "events": body_of("events.html"), "booking": body_of("booking.html")}
@@ -98,8 +102,7 @@ nav = """
   <nav>
     <a href="#/" data-route="home">Головна</a>
     <a href="#/events" data-route="events">Афіша</a>
-    <a href="#/booking" data-route="booking">Оренда</a>
-    <a class="cta" href="#/booking">Забронювати</a>
+    <a class="cta" href="#/booking" data-route="booking">Забронювати</a>
   </nav>
 </div>
 """.replace("__LOGO__", logo_inline_uri)
