@@ -7,6 +7,10 @@
 
   var REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // How far the opening reveal has run, 0 (darkness) to 1 (the mark is whole).
+  // The shader reads it every frame; the scroll controller writes it.
+  var STATE = { reveal: REDUCED ? 1 : 0 };
+
   /* ── 1. the void ────────────────────────────────────────────────── */
   var VERT = [
     "attribute vec2 p;",
@@ -18,6 +22,7 @@
     "uniform vec2  u_res;",
     "uniform float u_t;",
     "uniform vec2  u_m;",
+    "uniform float u_rev;",
 
     "float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }",
 
@@ -62,6 +67,7 @@
     "  col += (hash(gl_FragCoord.xy + fract(u_t)) - 0.5) * 0.030;",
     "  col *= smoothstep(1.25, 0.25, length(uv - 0.5));",
 
+    "  col *= 0.16 + 0.84 * u_rev;",
     "  gl_FragColor = vec4(col, 1.0);",
     "}"
   ].join("\n");
@@ -98,7 +104,8 @@
 
     var uRes = gl.getUniformLocation(pr, "u_res"),
         uT   = gl.getUniformLocation(pr, "u_t"),
-        uM   = gl.getUniformLocation(pr, "u_m");
+        uM   = gl.getUniformLocation(pr, "u_m"),
+        uRev = gl.getUniformLocation(pr, "u_rev");
 
     // Half resolution is plenty for a soft field, and keeps laptops quiet.
     var dpr = Math.min(devicePixelRatio || 1, 1.5) * 0.5;
@@ -128,6 +135,7 @@
       my += (ty - my) * 0.045;
       gl.uniform2f(uM, mx, my);
       gl.uniform1f(uT, REDUCED ? 8.0 : (now - t0) / 1000);
+      gl.uniform1f(uRev, STATE.reveal);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     })(t0);
   }
@@ -245,24 +253,22 @@
 
     host.appendChild(svg);
 
-    // The mark is not drawn flat — it is dithered, and two passes at slightly
-    // different burn levels cross-fade so it flickers like a flame.
+    // The mark is not drawn flat — it is dithered, and the dither is driven
+    // by scroll, so the sigil assembles out of pixels as the page moves.
     var mark = document.createElement("div");
     mark.className = "mark";
     mark.setAttribute("aria-hidden", "true");
     var a = document.createElement("canvas"); a.className = "dith a";
-    var b = document.createElement("canvas"); b.className = "dith b";
-    mark.appendChild(a); mark.appendChild(b);
+    mark.appendChild(a);
     host.appendChild(mark);
-
-    ditherMark(a, 0.00);
-    ditherMark(b, REDUCED ? 0.00 : 0.16);
   }
 
   /* ── the dither ─────────────────────────────────────────────────────
-     Ordered 8×8 Bayer over a coarse grid, so the dots are visible rather
-     than lost in the pixel density. The threshold rises toward the rim,
-     so the mark holds solid at its core and breaks up at the edges. */
+     Ordered 8x8 Bayer over a coarse grid, so the dots read as dither rather
+     than vanish into the pixel density. The threshold is driven by scroll:
+     at the top almost nothing clears it and the screen is dark; as the page
+     moves, more cells light until the mark stands whole. Pixels near the
+     centre clear it sooner, so the mark grows outward instead of fading in. */
   var BAYER = [
     [ 0,48,12,60, 3,51,15,63],
     [32,16,44,28,35,19,47,31],
@@ -274,10 +280,12 @@
     [42,26,38,22,41,25,37,21]
   ];
   var GAS = [46, 155, 240];
+  var SIZE = 300;
 
-  function ditherMark(canvas, burn) {
-    var CELL = 3;          // screen pixels per dither cell
-    var SIZE = 300;        // grid resolution before upscaling
+  // Builds a paint(progress) for one canvas. The source alpha and each cell's
+  // distance from the centre are measured once; a repaint is then just a
+  // threshold comparison over 90k cells, which is cheap enough per frame.
+  function markPainter(canvas, ready) {
     var img = new Image();
     img.decoding = "async";
     img.onload = function () {
@@ -285,35 +293,95 @@
       g.width = g.height = SIZE;
       var gx = g.getContext("2d");
       gx.drawImage(img, 0, 0, SIZE, SIZE);
+      var src = gx.getImageData(0, 0, SIZE, SIZE).data;
 
-      var data = gx.getImageData(0, 0, SIZE, SIZE);
-      var d = data.data, half = SIZE / 2;
-
+      var n = SIZE * SIZE;
+      var alpha = new Float32Array(n);
+      var rad = new Float32Array(n);
+      var thr = new Float32Array(n);
+      var half = SIZE / 2;
       for (var y = 0; y < SIZE; y++) {
         for (var x = 0; x < SIZE; x++) {
-          var i = (y * SIZE + x) * 4;
-          var alpha = d[i + 3] / 255;
-          if (alpha === 0) continue;
-
-          // 0 at the centre, 1 at the rim
-          var r = Math.sqrt((x - half) * (x - half) + (y - half) * (y - half)) / half;
-          var keep = alpha * (1.0 - Math.max(0, Math.min(1, (r - 0.46) / 0.60)) * (0.58 + burn));
-
-          var t = (BAYER[y & 7][x & 7] + 0.5) / 64;
-          if (keep > t) {
-            d[i] = GAS[0]; d[i + 1] = GAS[1]; d[i + 2] = GAS[2]; d[i + 3] = 255;
-          } else {
-            d[i + 3] = 0;
-          }
+          var i = y * SIZE + x;
+          alpha[i] = src[i * 4 + 3] / 255;
+          rad[i] = Math.sqrt((x - half) * (x - half) + (y - half) * (y - half)) / half;
+          thr[i] = (BAYER[y & 7][x & 7] + 0.5) / 64;
         }
       }
-      gx.putImageData(data, 0, 0);
 
-      canvas.width = SIZE; canvas.height = SIZE;
-      canvas.getContext("2d").drawImage(g, 0, 0);
-      canvas.style.setProperty("--cell", CELL);
+      canvas.width = canvas.height = SIZE;
+      var ctx = canvas.getContext("2d");
+      var out = ctx.createImageData(SIZE, SIZE);
+      var od = out.data;
+
+      function paint(p) {
+        var eased = p * p * (3 - 2 * p);
+        for (var i = 0; i < n; i++) {
+          var a = alpha[i], j = i * 4;
+          if (a === 0) { od[j + 3] = 0; continue; }
+          var r = rad[i];
+          // settled shape: solid core, dissolving rim
+          var settled = 1 - Math.min(1, Math.max(0, (r - 0.46) / 0.60)) * 0.58;
+          // arrival: the centre clears the threshold first
+          var arriving = eased * (1.35 - 0.55 * r);
+          var keep = a * Math.min(arriving, settled);
+          if (keep > thr[i]) {
+            od[j] = GAS[0]; od[j + 1] = GAS[1]; od[j + 2] = GAS[2]; od[j + 3] = 255;
+          } else {
+            od[j + 3] = 0;
+          }
+        }
+        ctx.putImageData(out, 0, 0);
+      }
+
+      ready(paint);
     };
     img.src = "/assets/logo-mark.svg";
+  }
+
+  /* ── the opening: darkness, then the mark assembles ─────────────── */
+  function revealScroll() {
+    var host = document.getElementById("reveal");
+    if (!host) return;
+    var pin = host.querySelector(".pin");
+    var mark = host.querySelector(".mark");
+    var canvas = mark && mark.querySelector("canvas");
+    if (!pin || !canvas) return;
+
+    mark.classList.add("scrolled");
+
+    markPainter(canvas, function (paint) {
+      if (REDUCED) {
+        pin.style.setProperty("--p", "1");
+        mark.classList.add("done");
+        paint(1);
+        return;
+      }
+
+      var last = -1, queued = false;
+
+      function measure() {
+        queued = false;
+        var span = host.offsetHeight - innerHeight;
+        var p = span > 0 ? -host.getBoundingClientRect().top / span : 1;
+        p = Math.min(1, Math.max(0, p));
+
+        pin.style.setProperty("--p", p.toFixed(3));
+        STATE.reveal = p;
+        mark.classList.toggle("done", p > 0.985);
+
+        // 48 steps is finer than the dither grid can show, and skips
+        // ~19 of every 20 repaints during a fast scroll.
+        var step = Math.round(p * 48);
+        if (step !== last) { last = step; paint(step / 48); }
+      }
+
+      function schedule() { if (!queued) { queued = true; requestAnimationFrame(measure); } }
+
+      addEventListener("scroll", schedule, { passive: true });
+      addEventListener("resize", schedule, { passive: true });
+      measure();
+    });
   }
 
   /* ── 3. the wordmark stutters now and then ──────────────────────── */
@@ -360,6 +428,7 @@
     reveals();
     var sig = document.querySelector(".sigil");
     if (sig) heroSigil(sig);
+    revealScroll();
   }
 
   if (document.readyState === "loading") {

@@ -90,6 +90,15 @@ a{ color:var(--pale); }
 @media (max-width:760px){ .bar nav a:not(.cta){ display:none; } }
 
 /* ── сцена ─────────────────────────────────────────────────────────── */
+/* Дві з половиною висоти екрана прокрутки, всередині — закріплений кадр.
+   Прогрес прокрутки живе в --p (0…1) і керує і знаком, і текстом. */
+.reveal{ position:relative; height:260svh; }
+.pin{
+  position:sticky; top:0; height:100svh;
+  display:flex; align-items:center; justify-content:center;
+  padding:96px var(--pad) clamp(56px,10vh,110px);
+  overflow:hidden;
+}
 .stage{
   position:relative; min-height:100svh;
   display:flex; align-items:center; justify-content:center;
@@ -102,6 +111,7 @@ a{ color:var(--pale); }
 .sigil svg{ width:min(74vh, min(880px, 92vw)); height:auto; overflow:visible; }
 .stagein{ position:relative; z-index:2; text-align:center; width:100%; }
 .stagein p{ max-width:none; margin-left:auto; margin-right:auto; }
+.pin::after,
 .stage::after{
   content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
   background:radial-gradient(46% 34% at 50% 50%, rgba(6,7,10,.92) 0%, rgba(6,7,10,.72) 45%, transparent 78%);
@@ -360,17 +370,34 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
   image-rendering:pixelated; image-rendering:crisp-edges;
   filter:drop-shadow(0 0 30px rgba(46,155,240,.42)) drop-shadow(0 0 90px rgba(46,155,240,.16));
 }
-.mark .dith.a{ opacity:1; }
-/* rare double catch, the way a jet takes light — not a strobe */
-.mark .dith.b{ opacity:0; animation:catch 8.5s steps(1,end) infinite; }
+.mark .dith{ opacity:1; }
+/* Once the mark is whole it dips briefly, twice, the way a jet catches.
+   It flickers around being visible — it never goes dark. */
 @keyframes catch{
-  0%,84%  { opacity:0; }
-  85%     { opacity:1; }
-  86.5%   { opacity:0; }
-  88%     { opacity:1; }
-  90%,100%{ opacity:0; }
+  0%,84%  { opacity:1; }
+  85%     { opacity:.34; }
+  86.5%   { opacity:1; }
+  88%     { opacity:.52; }
+  90%,100%{ opacity:1; }
 }
 @media (prefers-reduced-motion:reduce){
-  .mark .dith{ animation:none; }
-  .mark .dith.b{ display:none; }
+  .mark .dith{ animation:none; opacity:1; }
 }
+
+/* ── поява знака за прокруткою ─────────────────────────────────────── */
+.pin .sigil{ opacity:calc(.15 + var(--p, 0) * .85); }
+.pin .stagein{
+  /* напис проступає після того, як знак зібрався */
+  opacity:clamp(0, calc((var(--p, 0) - .58) / .22), 1);
+  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .58) / .22, 1)) * 14px));
+}
+.pin .stagein .tag,
+.pin .stagein .coord{
+  /* опис — останнім */
+  opacity:clamp(0, calc((var(--p, 0) - .78) / .18), 1);
+}
+.pin .scroll{ opacity:clamp(0, calc(1 - var(--p, 0) * 3.2), 1); }
+
+/* while assembling, the canvas is redrawn per scroll step — no animation */
+.mark.scrolled .dith{ animation:none; }
+.mark.scrolled.done .dith{ animation:catch 8.5s steps(1,end) infinite; }
