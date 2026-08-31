@@ -216,6 +216,41 @@
     return svg;
   }
 
+  // The hero carries the mark itself, with the inscription turning around it.
+  function heroSigil(host) {
+    var R = 500;
+    var svg = svgEl("svg", { viewBox: "-500 -500 1000 1000", "aria-hidden": "true" });
+
+    var defs = svgEl("defs");
+    defs.appendChild(svgEl("path", { id: "ring-hero", d: "M 0,-462 A 462,462 0 1,1 -0.01,-462", fill: "none" }));
+    svg.appendChild(defs);
+
+    var textG = svgEl("g", { class: "spin-slow" });
+    var txt = svgEl("text", {
+      "font-family": "JetBrains Mono, ui-monospace, monospace",
+      "font-size": "16", "letter-spacing": "6",
+      fill: "#9A9486", "fill-opacity": ".5"
+    });
+    var tp = svgEl("textPath", { href: "#ring-hero" });
+    tp.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#ring-hero");
+    tp.textContent = GLYPHS + GLYPHS;
+    txt.appendChild(tp); textG.appendChild(txt); svg.appendChild(textG);
+
+    var spin = svgEl("g", { class: "spin" });
+    spin.appendChild(svgEl("circle", {
+      cx: 0, cy: 0, r: 492, fill: "none",
+      stroke: "#3BE0F0", "stroke-opacity": ".16", "stroke-width": "1", "stroke-dasharray": "2 26"
+    }));
+    svg.appendChild(spin);
+
+    var s = 860;
+    svg.appendChild(svgEl("image", {
+      href: "/assets/logo-mark.svg", x: -s / 2, y: -s / 2, width: s, height: s, opacity: ".9"
+    }));
+
+    host.appendChild(svg);
+  }
+
   /* ── 3. the wordmark stutters now and then ──────────────────────── */
   function glitch() {
     var stage = document.querySelector(".stagein");
@@ -250,13 +285,16 @@
     nodes.forEach(function (n) { io.observe(n); });
   }
 
+  // Published before boot: site.js can paint from a cached or stubbed response
+  // before DOMContentLoaded, and must not fall back to the plain plan then.
+  window.noxDiagram = diagram;
+
   function boot() {
     voidLayer();
     glitch();
     reveals();
     var sig = document.querySelector(".sigil");
-    if (sig) diagram(sig, { id: "hero", planOpacity: ".26", planWidth: 540 });
-    window.noxDiagram = diagram;
+    if (sig) heroSigil(sig);
   }
 
   if (document.readyState === "loading") {

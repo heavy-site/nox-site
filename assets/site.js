@@ -44,35 +44,38 @@
     on();
   }
 
+  var all = function (name) {
+    return Array.prototype.slice.call(document.querySelectorAll('[data-nox="' + name + '"]'));
+  };
+
   function headline(items) {
-    var host = $("headline");
-    if (!host) return;
-    host.innerHTML = items.map(function (h) {
+    var html = items.map(function (h) {
       return '<div class="fig"><b>' + esc(h.value) + "</b><span>" + esc(h.label) + "</span></div>";
     }).join("");
+    all("headline").forEach(function (host) { host.innerHTML = html; });
   }
 
   // Photos when there are photos; the drawing of the room until then.
   function visual(media) {
-    var host = $("visual");
-    if (!host) return;
-    if (media && media.length) {
-      host.innerHTML = '<div class="gallery">' + media.map(function (m, i) {
-        var wide = (media.length % 2 === 1 && i === 0) ? ' class="wide"' : "";
-        return "<figure" + wide + '><img src="' + esc(m.src) + '" alt="' + esc(m.alt) +
-          '" loading="lazy" decoding="async">' +
-          (m.caption ? "<figcaption>" + esc(m.caption) + "</figcaption>" : "") + "</figure>";
-      }).join("") + "</div>";
-    } else {
-      host.innerHTML = '<div class="diagram" id="diagram"></div>' +
+    all("visual").forEach(function (host, n) {
+      if (media && media.length) {
+        host.innerHTML = '<div class="gallery">' + media.map(function (m, i) {
+          var wide = (media.length % 2 === 1 && i === 0) ? ' class="wide"' : "";
+          return "<figure" + wide + '><img src="' + esc(m.src) + '" alt="' + esc(m.alt) +
+            '" loading="lazy" decoding="async">' +
+            (m.caption ? "<figcaption>" + esc(m.caption) + "</figcaption>" : "") + "</figure>";
+        }).join("") + "</div>";
+        return;
+      }
+      host.innerHTML = '<div class="diagram"></div>' +
         '<p class="diagcap">План залу · 18,00 × 12,00 м · бар 9,6 м</p>';
-      var box = document.getElementById("diagram");
+      var box = host.querySelector(".diagram");
       if (window.noxDiagram) {
-        window.noxDiagram(box, { id: "page" });
+        window.noxDiagram(box, { id: "plan" + n });
       } else {
         box.innerHTML = '<img src="/assets/plan.svg" alt="План залу nøx">';
       }
-    }
+    });
   }
 
   function rent(data) {
