@@ -132,7 +132,7 @@ a{ color:var(--pale); }
    підбирається і підіймається, а слова стають рівно під ним. */
 .sigil{
   position:relative; display:grid; place-items:center;
-  z-index:0; pointer-events:none; padding:0;
+  z-index:1; pointer-events:none; padding:0;
   width:var(--sig); aspect-ratio:1;
   transform:translateY(calc(var(--lift) * -1));
 }
@@ -143,9 +143,11 @@ a{ color:var(--pale); }
   top:calc(50% + var(--sig) / 2 - var(--lift) + 2.5svh);
 }
 .stagein p{ max-width:none; margin-left:auto; margin-right:auto; }
+/* Затемнення існує заради шейдера позаду — воно має лежати ПІД знаком.
+   Доти воно стояло вище за нього і гасило знак майже непрозорою заливкою. */
 .pin::after,
 .stage::after{
-  content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
   background:radial-gradient(72% 60% at 50% 46%, rgba(6,7,10,.92) 0%, rgba(6,7,10,.74) 50%, transparent 84%);
 }
 h1{
@@ -416,7 +418,7 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 .mark .dith{
   position:absolute; inset:0; width:100%; height:100%;
   image-rendering:pixelated; image-rendering:crisp-edges;
-  filter:drop-shadow(0 0 30px rgba(46,155,240,.42)) drop-shadow(0 0 90px rgba(46,155,240,.16));
+  filter:drop-shadow(0 0 22px rgba(46,155,240,.55)) drop-shadow(0 0 70px rgba(46,155,240,.30)) drop-shadow(0 0 160px rgba(46,155,240,.16));
 }
 .mark .dith{ opacity:1; }
 /* Once the mark is whole it dips briefly, twice, the way a jet catches.
@@ -433,7 +435,9 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 }
 
 /* ── поява знака за прокруткою ─────────────────────────────────────── */
-.pin .sigil{ opacity:calc(.15 + clamp(0, calc(var(--p, 0) / .45), 1) * .85); }
+/* Кільця проступають за прокруткою; сам знак нею не гаситься — його появу
+   й так веде дизеринг, і подвійне притлумлення робило його тьмяним. */
+.pin .sigil svg{ opacity:calc(.15 + clamp(0, calc(var(--p, 0) / .45), 1) * .85); }
 /* Сцена читається у три такти. Спершу сам знак — і більше нічого.
    Потім коротке вітання. Останнім — де це місце і що воно таке. */
 .pin .stagein .welcome{
