@@ -79,8 +79,13 @@ a{ color:var(--pale); }
 .bar{
   position:fixed; inset:0 0 auto 0; z-index:40; height:60px;
   display:flex; align-items:center; gap:20px; padding:0 var(--pad);
-  border-bottom:1px solid transparent; transition:background .3s, border-color .3s;
+  border-bottom:1px solid transparent;
+  transition:background .3s, border-color .3s, opacity .6s ease, transform .6s ease;
 }
+/* На головній меню чекає, поки знак не збереться: .veiled чіпляє скрипт, тож
+   без JS панель просто лишається на місці. */
+.bar.veiled{ opacity:0; transform:translateY(-10px); pointer-events:none; }
+.bar.veiled.shown{ opacity:1; transform:none; pointer-events:auto; }
 .bar.stuck{ background:rgba(6,7,10,.9); backdrop-filter:blur(16px); border-bottom-color:var(--line); }
 .wm{ display:flex; align-items:center; gap:11px; font-family:var(--brand); font-size:25px;
   line-height:1; color:var(--bone); text-decoration:none; letter-spacing:.01em; }
@@ -156,6 +161,20 @@ h1 .g.c{ color:var(--pale); }
   letter-spacing:.42em; text-transform:uppercase; color:var(--bone); opacity:.92;
   text-indent:.42em;
 }
+/* Заголовок сторінки лишається в розмітці заради семантики, але сцену
+   відкриває сам знак — жодного напису поруч із ним. */
+h1.off{
+  position:absolute; width:1px; height:1px; margin:-1px; padding:0;
+  overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
+}
+.stagein .welcome{
+  margin:0 auto; max-width:19ch; font-family:var(--rite); font-weight:300;
+  font-size:clamp(26px,4.6vw,54px); line-height:1.16; letter-spacing:.015em;
+  color:var(--bone);
+}
+.stagein .welcome b{ font-family:var(--brand); font-weight:400; color:var(--gas); }
+.stagein .place{ margin:clamp(26px,3.4vw,44px) 0 0; }
+.stagein .place .rune{ margin-top:0; }
 .tag{ margin:22px auto 0; max-width:44ch !important; color:var(--ash); font-size:clamp(15px,1.7vw,17.5px); }
 .tag b{ color:var(--bone); font-weight:600; }
 .coord{
@@ -396,15 +415,15 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 
 /* ── поява знака за прокруткою ─────────────────────────────────────── */
 .pin .sigil{ opacity:calc(.15 + var(--p, 0) * .85); }
-.pin .stagein{
-  /* напис проступає після того, як знак зібрався */
-  opacity:clamp(0, calc((var(--p, 0) - .58) / .22), 1);
-  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .58) / .22, 1)) * 14px));
+/* Сцена читається у три такти. Спершу сам знак — і більше нічого.
+   Потім коротке вітання. Останнім — де це місце і що воно таке. */
+.pin .stagein .welcome{
+  opacity:clamp(0, calc((var(--p, 0) - .50) / .16), 1);
+  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .50) / .16, 1)) * 14px));
 }
-.pin .stagein .tag,
-.pin .stagein .coord{
-  /* опис — останнім */
-  opacity:clamp(0, calc((var(--p, 0) - .78) / .18), 1);
+.pin .stagein .place{
+  opacity:clamp(0, calc((var(--p, 0) - .74) / .16), 1);
+  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .74) / .16, 1)) * 12px));
 }
 .pin .scroll{ opacity:clamp(0, calc(1 - var(--p, 0) * 3.2), 1); }
 

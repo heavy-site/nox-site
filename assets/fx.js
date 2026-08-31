@@ -350,10 +350,17 @@
 
     mark.classList.add("scrolled");
 
+    // The menu waits for the mark. Only this page has an opening, and only the
+    // script veils the bar, so every other page — and a page with no JS — keeps
+    // its navigation from the first frame.
+    var bar = document.getElementById("bar");
+    if (bar) bar.classList.add("veiled");
+
     markPainter(canvas, function (paint) {
       if (REDUCED) {
         pin.style.setProperty("--p", "1");
         mark.classList.add("done");
+        if (bar) bar.classList.add("shown");
         paint(1);
         return;
       }
@@ -369,6 +376,8 @@
         pin.style.setProperty("--p", p.toFixed(3));
         STATE.reveal = p;
         mark.classList.toggle("done", p > 0.985);
+        // The bar arrives with the mark whole, a beat before the first words.
+        if (bar) bar.classList.toggle("shown", p > 0.46);
 
         // 48 steps is finer than the dither grid can show, and skips
         // ~19 of every 20 repaints during a fast scroll.
@@ -380,6 +389,10 @@
 
       addEventListener("scroll", schedule, { passive: true });
       addEventListener("resize", schedule, { passive: true });
+      // The one-file preview keeps every route in one document behind one bar,
+      // and switching route need not scroll. Remeasure so the bar is not left
+      // veiled on a page that has no opening of its own.
+      document.addEventListener("nox:route", schedule);
       measure();
     });
   }
@@ -465,7 +478,9 @@
   function glitch() {
     var stage = document.querySelector(".stagein");
     var h1 = stage && stage.querySelector("h1");
-    if (!h1 || REDUCED) return;
+    // The opening now shows the sigil alone; the wordmark is there for
+    // semantics only, and there is nothing on screen for it to stutter.
+    if (!h1 || REDUCED || h1.classList.contains("off")) return;
     var word = h1.textContent.trim();
     h1.innerHTML = '<span class="base">' + word + '</span>'
       + '<span class="g r" aria-hidden="true">' + word + '</span>'
