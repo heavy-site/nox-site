@@ -317,26 +317,41 @@ h3{
 /* ── мапа ──────────────────────────────────────────────────────────────
    Плитки OpenStreetMap світлі, тож їх вивертає у темне й зводить у синь
    сайта — інакше на чорній сторінці був би білий прямокутник. */
-/* Мапа йде від краю до краю вікна — на будь-якій ширині, не лише на широких
-   екранах. .map лежить просто в .inner, а .inner центрований у вікні, тож 50%
-   від нього мінус 50vw — це рівно те, чого бракує до краю з кожного боку.
+/* Адреса ліворуч, мапа праворуч — і мапа виходить за колонку контенту до
+   правого краю екрана. Без медіазапиту на виліт: саме тому мапа й тулилась
+   ліворуч у вужчому вікні — правило не спрацьовувало і ряд просто складався.
    Смуга невисока навмисно: широка й низька читається як мапа, а не як вікно. */
-.map{ margin:clamp(26px,3vw,44px) calc(50% - 50vw) 0; }
+.where{
+  display:grid; align-items:start;
+  gap:clamp(16px,1.6vw,26px);
+  grid-template-columns:minmax(130px,15ch) minmax(0,1fr);
+  margin-right:calc(50% - 50vw);
+}
+/* На тісному екрані колонки поруч не тримаються: адреса стає над мапою, а
+   мапа розходиться в обидва краї. */
+@media (max-width:639px){
+  .where{ grid-template-columns:1fr; margin-left:calc(50% - 50vw); }
+  .where .g{ margin:0 var(--pad); }
+}
 .mapframe{
   display:block; width:100%; height:clamp(240px,34vh,400px);
   border-top:1px solid var(--line2); border-bottom:1px solid var(--line2);
+  border-left:1px solid var(--line2);
   filter:invert(1) hue-rotate(188deg) saturate(.55) brightness(.92) contrast(1.05);
 }
 .mapnote{
   display:grid; place-items:center; height:clamp(240px,34vh,400px); margin:0;
   border-top:1px solid var(--line2); border-bottom:1px solid var(--line2);
-  background:var(--pit); text-align:center;
+  border-left:1px solid var(--line2); background:var(--pit); text-align:center;
   padding:0 var(--pad); color:var(--dust); font-family:var(--hud); font-size:11px;
   letter-spacing:.18em; text-transform:uppercase; line-height:2;
 }
+@media (max-width:639px){
+  .mapframe, .mapnote{ border-left:0; }
+}
 .mapfoot{
-  /* мапа на всю ширину, а підпис під нею вертається в колонку тексту */
-  max-width:var(--wrap); margin:14px auto 0; padding:0 var(--pad);
+  /* підпис не тікає за правий край разом із мапою */
+  margin:14px 0 0; padding-right:var(--pad);
   display:flex; flex-wrap:wrap; gap:8px 24px; justify-content:space-between;
   font-family:var(--hud); font-size:11px;
   letter-spacing:.16em; text-transform:uppercase; color:var(--dust);

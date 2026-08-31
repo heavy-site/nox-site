@@ -141,7 +141,7 @@
   }
 
   /* ── 2. the plan, drawn as a diagram ────────────────────────────── */
-  var GLYPHS = "NØX · НИЖНЬОЮРКІВСЬКА 31 · 50.4665 30.4999 · 215 M² · 300–350 · 18+ · ";
+  var GLYPHS = "NØX · НИЖНЬОЮРКІВСЬКА 31 · 50.4669 30.5008 · 215 M² · 300–350 · 18+ · ";
 
   function svgEl(name, attrs) {
     var e = document.createElementNS("http://www.w3.org/2000/svg", name);
