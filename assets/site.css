@@ -325,6 +325,13 @@ h3{
 .next .d{ font-family:var(--rite); font-weight:400; font-size:26px; color:var(--gas); letter-spacing:.015em; }
 .next .t{ font-family:var(--rite); font-size:clamp(26px,3.4vw,40px); text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
 
+/* ── афіша: сам плакат і більше нічого ─────────────────────────────── */
+.poster{ margin:0 auto; max-width:620px; }
+.poster img{
+  width:100%; height:auto; border:1px solid var(--line2);
+  box-shadow:0 30px 90px rgba(0,0,0,.55);
+}
+
 /* ── шапка внутрішньої сторінки ────────────────────────────────────── */
 .phead{ position:relative; padding:calc(60px + clamp(56px,9vw,120px)) var(--pad) clamp(40px,5vw,70px); }
 .phead .inner{ max-width:var(--wrap); margin:0 auto; }

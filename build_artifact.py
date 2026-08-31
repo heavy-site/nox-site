@@ -72,6 +72,12 @@ plan_uri = data_uri_svg("assets/plan.svg")
 logo_uri = data_uri_svg("assets/logo-mark.svg")
 logo_inline_uri = data_uri_svg("assets/logo.svg")
 
+# The sandbox serves no local files, so the poster travels in the page. The
+# 720px cut is the one that goes: the full one would add half a megabyte of
+# base64 for a preview nobody prints.
+poster_uri = "data:image/jpeg;base64," + base64.b64encode(
+    open(os.path.join(ROOT, "assets", "insane-poster-720.jpg"), "rb").read()).decode("ascii")
+
 fx = fx.replace('"/assets/logo-mark.svg"', json.dumps(logo_uri)).replace('"/assets/plan.svg"', json.dumps(plan_uri))
 site = site.replace("'/assets/plan.svg'", json.dumps(plan_uri)).replace('"/assets/plan.svg"', json.dumps(plan_uri))
 
@@ -79,6 +85,10 @@ site = site.replace("'/assets/plan.svg'", json.dumps(plan_uri)).replace('"/asset
 pages = {"home": body_of("index.html"), "events": body_of("events.html"), "booking": body_of("booking.html")}
 for key, html in pages.items():
     html = html.replace('src="/assets/logo.svg"', 'src="%s"' % logo_inline_uri)
+    # One copy, not three: the srcset would inline the same base64 for every
+    # candidate and treble the weight of the bundle.
+    html = re.sub(r'\s*srcset="[^"]*insane-poster[^"]*"\s+sizes="[^"]*"', "", html)
+    html = html.replace("/assets/insane-poster.jpg", poster_uri)
     html = html.replace('href="/booking"', 'href="#/booking"').replace('href="/events"', 'href="#/events"')
     html = html.replace('href="/"', 'href="#/"')
     pages[key] = html
