@@ -385,17 +385,19 @@
   }
 
   /* ── the waveform ───────────────────────────────────────────────────
-     Stacked horizontal lines in the left gutter. Flat at the top of the
-     page; scrolling raises a ridge through the stack, tallest at its middle.
-     Every line breathes slightly out of phase with its neighbours, so the
-     stack reads as a rhythm rather than a static graph. */
+     A dense stack of short horizontal lines in the left gutter. At rest they
+     only tremble. The swell rides the scroll position down the stack, so the
+     lines the reader is currently level with are the ones standing tall —
+     a playhead moving through the track rather than a fixed graph.
+     Each line erases what earlier lines drew below its curve, so a nearer
+     line occludes the ones behind and the swell reads as depth. */
   function waveform() {
     var cv = document.getElementById("wave");
     if (!cv) return;
     var ctx = cv.getContext("2d");
     if (!ctx) return;
 
-    var LINES = 34, STEPS = 44;
+    var LINES = 96, STEPS = 30, SPREAD = 8.5;
     var dpr = Math.min(devicePixelRatio || 1, 2);
     var W = 0, H = 0;
 
@@ -417,34 +419,56 @@
     var visible = true;
     document.addEventListener("visibilitychange", function () { visible = !document.hidden; });
 
-    var p = 0;
+    var p = progress();
     (function frame(now) {
       requestAnimationFrame(frame);
       if (!visible || W < 8) return;
 
       var t = now / 1000;
-      p += (progress() - p) * 0.08;            // the ridge follows, it does not snap
+      p += (progress() - p) * 0.09;          // the swell follows, it does not snap
       ctx.clearRect(0, 0, W, H);
 
       var gap = H / (LINES + 1);
+      var focus = p * (LINES - 1);           // which line the reader is level with
+
       for (var i = 0; i < LINES; i++) {
         var y0 = gap * (i + 1);
-        var d = i / (LINES - 1) - 0.5;
-        var env = Math.exp(-d * d * 7);        // the ridge peaks mid-stack
-        var beat = REDUCED ? 1 : 0.80 + 0.20 * Math.sin(t * 2.1 + i * 0.36);
-        var amp = gap * 3.1 * p * env * beat;
+        var away = (i - focus) / SPREAD;
+        var env = Math.exp(-away * away);    // tall at the playhead, flat away from it
+        var beat = REDUCED ? 1 : 0.78 + 0.22 * Math.sin(t * 2.3 + i * 0.42);
+        var amp = gap * 5.4 * env * beat;
 
         ctx.beginPath();
         for (var s = 0; s <= STEPS; s++) {
           var x = W * s / STEPS;
-          var u = x / W - 0.46;
-          var ridge = Math.exp(-u * u * 15);
-          var wob = REDUCED ? 0
-            : (Math.sin(x * 0.13 + t * 1.25 + i) + Math.sin(x * 0.058 - t * 0.85 + i * 2)) * 0.5;
-          var y = y0 - amp * ridge - wob * (0.7 + 2.6 * p * env);
+          var u = x / W - 0.5;
+          var swell = Math.exp(-u * u * 11);
+          var trem = REDUCED ? 0
+            : (Math.sin(x * 0.15 + t * 1.5 + i * 0.8) + Math.sin(x * 0.07 - t * 1.0 + i * 1.7)) * 0.5;
+          var y = y0 - amp * swell - trem * (0.55 + 1.9 * env);
           if (s) ctx.lineTo(x, y); else ctx.moveTo(x, y);
         }
-        ctx.strokeStyle = "rgba(46,155,240," + (0.09 + 0.34 * env * p).toFixed(3) + ")";
+
+        // Erase, don't paint: filling with the page colour would turn the
+        // gutter into an opaque strip and hide the shader behind it.
+        // destination-out clears only what this canvas drew earlier, so a
+        // nearer line occludes the ones above it and the rest stays glass.
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+
+        ctx.beginPath();
+        for (var s2 = 0; s2 <= STEPS; s2++) {
+          var x2 = W * s2 / STEPS;
+          var u2 = x2 / W - 0.5;
+          var swell2 = Math.exp(-u2 * u2 * 11);
+          var trem2 = REDUCED ? 0
+            : (Math.sin(x2 * 0.15 + t * 1.5 + i * 0.8) + Math.sin(x2 * 0.07 - t * 1.0 + i * 1.7)) * 0.5;
+          var y2 = y0 - amp * swell2 - trem2 * (0.55 + 1.9 * env);
+          if (s2) ctx.lineTo(x2, y2); else ctx.moveTo(x2, y2);
+        }
+        ctx.strokeStyle = "rgba(46,155,240," + (0.13 + 0.52 * env).toFixed(3) + ")";
         ctx.lineWidth = 1;
         ctx.stroke();
       }
