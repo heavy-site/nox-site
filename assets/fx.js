@@ -299,6 +299,7 @@
       var alpha = new Float32Array(n);
       var rad = new Float32Array(n);
       var thr = new Float32Array(n);
+      var phase = new Uint8Array(n);   // where each cell sits in the shimmer
       var half = SIZE / 2;
       for (var y = 0; y < SIZE; y++) {
         for (var x = 0; x < SIZE; x++) {
@@ -306,6 +307,8 @@
           alpha[i] = src[i * 4 + 3] / 255;
           rad[i] = Math.sqrt((x - half) * (x - half) + (y - half) * (y - half)) / half;
           thr[i] = (BAYER[y & 7][x & 7] + 0.5) / 64;
+          var h = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+          phase[i] = ((h - Math.floor(h)) * 256) | 0;
         }
       }
 
@@ -314,8 +317,18 @@
       var out = ctx.createImageData(SIZE, SIZE);
       var od = out.data;
 
-      function paint(p) {
+      // The shimmer is a 256-entry sine sampled by each cell's phase, so a
+      // living frame costs one array lookup per cell rather than a sine.
+      var WAVE = new Float32Array(256);
+
+      function paint(p, t) {
         var eased = p * p * (3 - 2 * p);
+        // A steady tremble at the dissolving rim, and every fourteen seconds
+        // or so a swell that eats further into the mark and lets it back.
+        var surge = Math.pow(Math.max(0, Math.sin(t * 0.45)), 12);
+        var amp = 0.05 + 0.10 * surge;
+        for (var k = 0; k < 256; k++) WAVE[k] = amp * Math.sin(t * 2.4 + k * 0.0245437);
+
         for (var i = 0; i < n; i++) {
           var a = alpha[i], j = i * 4;
           if (a === 0) { od[j + 3] = 0; continue; }
@@ -325,7 +338,7 @@
           // arrival: the centre clears the threshold first
           var arriving = eased * (1.35 - 0.55 * r);
           var keep = a * Math.min(arriving, settled);
-          if (keep > thr[i]) {
+          if (keep > thr[i] + WAVE[phase[i]]) {
             od[j] = GAS[0]; od[j + 1] = GAS[1]; od[j + 2] = GAS[2]; od[j + 3] = 255;
           } else {
             od[j + 3] = 0;
@@ -361,11 +374,11 @@
         pin.style.setProperty("--p", "1");
         mark.classList.add("done");
         if (bar) bar.classList.add("shown");
-        paint(1);
+        paint(1, 0);
         return;
       }
 
-      var last = -1, target = 0, cur = 0, running = false;
+      var target = 0, cur = 0, running = false;
 
       function read() {
         var span = host.offsetHeight - innerHeight;
@@ -377,20 +390,33 @@
       // stands there. The words do not start until .58, so there is a real
       // beat where the whole mark is the only thing on the screen.
       var ASSEMBLE = 0.45;
+      var built = 0;                       // how far the mark itself has come
 
       function apply(p) {
         var d = Math.min(1, p / ASSEMBLE);
+        built = d;
         pin.style.setProperty("--p", p.toFixed(4));
         STATE.reveal = d;
         mark.classList.toggle("done", d > 0.995);
         // The bar arrives with the mark whole, a beat before the first words.
         if (bar) bar.classList.toggle("shown", d > 0.98);
-
-        // 64 steps is finer than the dither grid can show, and still skips
-        // most repaints while the opening is settling.
-        var step = Math.round(d * 64);
-        if (step !== last) { last = step; paint(step / 64); }
       }
+
+      // The mark is never a still image: the dither keeps working whether the
+      // page is moving or not. ~22 fps — a shimmer at full frame rate reads as
+      // noise, and this is a third of the work.
+      var t0 = performance.now(), drawn = 0, awake = true;
+      document.addEventListener("visibilitychange", function () { awake = !document.hidden; });
+      (function shimmer(now) {
+        requestAnimationFrame(shimmer);
+        if (!awake || now - drawn < 45) return;
+        // Nothing to keep alive once the scene has left the screen — and in
+        // the one-file preview a hidden route measures as a zero-height box.
+        var r = host.getBoundingClientRect();
+        if (r.bottom <= 0 || r.top >= innerHeight) return;
+        drawn = now;
+        paint(built, (now - t0) / 1000);
+      })(t0);
 
       // The opening trails the scroll instead of snapping to it, so a wheel
       // notch reads as a glide rather than a jump.
@@ -414,6 +440,7 @@
       document.addEventListener("nox:route", schedule);
       target = cur = read();
       apply(cur);
+      paint(built, 0);
     });
   }
 
