@@ -279,9 +279,11 @@
     [10,58, 6,54, 9,57, 5,53],
     [42,26,38,22,41,25,37,21]
   ];
-  var GAS = [46, 155, 240];    // the body of the flame
-  var HOT = [96, 178, 236];    // where it is burning
-  var TIP = [158, 214, 250];   // the very edge of the burn
+  /* The mark is the brightest thing on the screen; what burns off it is
+     dimmer than it is, and dimmer again the further it gets. */
+  var GAS = [46, 155, 240];    // the mark itself
+  var EMB = [34, 112, 178];    // the burning edge, and a spark while it lives
+  var ASH = [22, 74, 124];     // the far reach of a tongue, and a spark going out
   var SIZE = 300, PAD = 26;   // room around the mark for the flame to work in
 
   /* A tileable field of soft blobs. White noise smoothed a few times with a
@@ -411,7 +413,7 @@
               // near its crest, so they stay short and come in patches
               var lick = spill[i] * TONGUE * Math.max(0, flame - 0.46) * eased;
               if (lick > thr[i]) {
-                var ct = lick > thr[i] * 2.2 ? TIP : HOT;
+                var ct = lick > thr[i] * 2.2 ? EMB : ASH;
                 od[j] = ct[0]; od[j + 1] = ct[1]; od[j + 2] = ct[2]; od[j + 3] = 255;
               } else {
                 od[j + 3] = 0;
@@ -432,7 +434,7 @@
 
             if (keep > lim) {
               var c = GAS;
-              if (edge > 0.24 && flame > 0.70 && keep - lim < 0.07) c = HOT;
+              if (edge > 0.24 && flame > 0.70 && keep - lim < 0.07) c = EMB;
               od[j] = c[0]; od[j + 1] = c[1]; od[j + 2] = c[2]; od[j + 3] = 255;
             } else {
               od[j + 3] = 0;
@@ -473,7 +475,7 @@
           var u = s.age / s.life;
           // an ember does not fade, it starts missing beats and then stops
           if (u > 0.5 && (((t * 11 + k) | 0) & 1)) continue;
-          var cs = u < 0.28 ? TIP : u < 0.68 ? HOT : GAS;
+          var cs = u < 0.45 ? EMB : ASH;
           var js = ((syi * SIZE) + sxi) << 2;
           od[js] = cs[0]; od[js + 1] = cs[1]; od[js + 2] = cs[2]; od[js + 3] = 255;
         }

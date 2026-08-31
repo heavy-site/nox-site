@@ -1,7 +1,7 @@
 """Bundle the three-page site into one self-contained HTML for review.
 
 The artifact sandbox allows no local files, so the stylesheet, scripts, floor
-plan, logo and the Yulong face are all inlined, the API is stubbed with the
+plan and logo are all inlined, the API is stubbed with the
 same data api/site.php returns, and the three pages become hash routes.
 
     python build_artifact.py   ->  artifact/nox-site.html   (gitignored)
@@ -67,10 +67,6 @@ PAYLOAD = {
 css = read("assets", "site.css")
 fx = read("assets", "fx.js")
 site = read("assets", "site.js")
-
-font_b64 = base64.b64encode(open(os.path.join(ROOT, "fonts", "Yulong-Regular.ttf"), "rb").read()).decode("ascii")
-css = css.replace('src:url("/fonts/Yulong-Regular.ttf") format("truetype");',
-                  'src:url(data:font/ttf;base64,%s) format("truetype");' % font_b64)
 
 plan_uri = data_uri_svg("assets/plan.svg")
 logo_uri = data_uri_svg("assets/logo-mark.svg")
