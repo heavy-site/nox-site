@@ -365,27 +365,40 @@
         return;
       }
 
-      var last = -1, queued = false;
+      var last = -1, target = 0, cur = 0, running = false;
 
-      function measure() {
-        queued = false;
+      function read() {
         var span = host.offsetHeight - innerHeight;
         var p = span > 0 ? -host.getBoundingClientRect().top / span : 1;
-        p = Math.min(1, Math.max(0, p));
+        return Math.min(1, Math.max(0, p));
+      }
 
-        pin.style.setProperty("--p", p.toFixed(3));
+      function apply(p) {
+        pin.style.setProperty("--p", p.toFixed(4));
         STATE.reveal = p;
         mark.classList.toggle("done", p > 0.985);
         // The bar arrives with the mark whole, a beat before the first words.
         if (bar) bar.classList.toggle("shown", p > 0.46);
 
-        // 48 steps is finer than the dither grid can show, and skips
-        // ~19 of every 20 repaints during a fast scroll.
-        var step = Math.round(p * 48);
-        if (step !== last) { last = step; paint(step / 48); }
+        // 64 steps is finer than the dither grid can show, and still skips
+        // most repaints while the opening is settling.
+        var step = Math.round(p * 64);
+        if (step !== last) { last = step; paint(step / 64); }
       }
 
-      function schedule() { if (!queued) { queued = true; requestAnimationFrame(measure); } }
+      // The opening trails the scroll instead of snapping to it, so a wheel
+      // notch reads as a glide rather than a jump.
+      function tick() {
+        cur += (target - cur) * 0.18;
+        if (Math.abs(target - cur) < 0.0004) { cur = target; running = false; }
+        else requestAnimationFrame(tick);
+        apply(cur);
+      }
+
+      function schedule() {
+        target = read();
+        if (!running) { running = true; requestAnimationFrame(tick); }
+      }
 
       addEventListener("scroll", schedule, { passive: true });
       addEventListener("resize", schedule, { passive: true });
@@ -393,8 +406,69 @@
       // and switching route need not scroll. Remeasure so the bar is not left
       // veiled on a page that has no opening of its own.
       document.addEventListener("nox:route", schedule);
-      measure();
+      target = cur = read();
+      apply(cur);
     });
+  }
+
+  /* ── 2b. the wheel gets some weight ──────────────────────────────────
+     A mouse wheel arrives in coarse notches and the page lurches one notch at
+     a time. Here the notches only set a destination and the page glides to it.
+     Anything that already sends a smooth stream is left alone: a trackpad's
+     small or fractional deltas, a pinch or a modifier, a reader who asked for
+     less motion, and any scrollable box under the cursor all fall through to
+     the browser untouched. */
+  function inertia() {
+    if (REDUCED) return;
+
+    var target = scrollY, running = false, own = false;
+
+    // We ease the page ourselves now; leaving the CSS easing on would put the
+    // browser's smoothing on top of every frame of ours and drag the page.
+    document.documentElement.style.scrollBehavior = "auto";
+
+    function limit() {
+      return Math.max(0, document.documentElement.scrollHeight - innerHeight);
+    }
+
+    function scrollableUnder(node) {
+      for (var n = node; n && n !== document.body; n = n.parentElement) {
+        if (n.scrollHeight > n.clientHeight + 1) {
+          var ov = getComputedStyle(n).overflowY;
+          if (ov === "auto" || ov === "scroll") return true;
+        }
+      }
+      return false;
+    }
+
+    function tick() {
+      var d = target - scrollY;
+      if (Math.abs(d) < 0.5) { running = false; own = false; return; }
+      scrollTo(0, scrollY + d * 0.17);
+      requestAnimationFrame(tick);
+    }
+
+    addEventListener("wheel", function (e) {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
+      var dy = e.deltaY;
+      if (!dy) return;
+
+      // A notch: whole lines/pages, or a whole-pixel delta big enough that no
+      // trackpad would send it. Everything else is already smooth.
+      var notch = e.deltaMode !== 0 || (Math.abs(dy) >= 40 && dy === Math.round(dy));
+      if (!notch) { own = false; return; }
+      if (scrollableUnder(e.target)) return;
+
+      e.preventDefault();
+      if (!own) { target = scrollY; own = true; }
+      var px = e.deltaMode === 1 ? dy * 42 : e.deltaMode === 2 ? dy * innerHeight : dy;
+      target = Math.min(limit(), Math.max(0, target + px * 1.15));
+      if (!running) { running = true; requestAnimationFrame(tick); }
+    }, { passive: false });
+
+    // Any scroll we did not drive — a drag of the bar, a key, a jump to an
+    // anchor — becomes the new starting point.
+    addEventListener("scroll", function () { if (!running) target = scrollY; }, { passive: true });
   }
 
   /* ── the waveform ───────────────────────────────────────────────────
@@ -519,6 +593,7 @@
     waveform();
     glitch();
     reveals();
+    inertia();
     var sig = document.querySelector(".sigil");
     if (sig) heroSigil(sig);
     revealScroll();
