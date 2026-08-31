@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>nøx — рейв-майданчик у Києві</title>
+<meta name="description" content="nøx — рейв-майданчик на Нижньоюрківській, 31 у Києві. 215 м², 300–350 гостей, власний бар, тераса і парковка. Афіша вечорів та оренда майданчика для організаторів.">
+<link rel="canonical" href="/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="nøx">
+<meta property="og:title" content="nøx — рейв-майданчик у Києві">
+<meta property="og:description" content="Нижньоюрківська, 31. 215 м², 300–350 гостей, власний бар, тераса і парковка.">
+<meta property="og:image" content="/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  @font-face{
+    font-family:"Yulong";
+    src:url("/fonts/Yulong-Regular.ttf") format("truetype");
+    font-weight:400; font-style:normal; font-display:swap;
+  }
+
+  :root{
+    --ground:#0C1316; --panel:#111A1E; --panel2:#0F171A;
+    --ink:#E8EFF0; --ink2:#93A7AD; --ink3:#7C919A;
+    --rule:#1E2C32; --rule2:#2B3D44;
+    --na:#5CC3E8; --na-dim:#2C7591;
+    --display:"Yulong","Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --sans:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --wrap:1060px;
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .brand,h1,h2,.stat b,.ev-date,.big{ font-synthesis-weight:none; font-synthesis:none; }
+  img{ max-width:100%; display:block; }
+  a{ color:var(--na); }
+  :focus-visible{ outline:2px solid var(--na); outline-offset:3px; }
+
+  .wrap{ max-width:var(--wrap); margin:0 auto; padding:0 22px; }
+
+  /* ── шапка ─────────────────────────────────────────── */
+  .top{
+    position:sticky; top:0; z-index:20;
+    background:rgba(12,19,22,.86); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--rule);
+  }
+  .topin{
+    max-width:var(--wrap); margin:0 auto; padding:0 22px;
+    height:60px; display:flex; align-items:center; gap:26px;
+  }
+  .mark{
+    font-family:var(--display); font-size:27px; line-height:1;
+    letter-spacing:.012em; color:var(--ink); text-decoration:none;
+  }
+  .nav{ display:flex; gap:22px; margin-left:auto; flex-wrap:wrap; }
+  .nav a{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink3); text-decoration:none;
+    white-space:nowrap;
+  }
+  .nav a:hover{ color:var(--na); }
+  @media (max-width:640px){
+    .topin{ height:auto; padding-top:12px; padding-bottom:12px; flex-wrap:wrap; gap:12px 18px; }
+    .nav{ margin-left:0; width:100%; gap:16px; }
+  }
+
+  /* ── титул ─────────────────────────────────────────── */
+  .hero{ position:relative; isolation:isolate; padding:clamp(52px,11vw,120px) 0 clamp(34px,6vw,64px); }
+  .rig{ position:absolute; inset:-40% -25% -10%; z-index:-1; pointer-events:none;
+    filter:blur(46px); opacity:.46; mix-blend-mode:screen; }
+  .rig i{ position:absolute; top:0; left:30%; width:13%; height:100%; transform-origin:50% 0;
+    background:linear-gradient(180deg,rgba(92,195,232,.6),rgba(92,195,232,.13) 46%,rgba(92,195,232,0) 78%);
+    animation:sweep 21s ease-in-out infinite; }
+  .rig i:nth-child(1){ --a:-26deg; animation-duration:24s; }
+  .rig i:nth-child(2){ --a:-3deg; animation-duration:18s; animation-delay:-7s; opacity:.82; }
+  .rig i:nth-child(3){ --a:20deg; animation-duration:27s; animation-delay:-12s; }
+  @keyframes sweep{ 0%,100%{ transform:rotate(var(--a)) scaleY(1); } 50%{ transform:rotate(calc(var(--a) + 5deg)) scaleY(1.06); } }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--na); margin:0 0 24px;
+  }
+  .brand{
+    font-family:var(--display); font-weight:400;
+    font-size:clamp(84px,19vw,190px); line-height:.84;
+    letter-spacing:.012em; margin:0;
+  }
+  .lede{
+    font-size:clamp(16px,1.85vw,18px); line-height:1.5; font-weight:500;
+    margin:28px 0 0; color:var(--ink);
+  }
+  .lede b{ color:var(--na); font-weight:600; }
+
+  .facts{
+    display:grid; gap:1px; margin:36px 0 0;
+    background:var(--rule); border:1px solid var(--rule);
+    grid-template-columns:1fr;
+  }
+  @media (min-width:620px){ .facts{ grid-template-columns:2.1fr 1fr 1fr; } }
+  .fact{ background:var(--panel); padding:17px 20px 19px; display:grid; gap:9px; align-content:start; }
+  .fact em{
+    font-family:var(--mono); font-style:normal; font-size:10.5px;
+    letter-spacing:.19em; text-transform:uppercase; color:var(--na);
+  }
+  .fact b{ font-weight:600; font-size:clamp(18px,2.4vw,25px); line-height:1.22; letter-spacing:-.005em; }
+  .fact i{ font-style:normal; font-size:13px; line-height:1.45; color:var(--na); }
+
+  /* ── секції ────────────────────────────────────────── */
+  .sec{ padding:clamp(46px,7vw,82px) 0; border-top:1px solid var(--rule); scroll-margin-top:70px; }
+  .sechead{ display:flex; align-items:baseline; gap:16px; margin:0 0 32px; flex-wrap:wrap; }
+  h2{
+    font-family:var(--display); font-weight:400;
+    font-size:clamp(27px,4vw,41px); line-height:1.14;
+    letter-spacing:.008em; margin:0; text-wrap:balance;
+  }
+  .sechead p{ margin:0; color:var(--ink3); font-size:14px; }
+  p{ margin:0 0 17px; color:var(--ink2); max-width:66ch; }
+  h3{
+    font-family:var(--mono); font-weight:500; font-size:11px;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--na); margin:0 0 16px;
+  }
+
+  /* ── афіша ─────────────────────────────────────────── */
+  .events{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); }
+  .ev{
+    background:var(--panel); padding:24px 22px;
+    display:grid; gap:6px 26px; align-items:center;
+    grid-template-columns:1fr;
+  }
+  @media (min-width:760px){ .ev{ grid-template-columns:190px 1fr auto; gap:4px 26px; } }
+  .ev-date{
+    font-family:var(--display); font-size:20px; letter-spacing:.015em;
+    color:var(--na); line-height:1.2;
+  }
+  .ev-main b{ display:block; font-size:19px; font-weight:600; line-height:1.3; }
+  .ev-main span{ display:block; font-family:var(--mono); font-size:11.5px;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); margin-top:6px; }
+  .ev.past .ev-date{ color:var(--ink3); }
+  .ev.past .ev-main b{ color:var(--ink2); font-weight:500; }
+  .btn{
+    display:inline-block; font-family:var(--mono); font-size:12px;
+    letter-spacing:.12em; text-transform:uppercase; text-decoration:none;
+    color:var(--ground); background:var(--na); padding:11px 20px; border:0;
+    cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{ background:#7ED2F0; }
+  .btn.ghost{ background:transparent; color:var(--na); box-shadow:inset 0 0 0 1px var(--na-dim); }
+  .btn.ghost:hover{ background:rgba(92,195,232,.09); }
+  .empty{
+    background:var(--panel); border:1px solid var(--rule);
+    padding:38px 26px; text-align:center;
+  }
+  .empty p{ margin:0 auto 18px; color:var(--ink3); max-width:46ch; }
+  .subhead{
+    font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink3); margin:34px 0 14px;
+  }
+
+  /* ── оренда ────────────────────────────────────────── */
+  .spec{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); grid-template-columns:1fr; }
+  @media (min-width:560px){ .spec{ grid-template-columns:1fr 1fr; } }
+  @media (min-width:880px){ .spec{ grid-template-columns:repeat(4,1fr); } }
+  .sp{ background:var(--panel); padding:18px 20px; display:grid; gap:5px; align-content:start; }
+  .sp em{ font-family:var(--mono); font-style:normal; font-size:10.5px;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--ink3); }
+  .sp b{ font-size:17px; font-weight:600; line-height:1.25; }
+  .sp i{ font-style:normal; font-size:12.5px; color:var(--ink3); line-height:1.4; }
+
+  .planbox{
+    border:1px solid var(--rule); background:var(--panel2);
+    padding:clamp(14px,3vw,28px); overflow-x:auto; margin:16px 0 0;
+  }
+  .planbox svg{ display:block; width:100%; height:auto; min-width:420px; }
+
+  form{ margin:26px 0 0; }
+  .fields{ display:grid; gap:14px; grid-template-columns:1fr; }
+  @media (min-width:700px){ .fields{ grid-template-columns:1fr 1fr; } }
+  .f{ display:grid; gap:7px; }
+  .f.wide{ grid-column:1 / -1; }
+  label{ font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink3); }
+  input,textarea{
+    font-family:var(--sans); font-size:15px; color:var(--ink);
+    background:var(--panel); border:1px solid var(--rule2);
+    padding:12px 14px; width:100%;
+  }
+  input:focus,textarea:focus{ outline:none; border-color:var(--na-dim); }
+  textarea{ min-height:104px; resize:vertical; }
+  .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  .formfoot{ display:flex; align-items:center; gap:18px; margin:20px 0 0; flex-wrap:wrap; }
+  .msg{ font-size:14px; color:var(--ink3); }
+  .msg.ok{ color:var(--na); }
+  .msg.err{ color:#E8899B; }
+
+  /* ── гостям ────────────────────────────────────────── */
+  .info{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); grid-template-columns:1fr; }
+  @media (min-width:700px){ .info{ grid-template-columns:1fr 1fr; } }
+  .inf{ background:var(--panel); padding:22px; display:grid; gap:8px; align-content:start; }
+  .inf b{ font-size:15px; font-weight:600; }
+  .inf span{ font-size:14.5px; color:var(--ink2); line-height:1.55; }
+
+  /* ── підвал ────────────────────────────────────────── */
+  .foot{ border-top:1px solid var(--rule); padding:clamp(44px,7vw,72px) 0 46px; }
+  .footgrid{ display:grid; gap:28px; grid-template-columns:1fr; align-items:end; }
+  @media (min-width:700px){ .footgrid{ grid-template-columns:1fr auto; } }
+  .footname{ font-family:var(--display); font-weight:400; font-size:clamp(23px,3.2vw,31px);
+    letter-spacing:.012em; margin:0 0 15px; }
+  .footlinks{ display:grid; gap:7px; justify-items:start; font-family:var(--mono); font-size:14px; }
+  .footlinks a{ text-decoration:none; border-bottom:1px solid var(--na-dim); }
+  .footmark{ font-family:var(--display); font-size:38px; letter-spacing:.012em;
+    color:var(--rule2); line-height:1; }
+  .footaddr{ font-family:var(--mono); font-size:12px; color:var(--ink3); line-height:1.8; }
+  @media (min-width:700px){ .footaddr{ text-align:right; } }
+
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    .rig i{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="topin">
+    <a class="mark" href="#top">nøx</a>
+    <nav class="nav">
+      <a href="#afisha">Афіша</a>
+      <a href="#orenda">Оренда</a>
+      <a href="#gostyam">Гостям</a>
+      <a href="#kontakty">Контакти</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="rig" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="wrap">
+      <p class="eyebrow">Рейв-майданчик · Київ</p>
+      <h1 class="brand">nøx</h1>
+      <p class="lede">Майданчик на <b>300–350 гостей</b> на Нижньоюрківській. Тестовий режим, повне відкриття — листопад 2026.</p>
+      <div class="facts">
+        <div class="fact"><em>Адреса</em><b>Нижньоюрківська 31, Київ</b><i>Початок вулиці — найпрохідніше місце</i></div>
+        <div class="fact"><em>Площа</em><b>215 м²</b><i>Плюс тераса і парковка</i></div>
+        <div class="fact"><em>Вік</em><b>18+</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="afisha">
+    <div class="wrap">
+      <div class="sechead"><h2>Афіша</h2></div>
+      <div id="upcoming"></div>
+      <div id="pastwrap" hidden>
+        <p class="subhead">Що вже було</p>
+        <div class="events" id="past"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="orenda">
+    <div class="wrap">
+      <div class="sechead">
+        <h2>Оренда майданчика</h2>
+        <p>Для організаторів</p>
+      </div>
+      <p>Зал, бар, гардероб і санвузол. Свій звук і світло привозите або орендуєте — розкажемо, з ким працюємо.</p>
+
+      <div class="spec" id="spec"></div>
+
+      <div class="planbox">
+        <svg viewBox="-700 -700 20200 13400" role="img" aria-label="План клубу nøx: барна стійка 9,6 м виділена в центрі внизу, танцювальна зона з колонами, санвузол на сім кабін, гардероб">
+        <rect x="0" y="0" width="18000" height="12000" fill="#0B1215"/>
+        <defs>
+        <radialGradient id="floorlight" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#5CC8E8" stop-opacity=".20"/>
+        <stop offset=".55" stop-color="#5CC8E8" stop-opacity=".07"/>
+        <stop offset="1" stop-color="#5CC8E8" stop-opacity="0"/>
+        </radialGradient>
+        </defs>
+        <ellipse cx="5450" cy="5750" rx="5300" ry="2750" fill="url(#floorlight)"/>
+
+        <path d="M0,0H18000V12000H0Z M250,250H17750V11750H250Z" fill-rule="evenodd" fill="#BDC8C9"/>
+        <rect x="0" y="2950" width="10650" height="150" fill="#BDC8C9"/>
+        <rect x="10490" y="250" width="160" height="2700" fill="#BDC8C9"/>
+        <rect x="2500" y="250" width="150" height="2700" fill="#BDC8C9"/>
+        <rect x="10700" y="8400" width="160" height="3350" fill="#BDC8C9"/>
+        <rect x="8960" y="834" width="250" height="2111" fill="#BDC8C9"/>
+
+        <rect x="780" y="2950" width="820" height="150" fill="#0B1215"/>
+        <rect x="3030" y="2950" width="820" height="150" fill="#0B1215"/>
+        <rect x="8470" y="2950" width="820" height="150" fill="#0B1215"/>
+        <rect x="0" y="4500" width="250" height="1400" fill="#0B1215"/>
+
+        <g fill="#DDE5E5" fill-opacity=".12" stroke="#DB92A5" stroke-width="24">
+        <rect x="2650" y="250" width="700" height="1300"/><rect x="3410" y="250" width="700" height="1300"/><rect x="4200" y="250" width="700" height="1300"/>
+        <rect x="4975" y="250" width="700" height="1300"/><rect x="5767" y="250" width="700" height="1300"/><rect x="6563" y="250" width="700" height="1300"/>
+        <rect x="7348" y="250" width="700" height="1300"/>
+        </g>
+        <g fill="#DB92A5" fill-opacity=".62" stroke="none">
+        <rect x="2780" y="331" width="450" height="550"/><rect x="3540" y="331" width="450" height="550"/><rect x="4330" y="331" width="450" height="550"/>
+        <rect x="5105" y="331" width="450" height="550"/><rect x="5897" y="331" width="450" height="550"/><rect x="6693" y="331" width="450" height="550"/>
+        <rect x="7478" y="331" width="450" height="550"/>
+        </g>
+        <rect x="10222" y="446" width="268" height="2317" fill="#DDAE6E" fill-opacity=".55" stroke="#DDAE6E" stroke-width="26"/>
+        <rect x="4738" y="2588" width="2490" height="360" fill="#DB92A5" fill-opacity=".34" stroke="#DB92A5" stroke-width="24"/>
+
+        <rect x="5290" y="9550" width="600" height="2200" fill="#B597CE" fill-opacity=".30" stroke="#B597CE" stroke-width="26"/>
+        <g stroke="#B597CE" stroke-width="26">
+        <rect x="5890" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
+        <rect x="7490" y="9550" width="1600" height="600" fill="#B597CE" fill-opacity=".30"/>
+        <rect x="9100" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
+        </g>
+        <g stroke="#B597CE" stroke-width="26">
+        <rect x="5890" y="11148" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
+        <rect x="6590" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
+        <rect x="7990" y="11148" width="600" height="560" fill="#5CC8E8" fill-opacity=".45"/>
+        <rect x="8588" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
+        <rect x="10000" y="11150" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
+        </g>
+
+        <rect x="250" y="9000" width="2500" height="2748" fill="#68C2B2" fill-opacity=".18"
+        stroke="#68C2B2" stroke-width="26" stroke-dasharray="220 140"/>
+
+        <g fill="#BDC8C9" stroke="none">
+        <rect x="3090" y="5950" width="320" height="360"/><rect x="4550" y="5950" width="320" height="360"/>
+        <rect x="6030" y="5950" width="320" height="360"/><rect x="7490" y="5950" width="320" height="360"/>
+        <rect x="8950" y="5950" width="320" height="360"/><rect x="10430" y="5950" width="320" height="360"/>
+        </g>
+
+        <g fill="none" stroke="#5CC8E8" stroke-width="46" stroke-dasharray="200 120" opacity=".95">
+        <rect x="5120" y="9390" width="5640" height="2400" rx="170"/>
+        </g>
+        <g text-anchor="middle" fill="#5CC8E8">
+        <text x="7940" y="8760" font-family="ui-monospace, Menlo, monospace"
+        font-size="700" letter-spacing="90">БАР</text>
+        <text x="7940" y="9130" font-family="ui-monospace, Menlo, monospace"
+        font-size="300" letter-spacing="28" opacity=".8">9,6 м стійки</text>
+        </g>
+
+        <g stroke="#8B999C" stroke-width="24" fill="none">
+        <line x1="0" y1="-330" x2="18000" y2="-330"/>
+        <line x1="18330" y1="0" x2="18330" y2="12000"/>
+        </g>
+        <g font-family="ui-monospace, Menlo, monospace" font-size="290" fill="#8B999C" text-anchor="middle">
+        <text x="9000" y="-450">18,00 м</text>
+        <text x="18800" y="6000" transform="rotate(-90 18800 6000)">12,00 м</text>
+        </g>
+        </svg>
+      </div>
+
+      <form id="rentform" autocomplete="on">
+        <h3>Заявка на дату</h3>
+        <div class="fields">
+          <div class="f">
+            <label for="r-name">Хто ви <span aria-hidden="true">*</span></label>
+            <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди">
+          </div>
+          <div class="f">
+            <label for="r-contact">Звʼязок <span aria-hidden="true">*</span></label>
+            <input id="r-contact" name="contact" required maxlength="200" placeholder="Telegram, телефон або пошта">
+          </div>
+          <div class="f">
+            <label for="r-event">Подія</label>
+            <input id="r-event" name="event" maxlength="200" placeholder="Назва або формат вечора">
+          </div>
+          <div class="f">
+            <label for="r-date">Дата <span aria-hidden="true">*</span></label>
+            <input id="r-date" name="date" required maxlength="200" placeholder="Наприклад, 15 листопада">
+          </div>
+          <div class="f">
+            <label for="r-guests">Скільки гостей очікуєте</label>
+            <input id="r-guests" name="guests" maxlength="200" placeholder="200–300">
+          </div>
+          <div class="f wide">
+            <label for="r-comment">Що потрібно від майданчика</label>
+            <textarea id="r-comment" name="comment" maxlength="2000" placeholder="Звук, світло, бар, тайминг, кількість барменів — усе, що важливо"></textarea>
+          </div>
+        </div>
+        <div class="hp" aria-hidden="true">
+          <label for="r-website">Не заповнюйте це поле</label>
+          <input id="r-website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="formfoot">
+          <button class="btn" type="submit" id="rentbtn">Надіслати заявку</button>
+          <span class="msg" id="rentmsg" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="sec" id="gostyam">
+    <div class="wrap">
+      <div class="sechead"><h2>Гостям</h2></div>
+      <div class="info">
+        <div class="inf">
+          <b>Як дістатися</b>
+          <span>Нижньоюрківська 31, Київ. Ми на самому початку вулиці.</span>
+          <span><a href="https://maps.google.com/?q=50.466564192974495,30.499941806080255" target="_blank" rel="noopener">Відкрити на мапі</a></span>
+        </div>
+        <div class="inf">
+          <b>Парковка</b>
+          <span>Своя парковка біля входу.</span>
+        </div>
+        <div class="inf">
+          <b>Вік</b>
+          <span>18+. На вході перевіряємо документи, тож візьміть із собою.</span>
+        </div>
+        <div class="inf">
+          <b>Всередині</b>
+          <span>Танцювальна зона, бар на 9,6 м стійки, гардероб, тераса.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot" id="kontakty">
+    <div class="wrap footgrid">
+      <div>
+        <p class="eyebrow">Звʼязатися</p>
+        <p class="footname">Євген Пивовар</p>
+        <div class="footlinks">
+          <a href="tel:+380633098621">+380 63 309 8621</a>
+          <a href="mailto:e.pyvovar@gmail.com">e.pyvovar@gmail.com</a>
+        </div>
+      </div>
+      <div class="footaddr">
+        <div class="footmark">nøx</div>
+        Нижньоюрківська 31, Київ<br>
+        215 м² · 300–350 гостей · 18+
+      </div>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  var esc = function(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  };
+
+  function eventRow(e, isPast){
+    var cls = isPast ? "ev past" : "ev";
+    var right = "";
+    if (!isPast && e.tickets) {
+      right = '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>';
+    }
+    var promoter = e.promoter ? '<span>' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + '</span>' : "";
+    return '<div class="' + cls + '">'
+      + '<div class="ev-date">' + esc(e.dateText || e.date) + '</div>'
+      + '<div class="ev-main"><b>' + esc(e.title) + '</b>' + promoter + '</div>'
+      + '<div>' + right + '</div>'
+      + '</div>';
+  }
+
+  function renderSpec(spec){
+    var host = document.getElementById("spec");
+    if (!host || !spec || !spec.length) return;
+    host.innerHTML = spec.map(function(s){
+      return '<div class="sp"><em>' + esc(s.label) + '</em><b>' + esc(s.value) + '</b>'
+        + (s.note ? '<i>' + esc(s.note) + '</i>' : "") + '</div>';
+    }).join("");
+  }
+
+  function renderEvents(data){
+    var up = document.getElementById("upcoming");
+    if (data.upcoming && data.upcoming.length) {
+      up.innerHTML = '<div class="events">'
+        + data.upcoming.map(function(e){ return eventRow(e, false); }).join("")
+        + '</div>';
+    } else {
+      up.innerHTML = '<div class="empty">'
+        + '<p>Найближчі вечори зʼявляться тут. Якщо хочете провести свій — напишіть, календар відкритий.</p>'
+        + '<a class="btn ghost" href="#orenda">Орендувати майданчик</a>'
+        + '</div>';
+    }
+
+    if (data.past && data.past.length) {
+      document.getElementById("past").innerHTML =
+        data.past.map(function(e){ return eventRow(e, true); }).join("");
+      document.getElementById("pastwrap").hidden = false;
+    }
+  }
+
+  fetch("/api/events", { headers: { "Accept": "application/json" } })
+    .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(data){ renderEvents(data); renderSpec(data.spec); })
+    .catch(function(){
+      document.getElementById("upcoming").innerHTML =
+        '<div class="empty"><p>Не вдалося завантажити афішу. Оновіть сторінку або напишіть нам.</p>'
+        + '<a class="btn ghost" href="#kontakty">Контакти</a></div>';
+    });
+
+  var form = document.getElementById("rentform");
+  form.addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var btn = document.getElementById("rentbtn");
+    var msg = document.getElementById("rentmsg");
+    var body = {};
+    ["name","contact","event","date","guests","comment","website"].forEach(function(k){
+      var el = form.elements[k];
+      if (el) body[k] = el.value.trim();
+    });
+
+    btn.disabled = true;
+    msg.className = "msg";
+    msg.textContent = "Надсилаємо…";
+
+    fetch("/api/rent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+      .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+      .then(function(res){
+        if (res.ok && res.j.ok) {
+          form.reset();
+          msg.className = "msg ok";
+          msg.textContent = "Заявку отримано. Звʼяжемося найближчим часом.";
+        } else {
+          msg.className = "msg err";
+          msg.textContent = (res.j && res.j.error) || "Не вдалося надіслати. Спробуйте ще раз.";
+        }
+      })
+      .catch(function(){
+        msg.className = "msg err";
+        msg.textContent = "Немає звʼязку з сервером. Спробуйте ще раз або напишіть нам.";
+      })
+      .then(function(){ btn.disabled = false; });
+  });
+})();
+</script>
+
+</body>
+</html>

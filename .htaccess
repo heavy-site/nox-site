@@ -1,0 +1,38 @@
+# nøx — venue site (cPanel/LiteSpeed)
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Extensionless API routes → PHP files
+  RewriteRule ^api/events/?$ /api/events.php [L,QSA]
+  RewriteRule ^api/rent/?$   /api/rent.php   [L,QSA]
+</IfModule>
+
+# ── Cache policy ────────────────────────────────────────────────────────────
+# LiteSpeed sends no Cache-Control for HTML, so browsers fall back to heuristic
+# caching and never revalidate — a deploy then shows up in one browser and not
+# another. Always revalidate the HTML; a 304 costs nothing. Posters are replaced
+# in place under the same filename, so they revalidate too.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "-poster\.(png|jpe?g|webp)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(ttf|woff2?|svg|jpe?g|png|webp|mp4)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+
+# Config files must never be served, wherever they land.
+<FilesMatch "^(nox_config|config\.sample).*\.php$">
+  Require all denied
+</FilesMatch>
+
+# Internal helpers are includes, not endpoints.
+<FilesMatch "^_.*\.php$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes
