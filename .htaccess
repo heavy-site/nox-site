@@ -4,8 +4,16 @@
   RewriteEngine On
 
   # Extensionless API routes → PHP files
-  RewriteRule ^api/events/?$ /api/events.php [L,QSA]
+  RewriteRule ^api/site/?$   /api/site.php   [L,QSA]
   RewriteRule ^api/rent/?$   /api/rent.php   [L,QSA]
+
+  # Pages without .html
+  RewriteRule ^events/?$     /events.html    [L,QSA]
+  RewriteRule ^booking/?$    /booking.html   [L,QSA]
+
+  # A visitor who types the .html form lands on the clean URL
+  RewriteCond %{THE_REQUEST} \s/+(events|booking)\.html[\s?] [NC]
+  RewriteRule ^ /%1 [R=301,L]
 </IfModule>
 
 # ── Cache policy ────────────────────────────────────────────────────────────

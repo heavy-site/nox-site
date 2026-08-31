@@ -4,10 +4,14 @@ deployment:
     # Docroot of the nox subdomain. Confirm in cPanel > Domains before the
     # first deploy — cPanel picks this path when the subdomain is created.
     - export DEPLOYPATH=/home3/hevycom/nox.he4vy.com/
-    - /bin/mkdir -p $DEPLOYPATH/api $DEPLOYPATH/fonts
+    - /bin/mkdir -p $DEPLOYPATH/api $DEPLOYPATH/fonts $DEPLOYPATH/assets $DEPLOYPATH/media
     - /bin/cp    ./index.html      $DEPLOYPATH
+    - /bin/cp    ./events.html     $DEPLOYPATH
+    - /bin/cp    ./booking.html    $DEPLOYPATH
     - /bin/cp    ./favicon.svg     $DEPLOYPATH
     - /bin/cp    ./.htaccess       $DEPLOYPATH
     - /bin/cp -R ./api/.           $DEPLOYPATH/api/
     - /bin/cp -R ./fonts/.         $DEPLOYPATH/fonts/
+    - /bin/cp -R ./assets/.        $DEPLOYPATH/assets/
+    - /bin/cp -R ./media/.         $DEPLOYPATH/media/
     - /bin/rm -f $DEPLOYPATH/api/config.sample.php

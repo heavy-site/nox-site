@@ -1,6 +1,7 @@
-preview.html
-nox_config.php
-nox_data/
 .DS_Store
 Thumbs.db
+artifact/
 make_preview.py
+nox_config.php
+nox_data/
+preview.html

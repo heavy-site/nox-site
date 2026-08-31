@@ -8,7 +8,9 @@ $split = nox_split_events();
 
 echo json_encode([
     'venue'    => nox_venue(),
-    'spec'     => nox_spec(),
+    'headline' => nox_headline(),
+    'rent'     => nox_included(),
+    'media'    => nox_media(),
     'upcoming' => $split['upcoming'],
     'past'     => $split['past'],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
