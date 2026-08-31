@@ -324,18 +324,23 @@ h3{
 .where{ display:grid; gap:clamp(26px,3.4vw,54px); grid-template-columns:1fr; align-items:start; }
 @media (min-width:900px){
   .where{
-    grid-template-columns:minmax(200px,26ch) minmax(0,1fr);
+    /* Адресі — рівно стільки, скільки треба на два рядки; решта ширини мапі.
+       Ряд виходить з колонки контенту в обидва боки: ліворуч — до бічного
+       відступу сторінки, праворуч — до самого краю екрана. */
+    grid-template-columns:minmax(130px,15ch) minmax(0,1fr);
+    gap:clamp(16px,1.6vw,26px);
+    margin-left:calc(50% - 50vw + var(--pad));
     margin-right:calc(50% - 50vw);
   }
   /* підпис під мапою лишається в межах сторінки, а не тікає за край */
   .where .mapfoot{ padding-right:var(--pad); }
 }
 .mapframe{
-  display:block; width:100%; height:clamp(360px,60vh,640px); border:1px solid var(--line2);
+  display:block; width:100%; height:clamp(400px,68vh,760px); border:1px solid var(--line2);
   filter:invert(1) hue-rotate(188deg) saturate(.55) brightness(.92) contrast(1.05);
 }
 .mapnote{
-  display:grid; place-items:center; height:clamp(360px,60vh,640px); margin:0;
+  display:grid; place-items:center; height:clamp(400px,68vh,760px); margin:0;
   border:1px solid var(--line2); background:var(--pit); text-align:center;
   padding:0 var(--pad); color:var(--dust); font-family:var(--hud); font-size:11px;
   letter-spacing:.18em; text-transform:uppercase; line-height:2;
