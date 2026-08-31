@@ -168,11 +168,6 @@ h1 .g.c{ color:var(--pale); }
   75%{ clip-path:inset(66% 0 12% 0); transform:translate(2px,0); opacity:.6; }
   100%{ clip-path:inset(0 0 100% 0); transform:none; opacity:0; }
 }
-.rune{
-  margin:26px 0 0; font-family:var(--rite); font-size:clamp(17px,2.3vw,25px);
-  letter-spacing:.42em; text-transform:uppercase; color:var(--bone); opacity:.92;
-  text-indent:.42em;
-}
 /* Заголовок сторінки лишається в розмітці заради семантики, але сцену
    відкриває сам знак — жодного напису поруч із ним. */
 h1.off{
@@ -186,15 +181,9 @@ h1.off{
 }
 /* «nøx» тримає лише колір — накреслення те саме, що й у кирилиці поруч. */
 .stagein .welcome b{ font-weight:400; color:var(--gas); }
-.stagein .place{ margin:clamp(20px,2.8vw,36px) 0 0; }
-.stagein .place .rune{ margin-top:0; }
+.stagein .place{ margin:clamp(12px,1.8vw,24px) 0 0; }
 .tag{ margin:22px auto 0; max-width:44ch !important; color:var(--ash); font-size:clamp(15px,1.7vw,17.5px); }
 .tag b{ color:var(--bone); font-weight:600; }
-.coord{
-  margin:34px 0 0; font-family:var(--hud); font-size:10.5px;
-  letter-spacing:.26em; text-transform:uppercase; color:var(--dust);
-}
-.coord span{ color:var(--gas); }
 .scroll{
   position:absolute; left:50%; bottom:22px; transform:translateX(-50%);
   font-family:var(--hud); font-size:9.5px; letter-spacing:.3em; text-transform:uppercase;
