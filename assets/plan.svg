@@ -1,69 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-700 -700 20200 13400" role="img" aria-label="План клубу nøx: барна стійка 9,6 м виділена в центрі внизу, танцювальна зона з колонами, санвузол на сім кабін, гардероб">
-  <rect x="0" y="0" width="18000" height="12000" fill="#0B1215"/>
+  <rect x="0" y="0" width="18000" height="12000" fill="#06070A"/>
   <defs>
   <radialGradient id="floorlight" cx="50%" cy="50%" r="50%">
-  <stop offset="0" stop-color="#5CC8E8" stop-opacity=".20"/>
-  <stop offset=".55" stop-color="#5CC8E8" stop-opacity=".07"/>
-  <stop offset="1" stop-color="#5CC8E8" stop-opacity="0"/>
+  <stop offset="0" stop-color="#2E9BF0" stop-opacity=".20"/>
+  <stop offset=".55" stop-color="#2E9BF0" stop-opacity=".07"/>
+  <stop offset="1" stop-color="#2E9BF0" stop-opacity="0"/>
   </radialGradient>
   </defs>
   <ellipse cx="5450" cy="5750" rx="5300" ry="2750" fill="url(#floorlight)"/>
-  <path d="M0,0H18000V12000H0Z M250,250H17750V11750H250Z" fill-rule="evenodd" fill="#BDC8C9"/>
-  <rect x="0" y="2950" width="10650" height="150" fill="#BDC8C9"/>
-  <rect x="10490" y="250" width="160" height="2700" fill="#BDC8C9"/>
-  <rect x="2500" y="250" width="150" height="2700" fill="#BDC8C9"/>
-  <rect x="10700" y="8400" width="160" height="3350" fill="#BDC8C9"/>
-  <rect x="8960" y="834" width="250" height="2111" fill="#BDC8C9"/>
-  <rect x="780" y="2950" width="820" height="150" fill="#0B1215"/>
-  <rect x="3030" y="2950" width="820" height="150" fill="#0B1215"/>
-  <rect x="8470" y="2950" width="820" height="150" fill="#0B1215"/>
-  <rect x="0" y="4500" width="250" height="1400" fill="#0B1215"/>
-  <g fill="#DDE5E5" fill-opacity=".12" stroke="#DB92A5" stroke-width="24">
+  <path d="M0,0H18000V12000H0Z M250,250H17750V11750H250Z" fill-rule="evenodd" fill="#E9E4D8"/>
+  <rect x="0" y="2950" width="10650" height="150" fill="#E9E4D8"/>
+  <rect x="10490" y="250" width="160" height="2700" fill="#E9E4D8"/>
+  <rect x="2500" y="250" width="150" height="2700" fill="#E9E4D8"/>
+  <rect x="10700" y="8400" width="160" height="3350" fill="#E9E4D8"/>
+  <rect x="8960" y="834" width="250" height="2111" fill="#E9E4D8"/>
+  <rect x="780" y="2950" width="820" height="150" fill="#06070A"/>
+  <rect x="3030" y="2950" width="820" height="150" fill="#06070A"/>
+  <rect x="8470" y="2950" width="820" height="150" fill="#06070A"/>
+  <rect x="0" y="4500" width="250" height="1400" fill="#06070A"/>
+  <g fill="#E9E4D8" fill-opacity=".12" stroke="#2E9BF0" stroke-width="24">
   <rect x="2650" y="250" width="700" height="1300"/><rect x="3410" y="250" width="700" height="1300"/><rect x="4200" y="250" width="700" height="1300"/>
   <rect x="4975" y="250" width="700" height="1300"/><rect x="5767" y="250" width="700" height="1300"/><rect x="6563" y="250" width="700" height="1300"/>
   <rect x="7348" y="250" width="700" height="1300"/>
   </g>
-  <g fill="#DB92A5" fill-opacity=".62" stroke="none">
+  <g fill="#2E9BF0" fill-opacity=".62" stroke="none">
   <rect x="2780" y="331" width="450" height="550"/><rect x="3540" y="331" width="450" height="550"/><rect x="4330" y="331" width="450" height="550"/>
   <rect x="5105" y="331" width="450" height="550"/><rect x="5897" y="331" width="450" height="550"/><rect x="6693" y="331" width="450" height="550"/>
   <rect x="7478" y="331" width="450" height="550"/>
   </g>
-  <rect x="10222" y="446" width="268" height="2317" fill="#DDAE6E" fill-opacity=".55" stroke="#DDAE6E" stroke-width="26"/>
-  <rect x="4738" y="2588" width="2490" height="360" fill="#DB92A5" fill-opacity=".34" stroke="#DB92A5" stroke-width="24"/>
-  <rect x="5290" y="9550" width="600" height="2200" fill="#B597CE" fill-opacity=".30" stroke="#B597CE" stroke-width="26"/>
-  <g stroke="#B597CE" stroke-width="26">
-  <rect x="5890" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
-  <rect x="7490" y="9550" width="1600" height="600" fill="#B597CE" fill-opacity=".30"/>
-  <rect x="9100" y="9550" width="1600" height="600" fill="#5CC8E8" fill-opacity=".30"/>
+  <rect x="10222" y="446" width="268" height="2317" fill="#7FD4FF" fill-opacity=".55" stroke="#7FD4FF" stroke-width="26"/>
+  <rect x="4738" y="2588" width="2490" height="360" fill="#2E9BF0" fill-opacity=".34" stroke="#2E9BF0" stroke-width="24"/>
+  <rect x="5290" y="9550" width="600" height="2200" fill="#B9E2FF" fill-opacity=".30" stroke="#B9E2FF" stroke-width="26"/>
+  <g stroke="#B9E2FF" stroke-width="26">
+  <rect x="5890" y="9550" width="1600" height="600" fill="#2E9BF0" fill-opacity=".30"/>
+  <rect x="7490" y="9550" width="1600" height="600" fill="#B9E2FF" fill-opacity=".30"/>
+  <rect x="9100" y="9550" width="1600" height="600" fill="#2E9BF0" fill-opacity=".30"/>
   </g>
-  <g stroke="#B597CE" stroke-width="26">
-  <rect x="5890" y="11148" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
-  <rect x="6590" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
-  <rect x="7990" y="11148" width="600" height="560" fill="#5CC8E8" fill-opacity=".45"/>
-  <rect x="8588" y="11148" width="1400" height="600" fill="#B597CE" fill-opacity=".45"/>
-  <rect x="10000" y="11150" width="700" height="600" fill="#5CC8E8" fill-opacity=".45"/>
+  <g stroke="#B9E2FF" stroke-width="26">
+  <rect x="5890" y="11148" width="700" height="600" fill="#2E9BF0" fill-opacity=".45"/>
+  <rect x="6590" y="11148" width="1400" height="600" fill="#B9E2FF" fill-opacity=".45"/>
+  <rect x="7990" y="11148" width="600" height="560" fill="#2E9BF0" fill-opacity=".45"/>
+  <rect x="8588" y="11148" width="1400" height="600" fill="#B9E2FF" fill-opacity=".45"/>
+  <rect x="10000" y="11150" width="700" height="600" fill="#2E9BF0" fill-opacity=".45"/>
   </g>
-  <rect x="250" y="9000" width="2500" height="2748" fill="#68C2B2" fill-opacity=".18"
-  stroke="#68C2B2" stroke-width="26" stroke-dasharray="220 140"/>
-  <g fill="#BDC8C9" stroke="none">
+  <rect x="250" y="9000" width="2500" height="2748" fill="#B9E2FF" fill-opacity=".18"
+  stroke="#B9E2FF" stroke-width="26" stroke-dasharray="220 140"/>
+  <g fill="#E9E4D8" stroke="none">
   <rect x="3090" y="5950" width="320" height="360"/><rect x="4550" y="5950" width="320" height="360"/>
   <rect x="6030" y="5950" width="320" height="360"/><rect x="7490" y="5950" width="320" height="360"/>
   <rect x="8950" y="5950" width="320" height="360"/><rect x="10430" y="5950" width="320" height="360"/>
   </g>
-  <g fill="none" stroke="#5CC8E8" stroke-width="46" stroke-dasharray="200 120" opacity=".95">
+  <g fill="none" stroke="#2E9BF0" stroke-width="46" stroke-dasharray="200 120" opacity=".95">
   <rect x="5120" y="9390" width="5640" height="2400" rx="170"/>
   </g>
-  <g text-anchor="middle" fill="#5CC8E8">
+  <g text-anchor="middle" fill="#2E9BF0">
   <text x="7940" y="8760" font-family="ui-monospace, Menlo, monospace"
   font-size="700" letter-spacing="90">БАР</text>
   <text x="7940" y="9130" font-family="ui-monospace, Menlo, monospace"
   font-size="300" letter-spacing="28" opacity=".8">9,6 м стійки</text>
   </g>
-  <g stroke="#8B999C" stroke-width="24" fill="none">
+  <g stroke="#6B665C" stroke-width="24" fill="none">
   <line x1="0" y1="-330" x2="18000" y2="-330"/>
   <line x1="18330" y1="0" x2="18330" y2="12000"/>
   </g>
-  <g font-family="ui-monospace, Menlo, monospace" font-size="290" fill="#8B999C" text-anchor="middle">
+  <g font-family="ui-monospace, Menlo, monospace" font-size="290" fill="#6B665C" text-anchor="middle">
   <text x="9000" y="-450">18,00 м</text>
   <text x="18800" y="6000" transform="rotate(-90 18800 6000)">12,00 м</text>
   </g>

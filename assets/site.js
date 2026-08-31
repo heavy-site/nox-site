@@ -16,7 +16,7 @@
       { value: "215 м²",  label: "зал" },
       { value: "300–350", label: "гостей" },
       { value: "9,6 м",   label: "барна стійка" },
-      { value: "18 × 12", label: "метрів, без колон по центру" }
+      { value: "88,2 м²", label: "танцпол, окреме приміщення" }
     ],
     rent: {
       included: [
@@ -102,24 +102,19 @@
       '<a class="btn machine" href="/booking">Забронювати дату</a></div>';
   }
 
-  // The head of the calendar: one night, given the whole width, with its
-  // poster. When nothing is booked ahead it holds the last night that
-  // happened rather than going blank — and says so, instead of calling a
-  // night that is over the nearest one.
+  // The head of the calendar: the nearest night, given the whole width, with
+  // its poster. The newest night in the calendar holds this place whether or
+  // not its date has passed — the section is the nearest event either way.
   function feature(data) {
-    var host = $("feature"), cap = $("featurecap");
+    var host = $("feature");
     if (!host) return;
 
     var up = data.upcoming || [], past = data.past || [];
     var e = up[0] || past[0];               // past comes newest first
     if (!e) {
-      if (cap) cap.textContent = "Афіша";
       host.innerHTML = empty("Найближчі вечори зʼявляться тут. Дати ще вільні.");
       return;
     }
-
-    var ahead = up.length > 0;
-    if (cap) cap.textContent = ahead ? "Найближчий вечір" : "Останній вечір";
 
     var poster = "";
     if (e.poster) {
@@ -131,13 +126,13 @@
         ' alt="' + esc(e.title) + ' — афіша" loading="lazy"></div>';
     }
 
-    host.innerHTML = '<div class="feat' + (ahead ? "" : " over") + '">' + poster +
+    host.innerHTML = '<div class="feat">' + poster +
       '<div class="fbody">' +
         '<div class="d">' + esc(e.dateText || e.date) + (e.year ? " " + esc(e.year) : "") + "</div>" +
         '<div class="t">' + esc(e.title) + "</div>" +
         (e.promoter ? '<div class="p">' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + "</div>" : "") +
         (e.lineup ? '<p class="line">' + esc(e.lineup) + "</p>" : "") +
-        (ahead && e.tickets
+        (e.tickets
           ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>' : "") +
       "</div></div>";
   }

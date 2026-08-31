@@ -214,7 +214,7 @@
     });
 
     // the real room in the middle
-    var w = opts.planWidth || 630, h = w * (13400 / 20200);
+    var w = opts.planWidth || 745, h = w * (13400 / 20200);
     svg.appendChild(svgEl("image", {
       href: "/assets/plan.svg", x: -w / 2, y: -h / 2, width: w, height: h,
       opacity: opts.planOpacity || ".9"
