@@ -1,6 +1,7 @@
 /* nøx — cyber-occult
-   void + bone + blood, with one cold machine cyan.
-   Red is the ritual layer, cyan is the system layer; they never mix in one element. */
+   Three colours only: void black, bone white, and the blue of a gas flame.
+   --gas is the core of the flame and carries every accent; --hot is the
+   hottest point, used on hover; --pale is the cold edge, for HUD detail. */
 
 @font-face{
   font-family:"Yulong";
@@ -15,9 +16,9 @@
   --bone:#E9E4D8;
   --ash:#9A9486;
   --dust:#6B665C;
-  --blood:#D7241C;
-  --ember:#FF4A2E;
-  --machine:#3BE0F0;
+  --gas:#2E9BF0;      /* пальник: ядро полумʼя */
+  --hot:#7FD4FF;      /* найгарячіше, для наведення */
+  --pale:#B9E2FF;     /* холодний край */
   --line:#191C22;
   --line2:#262A32;
 
@@ -37,8 +38,8 @@ body{
   -webkit-font-smoothing:antialiased; overflow-x:hidden;
 }
 img{ display:block; max-width:100%; }
-a{ color:var(--machine); }
-:focus-visible{ outline:1px solid var(--machine); outline-offset:4px; }
+a{ color:var(--pale); }
+:focus-visible{ outline:1px solid var(--pale); outline-offset:4px; }
 .wm,h1,h2,.fig b,.ev .d,.teaser b,.fname{ font-synthesis-weight:none; font-synthesis:none; }
 
 /* ── фон: шейдер + плівка ──────────────────────────────────────────── */
@@ -74,7 +75,7 @@ a{ color:var(--machine); }
 .wm{ display:flex; align-items:center; gap:11px; font-family:var(--brand); font-size:25px;
   line-height:1; color:var(--bone); text-decoration:none; letter-spacing:.01em; }
 .wm img{ width:26px; height:26px; filter:saturate(.9); }
-.wm:hover{ color:var(--blood); }
+.wm:hover{ color:var(--gas); }
 .wm:hover img{ filter:none; }
 .bar nav{ display:flex; gap:20px; margin-left:auto; align-items:center; }
 .bar nav a{
@@ -83,9 +84,9 @@ a{ color:var(--machine); }
 }
 .bar nav a:hover{ color:var(--bone); }
 .bar nav a[aria-current="page"]{ color:var(--bone); }
-.bar nav a[aria-current="page"]::before{ content:"◆ "; color:var(--blood); }
-.bar .cta{ color:var(--blood); }
-.bar .cta:hover{ color:var(--ember); }
+.bar nav a[aria-current="page"]::before{ content:"◆ "; color:var(--gas); }
+.bar .cta{ color:var(--gas); }
+.bar .cta:hover{ color:var(--hot); }
 @media (max-width:760px){ .bar nav a:not(.cta){ display:none; } }
 
 /* ── сцена ─────────────────────────────────────────────────────────── */
@@ -114,8 +115,8 @@ h1 .g{
   position:absolute; inset:0; pointer-events:none;
   clip-path:inset(0 0 100% 0);
 }
-h1 .g.r{ color:var(--blood); }
-h1 .g.c{ color:var(--machine); }
+h1 .g.r{ color:var(--gas); }
+h1 .g.c{ color:var(--pale); }
 .glitch h1 .g.r{ animation:gr .42s steps(2,end) 1; }
 .glitch h1 .g.c{ animation:gc .42s steps(2,end) 1; }
 @keyframes gr{
@@ -141,7 +142,7 @@ h1 .g.c{ color:var(--machine); }
   margin:34px 0 0; font-family:var(--hud); font-size:10.5px;
   letter-spacing:.26em; text-transform:uppercase; color:var(--dust);
 }
-.coord span{ color:var(--blood); }
+.coord span{ color:var(--gas); }
 .scroll{
   position:absolute; left:50%; bottom:22px; transform:translateX(-50%);
   font-family:var(--hud); font-size:9.5px; letter-spacing:.3em; text-transform:uppercase;
@@ -157,7 +158,7 @@ section + section{ border-top:1px solid var(--line); }
 .mark{
   display:flex; align-items:center; gap:14px; margin:0 0 clamp(26px,3.4vw,44px);
   font-family:var(--hud); font-size:10.5px; letter-spacing:.28em;
-  text-transform:uppercase; color:var(--blood);
+  text-transform:uppercase; color:var(--gas);
 }
 .mark::after{ content:""; flex:1; height:1px; background:var(--line); }
 h2{
@@ -173,7 +174,7 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 @media (min-width:920px){ .figs{ grid-template-columns:repeat(4,1fr); } }
 .fig{ position:relative; padding:18px 0 0; border-top:1px solid var(--line2); }
 .fig::before{
-  content:""; position:absolute; top:-1px; left:0; width:26px; height:1px; background:var(--blood);
+  content:""; position:absolute; top:-1px; left:0; width:26px; height:1px; background:var(--gas);
 }
 .fig b{
   display:block; font-family:var(--brand); font-weight:400;
@@ -211,14 +212,14 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 @media (min-width:880px){ .cols{ grid-template-columns:1fr 1fr; } }
 h3{
   font-family:var(--hud); font-weight:500; font-size:10.5px; letter-spacing:.24em;
-  text-transform:uppercase; color:var(--blood); margin:0 0 22px;
+  text-transform:uppercase; color:var(--gas); margin:0 0 22px;
 }
 .list{ list-style:none; margin:0; padding:0; }
 .list li{ padding:17px 0 17px 26px; border-top:1px solid var(--line); position:relative; }
 .list li:last-child{ border-bottom:1px solid var(--line); }
 .list li::before{
   content:"◆"; position:absolute; left:0; top:18px;
-  font-size:8px; color:var(--blood); line-height:1.6;
+  font-size:8px; color:var(--gas); line-height:1.6;
 }
 .list b{ display:block; font-size:17px; font-weight:600; }
 .list span{ display:block; margin-top:5px; font-size:14.5px; color:var(--dust); line-height:1.5; }
@@ -230,7 +231,7 @@ h3{
 }
 @media (min-width:780px){ .ev{ grid-template-columns:230px 1fr auto; gap:4px 30px; } }
 .ev:last-child{ border-bottom:1px solid var(--line); }
-.ev .d{ font-family:var(--brand); font-size:23px; color:var(--blood); letter-spacing:.015em; }
+.ev .d{ font-family:var(--brand); font-size:23px; color:var(--gas); letter-spacing:.015em; }
 .ev .t{ font-family:var(--rite); font-size:clamp(24px,3vw,34px); text-transform:uppercase; letter-spacing:.05em; line-height:1.1; }
 .ev .p{ font-family:var(--hud); font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--dust); margin-top:8px; }
 .ev.past .d{ color:var(--dust); }
@@ -246,13 +247,13 @@ h3{
 .btn{
   display:inline-block; font-family:var(--hud); font-size:11px; letter-spacing:.22em;
   text-transform:uppercase; text-decoration:none; cursor:pointer; position:relative;
-  color:var(--bone); background:transparent; border:1px solid var(--blood);
+  color:var(--bone); background:transparent; border:1px solid var(--gas);
   padding:15px 30px; transition:color .25s, background .25s, box-shadow .25s;
 }
-.btn:hover{ background:var(--blood); color:var(--void); box-shadow:0 0 32px rgba(215,36,28,.35); }
+.btn:hover{ background:var(--gas); color:var(--void); box-shadow:0 0 32px rgba(46,155,240,.34); }
 .btn:disabled{ opacity:.45; cursor:default; }
-.btn.machine{ border-color:var(--line2); color:var(--machine); }
-.btn.machine:hover{ background:transparent; border-color:var(--machine); box-shadow:0 0 26px rgba(59,224,240,.16); color:var(--machine); }
+.btn.machine{ border-color:var(--line2); color:var(--pale); }
+.btn.machine:hover{ background:transparent; border-color:var(--pale); box-shadow:0 0 26px rgba(127,212,255,.18); color:var(--pale); }
 
 /* ── тизери ────────────────────────────────────────────────────────── */
 .teasers{ display:grid; gap:2px; grid-template-columns:1fr; }
@@ -262,14 +263,14 @@ h3{
   display:grid; gap:14px; align-content:start; text-decoration:none; color:inherit;
   border:1px solid var(--line); transition:border-color .3s, background .3s;
 }
-.teaser:hover{ border-color:var(--blood); background:var(--slab); }
-.teaser em{ font-family:var(--hud); font-style:normal; font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:var(--blood); }
+.teaser:hover{ border-color:var(--gas); background:var(--slab); }
+.teaser em{ font-family:var(--hud); font-style:normal; font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:var(--gas); }
 .teaser b{ font-family:var(--rite); font-weight:400; font-size:clamp(28px,3.6vw,44px); line-height:1.02; text-transform:uppercase; letter-spacing:.05em; }
 .teaser span{ color:var(--ash); font-size:15.5px; line-height:1.55; max-width:40ch; }
-.teaser .go{ margin-top:8px; font-family:var(--hud); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--machine); }
+.teaser .go{ margin-top:8px; font-family:var(--hud); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--pale); }
 
 .next{ border-top:1px solid var(--line2); border-bottom:1px solid var(--line2); padding:30px 0; }
-.next .d{ font-family:var(--brand); font-size:24px; color:var(--blood); letter-spacing:.015em; }
+.next .d{ font-family:var(--brand); font-size:24px; color:var(--gas); letter-spacing:.015em; }
 .next .t{ font-family:var(--rite); font-size:clamp(26px,3.4vw,40px); text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
 
 /* ── шапка внутрішньої сторінки ────────────────────────────────────── */
@@ -289,27 +290,27 @@ h3{
 .f{ display:grid; gap:9px; }
 .f.wide{ grid-column:1 / -1; }
 label{ font-family:var(--hud); font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--dust); }
-label span{ color:var(--blood); }
+label span{ color:var(--gas); }
 input,textarea{
   font-family:var(--sans); font-size:16px; color:var(--bone);
   background:transparent; border:0; border-bottom:1px solid var(--line2);
   padding:11px 0; width:100%; border-radius:0; transition:border-color .25s;
 }
 input::placeholder,textarea::placeholder{ color:#4A4640; }
-input:focus,textarea:focus{ outline:none; border-bottom-color:var(--blood); }
+input:focus,textarea:focus{ outline:none; border-bottom-color:var(--gas); }
 textarea{ min-height:100px; resize:vertical; }
 .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 .formfoot{ display:flex; align-items:center; gap:22px; margin:36px 0 0; flex-wrap:wrap; }
 .msg{ font-family:var(--hud); font-size:11px; letter-spacing:.12em; color:var(--dust); }
-.msg.ok{ color:var(--machine); }
-.msg.err{ color:var(--ember); }
+.msg.ok{ color:var(--pale); }
+.msg.err{ color:var(--hot); }
 
 /* ── гостям ────────────────────────────────────────────────────────── */
 .grid4{ display:grid; gap:clamp(24px,3vw,48px); grid-template-columns:1fr; }
 @media (min-width:700px){ .grid4{ grid-template-columns:1fr 1fr; } }
 @media (min-width:1060px){ .grid4{ grid-template-columns:repeat(4,1fr); } }
 .g{ border-top:1px solid var(--line2); padding-top:18px; position:relative; }
-.g::before{ content:""; position:absolute; top:-1px; left:0; width:26px; height:1px; background:var(--blood); }
+.g::before{ content:""; position:absolute; top:-1px; left:0; width:26px; height:1px; background:var(--gas); }
 .g b{ display:block; font-family:var(--hud); font-size:10.5px; letter-spacing:.22em; text-transform:uppercase; color:var(--bone); margin-bottom:10px; }
 .g span{ font-size:15px; color:var(--ash); line-height:1.6; }
 
@@ -321,8 +322,8 @@ footer{ padding:clamp(72px,10vw,130px) var(--pad) clamp(44px,6vw,72px); border-t
   letter-spacing:.05em; text-transform:uppercase; margin:0 0 22px; line-height:1; }
 .flinks{ display:grid; gap:10px; justify-items:start; font-family:var(--hud); font-size:14px; }
 .flinks a{ text-decoration:none; border-bottom:1px solid var(--line2); padding-bottom:2px; }
-.flinks a:hover{ border-bottom-color:var(--machine); }
-.eyebrow{ font-family:var(--hud); font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--blood); margin:0 0 22px; }
+.flinks a:hover{ border-bottom-color:var(--pale); }
+.eyebrow{ font-family:var(--hud); font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--gas); margin:0 0 22px; }
 .fright{ font-family:var(--hud); font-size:11px; color:var(--dust); line-height:2; letter-spacing:.08em; }
 @media (min-width:780px){ .fright{ text-align:right; } }
 
@@ -347,4 +348,29 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 
 @media (prefers-reduced-motion:reduce){
   .spin, .spin-slow{ animation:none; }
+}
+
+/* ── знак: дизеринг, два проходи, мерехтіння ───────────────────────── */
+.mark{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(62vh, min(740px, 78vw)); aspect-ratio:1; z-index:1; pointer-events:none;
+}
+.mark .dith{
+  position:absolute; inset:0; width:100%; height:100%;
+  image-rendering:pixelated; image-rendering:crisp-edges;
+  filter:drop-shadow(0 0 30px rgba(46,155,240,.42)) drop-shadow(0 0 90px rgba(46,155,240,.16));
+}
+.mark .dith.a{ opacity:1; }
+/* rare double catch, the way a jet takes light — not a strobe */
+.mark .dith.b{ opacity:0; animation:catch 8.5s steps(1,end) infinite; }
+@keyframes catch{
+  0%,84%  { opacity:0; }
+  85%     { opacity:1; }
+  86.5%   { opacity:0; }
+  88%     { opacity:1; }
+  90%,100%{ opacity:0; }
+}
+@media (prefers-reduced-motion:reduce){
+  .mark .dith{ animation:none; }
+  .mark .dith.b{ display:none; }
 }

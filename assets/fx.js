@@ -49,14 +49,14 @@
     "  float ring = sin(r * 46.0 - u_t * 0.5) * 0.5 + 0.5;",
     "  ring *= smoothstep(0.85, 0.12, r) * 0.035;",
 
-    // blood in the low end, a bare trace of machine cyan in the high
-    "  vec3 col = vec3(0.024, 0.027, 0.038);",
-    "  col += vec3(0.42, 0.055, 0.045) * pow(f, 2.6) * 0.72;",
-    "  col += vec3(0.05, 0.28, 0.32) * pow(f, 5.5) * 0.30;",
-    "  col += vec3(0.35, 0.09, 0.08) * ring;",
+    // gas flame: deep blue body, near-white blue at the hottest points
+    "  vec3 col = vec3(0.020, 0.026, 0.040);",
+    "  col += vec3(0.045, 0.200, 0.430) * pow(f, 2.4) * 0.86;",
+    "  col += vec3(0.300, 0.560, 0.760) * pow(f, 6.0) * 0.34;",
+    "  col += vec3(0.075, 0.230, 0.400) * ring;",
 
     // a dim halo where the cursor is
-    "  col += vec3(0.20, 0.045, 0.04) * smoothstep(0.62, 0.0, length(q - u_m * 0.5)) * 0.24;",
+    "  col += vec3(0.050, 0.170, 0.320) * smoothstep(0.62, 0.0, length(q - u_m * 0.5)) * 0.28;",
 
     // grain, then fade to the page ground at the edges
     "  col += (hash(gl_FragCoord.xy + fract(u_t)) - 0.5) * 0.030;",
@@ -161,12 +161,12 @@
     [[470, ".18", "1"], [452, ".10", "1"], [352, ".14", "1"]].forEach(function (r) {
       svg.appendChild(svgEl("circle", {
         cx: 0, cy: 0, r: r[0], fill: "none",
-        stroke: "#D7241C", "stroke-opacity": r[1], "stroke-width": r[2]
+        stroke: "#2E9BF0", "stroke-opacity": r[1], "stroke-width": r[2]
       }));
     });
 
     // ticking ring — 72 marks, every ninth one long
-    var g = svgEl("g", { stroke: "#D7241C", "stroke-opacity": ".34", "stroke-width": "1" });
+    var g = svgEl("g", { stroke: "#2E9BF0", "stroke-opacity": ".34", "stroke-width": "1" });
     for (var i = 0; i < 72; i++) {
       var a = (i / 72) * Math.PI * 2, lng = i % 9 === 0;
       var r1 = 452, r2 = lng ? 428 : 442;
@@ -181,7 +181,7 @@
     var spin = svgEl("g", { class: "spin" });
     spin.appendChild(svgEl("circle", {
       cx: 0, cy: 0, r: 418, fill: "none",
-      stroke: "#3BE0F0", "stroke-opacity": ".22",
+      stroke: "#B9E2FF", "stroke-opacity": ".22",
       "stroke-width": "1", "stroke-dasharray": "2 22"
     }));
     svg.appendChild(spin);
@@ -201,7 +201,7 @@
     // cardinal reticles
     [[0, -470], [470, 0], [0, 470], [-470, 0]].forEach(function (p) {
       svg.appendChild(svgEl("circle", {
-        cx: p[0], cy: p[1], r: 3.5, fill: "#D7241C", "fill-opacity": ".8"
+        cx: p[0], cy: p[1], r: 3.5, fill: "#2E9BF0", "fill-opacity": ".8"
       }));
     });
 
@@ -239,16 +239,81 @@
     var spin = svgEl("g", { class: "spin" });
     spin.appendChild(svgEl("circle", {
       cx: 0, cy: 0, r: 492, fill: "none",
-      stroke: "#3BE0F0", "stroke-opacity": ".16", "stroke-width": "1", "stroke-dasharray": "2 26"
+      stroke: "#B9E2FF", "stroke-opacity": ".16", "stroke-width": "1", "stroke-dasharray": "2 26"
     }));
     svg.appendChild(spin);
 
-    var s = 860;
-    svg.appendChild(svgEl("image", {
-      href: "/assets/logo-mark.svg", x: -s / 2, y: -s / 2, width: s, height: s, opacity: ".9"
-    }));
-
     host.appendChild(svg);
+
+    // The mark is not drawn flat — it is dithered, and two passes at slightly
+    // different burn levels cross-fade so it flickers like a flame.
+    var mark = document.createElement("div");
+    mark.className = "mark";
+    mark.setAttribute("aria-hidden", "true");
+    var a = document.createElement("canvas"); a.className = "dith a";
+    var b = document.createElement("canvas"); b.className = "dith b";
+    mark.appendChild(a); mark.appendChild(b);
+    host.appendChild(mark);
+
+    ditherMark(a, 0.00);
+    ditherMark(b, REDUCED ? 0.00 : 0.16);
+  }
+
+  /* ── the dither ─────────────────────────────────────────────────────
+     Ordered 8×8 Bayer over a coarse grid, so the dots are visible rather
+     than lost in the pixel density. The threshold rises toward the rim,
+     so the mark holds solid at its core and breaks up at the edges. */
+  var BAYER = [
+    [ 0,48,12,60, 3,51,15,63],
+    [32,16,44,28,35,19,47,31],
+    [ 8,56, 4,52,11,59, 7,55],
+    [40,24,36,20,43,27,39,23],
+    [ 2,50,14,62, 1,49,13,61],
+    [34,18,46,30,33,17,45,29],
+    [10,58, 6,54, 9,57, 5,53],
+    [42,26,38,22,41,25,37,21]
+  ];
+  var GAS = [46, 155, 240];
+
+  function ditherMark(canvas, burn) {
+    var CELL = 3;          // screen pixels per dither cell
+    var SIZE = 300;        // grid resolution before upscaling
+    var img = new Image();
+    img.decoding = "async";
+    img.onload = function () {
+      var g = document.createElement("canvas");
+      g.width = g.height = SIZE;
+      var gx = g.getContext("2d");
+      gx.drawImage(img, 0, 0, SIZE, SIZE);
+
+      var data = gx.getImageData(0, 0, SIZE, SIZE);
+      var d = data.data, half = SIZE / 2;
+
+      for (var y = 0; y < SIZE; y++) {
+        for (var x = 0; x < SIZE; x++) {
+          var i = (y * SIZE + x) * 4;
+          var alpha = d[i + 3] / 255;
+          if (alpha === 0) continue;
+
+          // 0 at the centre, 1 at the rim
+          var r = Math.sqrt((x - half) * (x - half) + (y - half) * (y - half)) / half;
+          var keep = alpha * (1.0 - Math.max(0, Math.min(1, (r - 0.46) / 0.60)) * (0.58 + burn));
+
+          var t = (BAYER[y & 7][x & 7] + 0.5) / 64;
+          if (keep > t) {
+            d[i] = GAS[0]; d[i + 1] = GAS[1]; d[i + 2] = GAS[2]; d[i + 3] = 255;
+          } else {
+            d[i + 3] = 0;
+          }
+        }
+      }
+      gx.putImageData(data, 0, 0);
+
+      canvas.width = SIZE; canvas.height = SIZE;
+      canvas.getContext("2d").drawImage(g, 0, 0);
+      canvas.style.setProperty("--cell", CELL);
+    };
+    img.src = "/assets/logo-mark.svg";
   }
 
   /* ── 3. the wordmark stutters now and then ──────────────────────── */
