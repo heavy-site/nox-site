@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Оренда майданчика — nøx</title>
+<meta name="description" content="Оренда nøx під ваш вечір: зал 215 м² на 300–350 гостей, бар 9,6 м, гардероб, тераса, парковка. План залу і заявка на дату.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="nøx">
+<meta property="og:title" content="Оренда майданчика — nøx">
+<meta property="og:description" content="Зал 215 м² на 300–350 гостей під ваш вечір. Нижньоюрківська, 31.">
+<meta property="og:image" content="/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<div class="bar stuck" id="bar">
+  <a class="wm" href="/">nøx</a>
+  <nav>
+    <a href="/">Головна</a>
+    <a href="/events">Афіша</a>
+    <a href="/booking" aria-current="page">Оренда</a>
+    <a class="cta" href="#dati">Забронювати дату</a>
+  </nav>
+</div>
+
+<main>
+
+  <header class="phead">
+    <div class="inner">
+      <h1>Оренда<br>майданчика</h1>
+      <p class="lead">Зал на 300–350 гостей під ваш вечір. Розкажіть про дату — відповімо, чи вільна, і що можемо взяти на себе.</p>
+    </div>
+  </header>
+
+  <section>
+    <div class="inner">
+      <h2>Простір</h2>
+      <div class="hl" id="headline"></div>
+      <div id="visual"></div>
+    </div>
+  </section>
+
+  <section id="scho">
+    <div class="inner">
+      <h2>Що ви отримуєте</h2>
+      <div class="cols">
+        <div>
+          <h3>Уже на майданчику</h3>
+          <ul class="list" id="included"></ul>
+        </div>
+        <div>
+          <h3>Домовляємось окремо</h3>
+          <ul class="list" id="arranged"></ul>
+          <p style="margin-top:26px">Ціна залежить від дати, тривалості й того, що саме потрібно від нас. Напишіть — порахуємо під ваш вечір.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dati">
+    <div class="inner">
+      <h2>Заявка на дату</h2>
+      <div class="book">
+        <div>
+          <p class="lead">Відповідаємо в той самий день. Якщо дата зайнята — запропонуємо найближчі вільні.</p>
+          <p>Якщо зручніше голосом — <a href="tel:+380633098621">+380&nbsp;63&nbsp;309&nbsp;8621</a>.</p>
+        </div>
+        <form id="rentform" autocomplete="on">
+          <div class="fields">
+            <div class="f">
+              <label for="r-name">Хто ви *</label>
+              <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди">
+            </div>
+            <div class="f">
+              <label for="r-contact">Звʼязок *</label>
+              <input id="r-contact" name="contact" required maxlength="200" placeholder="Telegram, телефон або пошта">
+            </div>
+            <div class="f">
+              <label for="r-date">Дата *</label>
+              <input id="r-date" name="date" required maxlength="200" placeholder="15 листопада">
+            </div>
+            <div class="f">
+              <label for="r-guests">Скільки гостей чекаєте</label>
+              <input id="r-guests" name="guests" maxlength="200" placeholder="200–300">
+            </div>
+            <div class="f wide">
+              <label for="r-event">Що за вечір</label>
+              <input id="r-event" name="event" maxlength="200" placeholder="Назва, формат, музика">
+            </div>
+            <div class="f wide">
+              <label for="r-comment">Що потрібно від нас</label>
+              <textarea id="r-comment" name="comment" maxlength="2000" placeholder="Звук, світло, бармени, тайминг"></textarea>
+            </div>
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="r-website">Не заповнюйте</label>
+            <input id="r-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="formfoot">
+            <button class="btn" type="submit" id="rentbtn">Надіслати</button>
+            <span class="msg" id="rentmsg" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="fgrid">
+    <div>
+      <p class="eyebrow">Звʼязатися</p>
+      <p class="fname">Євген Пивовар</p>
+      <div class="flinks">
+        <a href="tel:+380633098621">+380 63 309 8621</a>
+        <a href="mailto:e.pyvovar@gmail.com">e.pyvovar@gmail.com</a>
+      </div>
+    </div>
+    <div class="fright">
+      Нижньоюрківська 31, Київ<br>
+      215 м² · 300–350 гостей · 18+
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+</body>
+</html>
