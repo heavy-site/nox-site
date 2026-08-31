@@ -105,36 +105,48 @@ a{ color:var(--pale); }
 @media (max-width:760px){ .bar nav a:not(.cta){ display:none; } }
 
 /* ── сцена ─────────────────────────────────────────────────────────── */
-/* Дві з половиною висоти екрана прокрутки, всередині — закріплений кадр.
+/* Три з половиною висоти екрана прокрутки, всередині — закріплений кадр.
    Прогрес прокрутки живе в --p (0…1) і керує і знаком, і текстом. */
 .reveal{ position:relative; height:340svh; }
 .pin{
   position:sticky; top:0; height:100svh;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:clamp(12px,2.4vh,34px);
-  padding:96px var(--pad) clamp(56px,10vh,110px);
-  overflow:hidden;
+  display:grid; place-items:center;
+  /* Без внутрішніх відступів: знак центрується рівно посеред екрана, і текст
+     під ним відраховується від того самого центру, без похибки у пів-падінга. */
+  padding:0; overflow:hidden;
+  /* --t: наскільки вже прийшли слова. Поки знак сам — він на весь екран і по
+     центру. Коли надходить текст, знак підбирається і підіймається рівно на
+     стільки, скільки треба словам під ним.
+     --sig — сторона знака; текст іде за його нижньою кромкою, а не за екраном,
+     тож між ними завжди однаковий проміжок. */
+  --t:clamp(0, calc((var(--p, 0) - .50) / .24), 1);
+  --sig:calc(min(74vh, 90vw) * (1 - var(--t, 0) * .52));
+  --lift:calc(var(--t, 0) * 16svh);
 }
 .stage{
   position:relative; min-height:100svh;
   display:flex; align-items:center; justify-content:center;
   padding:96px var(--pad) clamp(56px,10vh,110px);
 }
-/* Знак більше не лежить під написом — він стоїть над ним, у своєму місці
-   в колонці, і слова починаються там, де він закінчується. */
+/* Знак більше не лежить під написом. Спершу він сам, на весь екран; далі
+   підбирається і підіймається, а слова стають рівно під ним. */
 .sigil{
-  position:relative; flex:none; display:grid; place-items:center;
+  position:relative; display:grid; place-items:center;
   z-index:0; pointer-events:none; padding:0;
-  width:min(40vh, 480px, 78vw); aspect-ratio:1;
+  width:var(--sig); aspect-ratio:1;
+  transform:translateY(calc(var(--lift) * -1));
 }
 .sigil svg{ width:100%; height:auto; overflow:visible; }
-@media (max-height:720px){ .sigil{ width:min(34vh, 400px, 70vw); } }
-.stagein{ position:relative; z-index:2; text-align:center; width:100%; flex:none; }
+.stagein{
+  position:absolute; left:0; right:0; z-index:2; text-align:center;
+  padding:0 var(--pad);
+  top:calc(50% + var(--sig) / 2 - var(--lift) + 2.5svh);
+}
 .stagein p{ max-width:none; margin-left:auto; margin-right:auto; }
 .pin::after,
 .stage::after{
   content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
-  background:radial-gradient(62% 52% at 50% 44%, rgba(6,7,10,.92) 0%, rgba(6,7,10,.72) 48%, transparent 82%);
+  background:radial-gradient(72% 60% at 50% 46%, rgba(6,7,10,.92) 0%, rgba(6,7,10,.74) 50%, transparent 84%);
 }
 h1{
   font-family:var(--brand); font-weight:400; margin:0;

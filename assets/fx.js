@@ -389,7 +389,7 @@
       // The opening trails the scroll instead of snapping to it, so a wheel
       // notch reads as a glide rather than a jump.
       function tick() {
-        cur += (target - cur) * 0.18;
+        cur += (target - cur) * 0.22;
         if (Math.abs(target - cur) < 0.0004) { cur = target; running = false; }
         else requestAnimationFrame(tick);
         apply(cur);
@@ -444,7 +444,7 @@
     function tick() {
       var d = target - scrollY;
       if (Math.abs(d) < 0.5) { running = false; own = false; return; }
-      scrollTo(0, scrollY + d * 0.17);
+      scrollTo(0, scrollY + d * 0.085);
       requestAnimationFrame(tick);
     }
 
@@ -462,7 +462,7 @@
       e.preventDefault();
       if (!own) { target = scrollY; own = true; }
       var px = e.deltaMode === 1 ? dy * 42 : e.deltaMode === 2 ? dy * innerHeight : dy;
-      target = Math.min(limit(), Math.max(0, target + px * 1.15));
+      target = Math.min(limit(), Math.max(0, target + px * 1.25));
       if (!running) { running = true; requestAnimationFrame(tick); }
     }, { passive: false });
 
@@ -588,7 +588,21 @@
   // before DOMContentLoaded, and must not fall back to the plain plan then.
   window.noxDiagram = diagram;
 
+  /* ── the page opens at the top ───────────────────────────────────────
+     A browser restores the last scroll position on reload, and the one-file
+     preview restores its own from sessionStorage — neither is how the opening
+     is meant to be met. We take the top back on boot and again once the load
+     handlers have had their say. */
+  function fromTheTop() {
+    try { history.scrollRestoration = "manual"; } catch (e) {}
+    function top() { scrollTo(0, 0); }
+    top();
+    if (document.readyState === "complete") requestAnimationFrame(top);
+    else addEventListener("load", function () { top(); requestAnimationFrame(top); });
+  }
+
   function boot() {
+    fromTheTop();
     voidLayer();
     waveform();
     glitch();
