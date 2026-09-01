@@ -18,14 +18,51 @@ function tg_esc(string $v): string {
     return str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $v);
 }
 
-// [label => value]; empty values are dropped.
-function tg_rows(string $title, array $fields): string {
-    $out = '<b>' . tg_esc($title) . '</b>';
-    foreach ($fields as $label => $value) {
-        $value = trim((string)$value);
-        if ($value === '') continue;
-        $out .= "\n" . tg_esc($label) . ': <b>' . tg_esc($value) . '</b>';
+// 2026-09-10 -> "10.09.2026, четвер". The weekday is half the decision for a
+// venue: a Friday and a Tuesday are not the same request.
+function tg_date(string $v): string {
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $v, $m)) return tg_esc($v);
+    $days = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'пʼятниця', 'субота'];
+    $ts = mktime(12, 0, 0, (int)$m[2], (int)$m[3], (int)$m[1]);
+    return $m[3] . '.' . $m[2] . '.' . $m[1] . ', ' . $days[(int)date('w', $ts)];
+}
+
+// The contact chooses its own icon, and a phone typed as bare digits is put
+// into international form — Telegram only makes a number tappable once it
+// looks like one. Usernames and addresses it links by itself.
+function tg_contact(string $v): array {
+    $v = trim($v);
+    if (filter_var($v, FILTER_VALIDATE_EMAIL)) return ['✉️', tg_esc($v)];
+    if ($v !== '' && ($v[0] === '@' || stripos($v, 't.me/') !== false)) return ['💬', tg_esc($v)];
+
+    $d = preg_replace('/\D+/', '', $v);
+    if (strlen($d) === 10 && $d[0] === '0') $d = '38' . $d;         // 063… -> 38063…
+    if (strlen($d) === 12 && substr($d, 0, 3) === '380') {
+        return ['📞', '+' . substr($d, 0, 3) . ' ' . substr($d, 3, 2) . ' '
+                    . substr($d, 5, 3) . ' ' . substr($d, 8, 2) . ' ' . substr($d, 10, 2)];
     }
+    return ['📞', tg_esc($v)];
+}
+
+/* A rental enquiry, laid out to be read on a phone: what the night is, then
+   who is asking and how to reach them, then the detail. The date leads — it
+   is the only field that can decide the answer on its own. */
+function tg_enquiry(array $e): string {
+    list($icon, $contact) = tg_contact($e['contact']);
+
+    $out  = '<b>◆ ЗАЯВКА НА ОРЕНДУ</b>' . "\n\n";
+    $out .= '📅 <b>' . tg_date($e['date']) . '</b>' . "\n";
+    $out .= '👤 <b>' . tg_esc($e['name']) . '</b>' . "\n";
+    $out .= $icon . ' ' . $contact;
+
+    if (trim($e['event'])   !== '') $out .= "\n\n" . '🎧 ' . tg_esc($e['event']);
+    if (trim($e['guests'])  !== '') $out .= "\n" . '👥 ' . tg_esc($e['guests']) . ' гостей';
+    if (trim($e['comment']) !== '') {
+        $out .= "\n\n" . '<blockquote>' . tg_esc($e['comment']) . '</blockquote>';
+    }
+
+    $now = new DateTime('now', new DateTimeZone('Europe/Kyiv'));
+    $out .= "\n\n" . '<i>' . $now->format('d.m, H:i') . ' · noxpl4ce.com</i>';
     return $out;
 }
 

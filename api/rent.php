@@ -67,21 +67,7 @@ if (!is_dir($dir)) @mkdir($dir, 0750, true);
     LOCK_EX
 );
 
-// The field is a date input, so it arrives as 2026-11-15. Anything else is
-// passed through untouched — an older cached page can still post free text.
-$dateText = $entry['date'];
-if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dateText, $m)) {
-    $dateText = $m[3] . '.' . $m[2] . '.' . $m[1];
-}
-
-tg_send(tg_rows('Заявка на оренду', [
-    'Організатор' => $entry['name'],
-    'Контакт'     => $entry['contact'],
-    'Дата'        => $dateText,
-    'Подія'       => $entry['event'],
-    'Гостей'      => $entry['guests'],
-    'Коментар'    => $entry['comment'],
-]));
+tg_send(tg_enquiry($entry));
 
 // The enquiry is on disk either way, so the sender always gets a clean answer.
 echo json_encode(['ok' => true]);
