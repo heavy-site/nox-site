@@ -116,6 +116,32 @@ router = """
 <script>
 (function(){
   var pages = ["home","events","booking"];
+  /* One scrollTo is not enough on a route change. The preview runs inside the
+     artifact shell, and the shell puts the scroll position back on its own —
+     it remembers it in sessionStorage and restores it whenever the frame is
+     resized or promoted, which is exactly what a route change causes. So the
+     route that opened was the old page's position, seen through a shorter
+     page. We hold the top for a short while instead, the same way fx.js holds
+     it on load, and let go the instant the reader touches anything so a real
+     gesture is never fought. The shell's own note of the position is zeroed
+     too, so a restore that lands after the hold lands at the top. */
+  function holdTop(){
+    try { sessionStorage.setItem("__frame_scroll", JSON.stringify({ y: 0 })); } catch (e) {}
+    var loose = false;
+    function release(){ loose = true; }
+    ["wheel","touchstart","keydown","pointerdown"].forEach(function(t){
+      addEventListener(t, release, { passive: true, once: true });
+    });
+    var until = Date.now() + 1200;
+    (function hold(){
+      if (scrollY !== 0) scrollTo(0,0);
+      if (!loose && Date.now() < until) requestAnimationFrame(hold);
+      else ["wheel","touchstart","keydown","pointerdown"].forEach(function(t){
+        removeEventListener(t, release);
+      });
+    })();
+  }
+
   function show(){
     var h = location.hash.replace(/^#\\/?/, "") || "home";
     if (pages.indexOf(h) < 0) h = "home";
@@ -128,19 +154,7 @@ router = """
       else a.removeAttribute("aria-current");
     });
     document.getElementById("bar").classList.toggle("stuck", h !== "home");
-    // This preview is served inside a frame, and the scrollbar the reader is
-    // using belongs to the page around it — scrollTo here moves a document
-    // that is not the one scrolled, so a new route opened halfway down.
-    // Scrolling an element into view walks every ancestor scrollport, the
-    // frame's parent included, so the top of the route is the top of what the
-    // reader sees. Instant, because the page asks for smooth scrolling and a
-    // route change is not a scroll.
-    scrollTo(0,0);
-    var top = document.getElementById("toproute");
-    if (top && top.scrollIntoView) {
-      try { top.scrollIntoView({ block: "start", behavior: "instant" }); }
-      catch (e) { top.scrollIntoView(true); }
-    }
+    holdTop();
     document.dispatchEvent(new CustomEvent("nox:route", { detail: h }));
   }
   addEventListener("hashchange", show);
@@ -176,7 +190,6 @@ out = """<title>nøx — сайт майданчика</title>
 .page[hidden]{ display:none !important; }
 </style>
 
-<span id="toproute" aria-hidden="true" style="position:absolute;top:0;left:0;width:1px;height:1px"></span>
 <canvas id="fx" aria-hidden="true"></canvas>
 <canvas id="wave" aria-hidden="true"></canvas>
 <div class="film" aria-hidden="true"></div>
