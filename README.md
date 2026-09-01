@@ -1,6 +1,6 @@
 # nox-site
 
-Venue site for nøx — Нижньоюрківська 31, Київ.
+Venue site for nøx — Нижньоюрківська 31, Київ. Lives at **noxpl4ce.com**.
 
 ## Stack
 
@@ -20,11 +20,16 @@ Edit `nox_events()` in `api/_venue.php`. The upcoming/past split is computed fro
 
 ## Config
 
-Secrets live in `/home3/hevycom/nox_config.php` (chmod 600), outside the web root.
+Secrets live in `/home/noxplcec/nox_config.php` (chmod 600), outside the web root.
 Create it from `config.sample.php`. Nothing sensitive belongs in this repo.
 
 ## Deploy
 
-Push to GitHub, then pull via cPanel Git Version Control. `.cpanel.yml` copies the
-site into the subdomain docroot. Confirm `DEPLOYPATH` matches what cPanel created
-for the subdomain before the first deploy.
+Host: cPanel account `noxplcec` on uashared43, primary domain **noxpl4ce.com**,
+docroot `/home/noxplcec/public_html`. The repository is cloned on the server at
+`~/repositories/nox-site` and tracks `main`.
+
+cPanel never pulls from GitHub on its own — a push here does nothing to the
+server. After pushing: cPanel → Git™ Version Control → Manage → Pull or Deploy →
+**Update from Remote**, then **Deploy HEAD Commit**. `.cpanel.yml` takes its
+DEPLOYPATH from `$HOME`, so it follows the account and needs no editing.
