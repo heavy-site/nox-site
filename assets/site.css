@@ -95,7 +95,22 @@ a{ color:var(--pale); }
 .bar nav a[aria-current="page"]::before{ content:"◆ "; color:var(--gas); }
 .bar .cta{ color:var(--gas); }
 .bar .cta:hover{ color:var(--hot); }
-@media (max-width:760px){ .bar nav a:not(.cta){ display:none; } }
+/* На телефоні лишались тільки «Забронювати» — «Головна» й «Афіша» ховались.
+   Замість ховати, стискаємо: кегль, трекінг і проміжки, а на зовсім вузькому
+   ще й слово з вордмарка, лишаючи сам знак. */
+@media (max-width:760px){
+  .bar{ gap:12px; }
+  .bar nav{ gap:15px; }
+  .bar nav a{ font-size:9.5px; letter-spacing:.14em; }
+  .bar nav a[aria-current="page"]::before{ content:none; }
+  .wm{ font-size:20px; gap:9px; }
+  .wm img{ width:22px; height:22px; }
+}
+@media (max-width:420px){
+  .bar nav{ gap:12px; }
+  .bar nav a{ font-size:9px; letter-spacing:.08em; }
+  .wm span{ display:none; }
+}
 
 /* ── сцена ─────────────────────────────────────────────────────────── */
 /* Три з половиною висоти екрана прокрутки, всередині — закріплений кадр.
