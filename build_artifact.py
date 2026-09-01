@@ -147,7 +147,17 @@ router = """
     if (pages.indexOf(h) < 0) h = "home";
     pages.forEach(function(p){
       var el = document.getElementById("page-" + p);
-      if (el) el.hidden = (p !== h);
+      if (!el) return;
+      el.hidden = (p !== h);
+      // A route the reader comes back to opens at its own top, not where it
+      // was left — the same as following a link on the site itself.
+      if (el.hidden) return;
+      el.scrollTop = 0;
+      // The side routes scroll inside themselves, and a keyboard scrolls what
+      // has focus — so the route that opens takes it. preventScroll, because
+      // taking focus must not undo the top we just set.
+      el.tabIndex = -1;
+      try { el.focus({ preventScroll: true }); } catch (e) {}
     });
     document.querySelectorAll(".bar nav a[data-route]").forEach(function(a){
       if (a.dataset.route === h) a.setAttribute("aria-current","page");
@@ -188,6 +198,19 @@ out = """<title>nøx — сайт майданчика</title>
 <style>
 %s
 .page[hidden]{ display:none !important; }
+
+/* Усі три сторінки живуть в одному документі, тож смуга прокрутки в них одна:
+   з прокрученої головної читач потрапляв у середину афіші, і ні scrollTo, ні
+   пам'ять оболонки тут ні до чого — це та сама прокрутка. Бічні сторінки
+   дістають власну. Поки відкрита котрась із них, документ рівно на висоту
+   екрана: прокручувати в ньому нічого, переносити нічого, а оболонці нічого
+   відновлювати. Головна лишається на прокрутці документа — на ній тримаються
+   і відкриття зі знаком, і хвиля в лівому полі. */
+#page-events:not([hidden]),
+#page-booking:not([hidden]){
+  height:100svh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
 </style>
 
 <canvas id="fx" aria-hidden="true"></canvas>
