@@ -165,6 +165,18 @@
     var form = $("rentform");
     if (!form) return;
 
+    // A native <input type="time"> is drawn in the browser's own locale, so an
+    // English one shows 10:00 PM and there is no attribute to say otherwise.
+    // Two lists of our own are 24-hour everywhere and look the same to everyone.
+    ["r-from", "r-to"].forEach(function (id) {
+      var sel = $(id);
+      if (!sel || sel.options.length > 1) return;
+      for (var m = 0; m < 24 * 60; m += 15) {
+        var t = ("0" + Math.floor(m / 60)).slice(-2) + ":" + ("0" + (m % 60)).slice(-2);
+        sel.appendChild(new Option(t, t));
+      }
+    });
+
     // Nobody books a night that has been. Kyiv time, not the visitor's, so the
     // floor matches the calendar the venue actually runs on.
     var day = $("r-date");
@@ -176,7 +188,8 @@
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var btn = $("rentbtn"), msg = $("rentmsg"), body = {};
-      ["name", "contact", "event", "date", "guests", "comment", "website"].forEach(function (k) {
+      ["name", "contact", "event", "date", "time_from", "time_to",
+       "guests", "artists", "music", "social", "comment", "website"].forEach(function (k) {
         if (form.elements[k]) body[k] = form.elements[k].value.trim();
       });
       btn.disabled = true; msg.className = "msg"; msg.textContent = "Надсилаємо…";
