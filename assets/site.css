@@ -120,6 +120,16 @@ a{ color:var(--pale); }
 .bar nav a[aria-current="page"]{ color:var(--bone); }
 .bar nav a[aria-current="page"]::before{ content:"◆ "; color:var(--gas); }
 .bar .cta{ color:var(--gas); }
+/* Дві мови стоять поруч, як одна деталь HUD: поточна горить, друга чекає. */
+.lang{ display:flex; align-items:center; margin-left:22px; }
+.lang button{
+  font-family:var(--hud); font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--dust); background:transparent; border:0; padding:4px 0; cursor:pointer;
+  transition:color .25s;
+}
+.lang button + button{ margin-left:9px; padding-left:10px; border-left:1px solid var(--line2); }
+.lang button:hover{ color:var(--bone); }
+.lang button[aria-pressed="true"]{ color:var(--gas); }
 .bar .cta:hover{ color:var(--hot); }
 /* На телефоні лишались тільки «Забронювати» — «Головна» й «Афіша» ховались.
    Замість ховати, стискаємо: кегль, трекінг і проміжки, а на зовсім вузькому
@@ -127,6 +137,8 @@ a{ color:var(--pale); }
 @media (max-width:760px){
   .bar{ gap:12px; }
   .bar nav{ gap:15px; }
+  .lang{ margin-left:14px; }
+  .lang button{ font-size:9.5px; letter-spacing:.12em; }
   .bar nav a{ font-size:9.5px; letter-spacing:.14em; }
   .bar nav a[aria-current="page"]::before{ content:none; }
   .wm{ font-size:20px; gap:9px; }
@@ -134,6 +146,9 @@ a{ color:var(--pale); }
 }
 @media (max-width:420px){
   .bar nav{ gap:12px; }
+  .lang{ margin-left:10px; }
+  .lang button{ font-size:9px; letter-spacing:.06em; }
+  .lang button + button{ margin-left:7px; padding-left:8px; }
   .bar nav a{ font-size:9px; letter-spacing:.08em; }
   .wm span{ display:none; }
 }
@@ -141,7 +156,7 @@ a{ color:var(--pale); }
 /* ── сцена ─────────────────────────────────────────────────────────── */
 /* Три з половиною висоти екрана прокрутки, всередині — закріплений кадр.
    Прогрес прокрутки живе в --p (0…1) і керує і знаком, і текстом. */
-.reveal{ position:relative; height:340svh; }
+.reveal{ position:relative; height:300svh; }
 .pin{
   position:sticky; top:0; height:100svh;
   display:grid; place-items:center;
@@ -153,7 +168,7 @@ a{ color:var(--pale); }
      стільки, скільки треба словам під ним.
      --sig — сторона знака; текст іде за його нижньою кромкою, а не за екраном,
      тож між ними завжди однаковий проміжок. */
-  --t:clamp(0, calc((var(--p, 0) - .58) / .20), 1);
+  --t:clamp(0, calc((var(--p, 0) - .62) / .26), 1);
   --sig:calc(min(74vh, 90vw) * (1 - var(--t, 0) * .52));
   --lift:calc(var(--t, 0) * 16svh);
 }
@@ -222,9 +237,6 @@ h1.off{
 }
 /* «nøx» тримає лише колір — накреслення те саме, що й у кирилиці поруч. */
 .stagein .welcome b{ font-weight:400; color:var(--gas); }
-.stagein .place{ margin:clamp(12px,1.8vw,24px) 0 0; }
-.tag{ margin:22px auto 0; max-width:44ch !important; color:var(--ash); font-size:clamp(15px,1.7vw,17.5px); }
-.tag b{ color:var(--bone); font-weight:600; }
 .scroll{
   position:absolute; left:50%; bottom:22px; transform:translateX(-50%);
   font-family:var(--hud); font-size:9.5px; letter-spacing:.3em; text-transform:uppercase;
@@ -316,6 +328,14 @@ h3{
 .ev .d{ font-family:var(--rite); font-weight:400; font-size:25px; color:var(--gas); letter-spacing:.015em; }
 .ev .t{ font-family:var(--rite); font-size:clamp(24px,3vw,34px); text-transform:uppercase; letter-spacing:.05em; line-height:1.1; }
 .ev .p{ font-family:var(--hud); font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--dust); margin-top:8px; }
+/* День тижня під датою: для майданчика це половина відповіді — пʼятниця і
+   вівторок не одне й те саме. Склад — під назвою, тим самим тоном, що й підпис. */
+.ev .d .wd, .feat .d .wd, .next .d .wd{
+  display:block; margin-top:6px; font-family:var(--hud); font-size:9.5px;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--dust);
+}
+.ev .lu{ margin:10px 0 0; color:var(--ash); font-size:15px; line-height:1.55; max-width:52ch; }
+.ev.past .lu{ color:var(--dust); }
 .ev.past .d{ color:var(--dust); }
 .ev.past .t{ color:var(--ash); }
 .none{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:52px 0; }
@@ -354,6 +374,7 @@ h3{
 .next{ border-top:1px solid var(--line2); border-bottom:1px solid var(--line2); padding:30px 0; }
 .next .d{ font-family:var(--rite); font-weight:400; font-size:26px; color:var(--gas); letter-spacing:.015em; }
 .next .t{ font-family:var(--rite); font-size:clamp(26px,3.4vw,40px); text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
+.next .p{ font-family:var(--hud); font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--dust); margin-top:10px; }
 
 /* ── мапа ──────────────────────────────────────────────────────────────
    Плитки OpenStreetMap світлі, тож їх вивертає у темне й зводить у синь
@@ -459,6 +480,8 @@ label,.lbl{ font-family:var(--hud); font-size:10px; letter-spacing:.24em; text-t
    єдиного контрола, на який міг би вказувати label. */
 .lbl{ margin:0; }
 label span{ color:var(--gas); }
+/* Слово підпису загорнуте в <i> заради перекладу — курсив тут ні до чого. */
+label i{ font-style:normal; }
 input,textarea{
   font-family:var(--sans); font-size:16px; color:var(--bone);
   background:transparent; border:0; border-bottom:1px solid var(--line2);
@@ -567,15 +590,13 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 /* Кільця проступають за прокруткою; сам знак нею не гаситься — його появу
    й так веде дизеринг, і подвійне притлумлення робило його тьмяним. */
 .pin .sigil svg{ opacity:calc(.15 + clamp(0, calc(var(--p, 0) / .45), 1) * .85); }
-/* Сцена читається у три такти. Спершу сам знак — і більше нічого.
-   Потім коротке вітання. Останнім — де це місце і що воно таке. */
+/* Сцена читається у два такти. Спершу сам знак — і більше нічого. Потім
+   вітання. Опис місця звідси прибрано на прохання власника, тож обидва такти
+   розтягнуті на ту саму сцену: пауза зі знаком лишається справжньою, а слова
+   встигають прийти до кінця прокрутки. */
 .pin .stagein .welcome{
-  opacity:clamp(0, calc((var(--p, 0) - .60) / .14), 1);
-  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .60) / .14, 1)) * 14px));
-}
-.pin .stagein .place{
-  opacity:clamp(0, calc((var(--p, 0) - .80) / .14), 1);
-  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .80) / .14, 1)) * 12px));
+  opacity:clamp(0, calc((var(--p, 0) - .64) / .20), 1);
+  transform:translateY(calc((1 - clamp(0, (var(--p, 0) - .64) / .20, 1)) * 14px));
 }
 .pin .scroll{ opacity:clamp(0, calc(1 - var(--p, 0) * 3.2), 1); }
 

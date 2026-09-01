@@ -30,10 +30,14 @@
 <div class="bar" id="bar">
   <a class="wm" href="/"><img src="/assets/logo.svg" alt="" width="26" height="26"><span>nøx</span></a>
   <nav>
-    <a href="/" aria-current="page">Головна</a>
-    <a href="/events">Афіша</a>
-    <a class="cta" href="/booking">Забронювати</a>
+    <a href="/" aria-current="page" data-i18n="nav.home">Головна</a>
+    <a href="/events" data-i18n="nav.events">Афіші</a>
+    <a class="cta" href="/booking" data-i18n="nav.booking">Забронювати</a>
   </nav>
+  <div class="lang" role="group" aria-label="Мова" data-i18n-aria="lang.label">
+    <button type="button" data-lang="uk" aria-pressed="true">укр</button>
+    <button type="button" data-lang="en" aria-pressed="false">eng</button>
+  </div>
 </div>
 
 <main>
@@ -43,19 +47,16 @@
       <div class="sigil" aria-hidden="true"></div>
       <div class="stagein">
         <h1 class="off">nøx</h1>
-        <p class="welcome">Ласкаво просимо до клубу нової ери <b>nøx</b></p>
-        <div class="place">
-          <p class="tag">Майданчик для вечорів у Києві. Зал на <b>300–350 гостей</b>, власний бар, тераса.</p>
-        </div>
+        <p class="welcome" data-i18n="hero.welcome">Ласкаво просимо до клубу нової ери <b>nøx</b></p>
       </div>
-      <div class="scroll" aria-hidden="true">Гортайте</div>
+      <div class="scroll" aria-hidden="true" data-i18n="hero.scroll">Гортайте</div>
     </div>
   </div>
 
   <section id="prostir">
     <div class="inner">
-      <p class="mark rise">I · Простір</p>
-      <h2 class="rise">Зал</h2>
+      <p class="mark rise" data-i18n="home.s1.mark">I · Простір</p>
+      <h2 class="rise" data-i18n="home.s1.h2">Зал</h2>
       <div class="figs rise" data-nox="headline"></div>
       <div class="rise" data-nox="visual"></div>
     </div>
@@ -63,21 +64,21 @@
 
   <section id="vechir">
     <div class="inner">
-      <p class="mark rise">II · Календар</p>
-      <h2 class="rise">Найближчий вечір</h2>
+      <p class="mark rise" data-i18n="home.s2.mark">II · Календар</p>
+      <h2 class="rise" data-i18n="home.s2.h2">Найближчий вечір</h2>
       <div class="rise" id="next"></div>
       <div class="teasers rise" style="margin-top:clamp(40px,5vw,68px)">
         <a class="teaser" href="/events">
-          <em>Афіша</em>
-          <b>Хто грає<br>і коли</b>
-          <span>Усі вечори на майданчику — свої та від зовнішніх організаторів.</span>
-          <span class="go">Дивитись афішу →</span>
+          <em data-i18n="home.t1.em">Афіші</em>
+          <b data-i18n="home.t1.b">Майбутні<br>події</b>
+          <span data-i18n="home.t1.text">Усі вечори на майданчику — свої та від зовнішніх організаторів.</span>
+          <span class="go" data-i18n="home.t1.go">Дивитись афіші →</span>
         </a>
         <a class="teaser" href="/booking">
-          <em>Оренда</em>
-          <b>Провести<br>свій вечір</b>
-          <span>Що входить у майданчик, план залу і заявка на конкретну дату.</span>
-          <span class="go">Забронювати дату →</span>
+          <em data-i18n="home.t2.em">Оренда</em>
+          <b data-i18n="home.t2.b">Забронювати<br>дату</b>
+          <span data-i18n="home.t2.text">Що входить у майданчик, план залу і заявка на конкретну дату.</span>
+          <span class="go" data-i18n="home.t2.go">Відкрити форму →</span>
         </a>
       </div>
     </div>
@@ -85,18 +86,18 @@
 
   <section id="gostyam">
     <div class="inner">
-      <p class="mark rise">III · Гостям</p>
-      <h2 class="rise">Як дістатися</h2>
+      <p class="mark rise" data-i18n="home.s3.mark">III · Гостям</p>
+      <h2 class="rise" data-i18n="home.s3.h2">Як дістатися</h2>
       <div class="where rise">
-        <div class="g"><b>Де це</b><span>Нижньоюрківська 31, на самому початку вулиці.</span></div>
+        <div class="g"><b data-i18n="home.where.b">Де це</b><span data-i18n="home.where.text">Нижньоюрківська 31, на самому початку вулиці.</span></div>
         <div class="map">
           <!-- Вікно взято під саму рамку: близько 500 м у ширину на 230 м
                углиб, мітка посередині. -->
-          <iframe class="mapframe" loading="lazy" title="Мапа: Нижньоюрківська 31, Київ"
+          <iframe class="mapframe" loading="lazy" title="Мапа: Нижньоюрківська 31, Київ" data-i18n-title="home.map.title"
             src="https://www.openstreetmap.org/export/embed.html?bbox=30.4973%2C50.4658%2C30.5043%2C50.4679&amp;layer=mapnik&amp;marker=50.466861%2C30.500806"></iframe>
           <p class="mapfoot">
             <span>50°28′00.7″N 30°30′02.9″E</span>
-            <a href="https://maps.google.com/?q=50.466861,30.500806" target="_blank" rel="noopener">Прокласти маршрут →</a>
+            <a href="https://maps.google.com/?q=50.466861,30.500806" target="_blank" rel="noopener" data-i18n="home.map.route">Прокласти маршрут →</a>
           </p>
         </div>
       </div>
@@ -105,6 +106,7 @@
 
 </main>
 
+<script src="/assets/i18n.js"></script>
 <script src="/assets/fx.js"></script>
 <script src="/assets/site.js"></script>
 </body>

@@ -9,6 +9,35 @@
   };
   var $ = function (id) { return document.getElementById(id); };
 
+  // The page is Ukrainian on its own; i18n.js, when it is there, turns what we
+  // build here into English too. Every helper falls back to the Ukrainian it
+  // was given, so the site is whole even if that file never loads.
+  var T     = function (k, uk) { return window.noxT ? window.noxT(k, uk) : uk; };
+  var TERM  = function (v) { return window.noxTerm ? window.noxTerm(v) : v; };
+  var DTEXT = function (v) { return window.noxDateText ? window.noxDateText(v) : v; };
+  var WDAY  = function (v) { return window.noxWeekday ? window.noxWeekday(v) : ""; };
+
+  // "субота" for one night, "субота — неділя" for a night that runs into the
+  // next day. Empty when the calendar carries no machine-readable date.
+  function weekdays(e) {
+    var a = WDAY(e.date), b = WDAY(e.dateEnd);
+    if (!a) return "";
+    return (b && b !== a) ? a + " — " + b : a;
+  }
+
+  // Everything under the date that is not the title: who runs the night, and
+  // when it starts.
+  function evMeta(e) {
+    var bits = [];
+    if (e.promoter) bits.push(e.promoter);
+    if (e.time) bits.push(e.time);
+    return bits.join(" · ");
+  }
+
+  function evDate(e) {
+    return esc(DTEXT(e.dateText || e.date)) + (e.year ? " " + esc(e.year) : "");
+  }
+
   // Venue figures the page can show even when the backend is unreachable —
   // an empty hero is worse than a slightly stale one.
   var FALLBACK = {
@@ -50,7 +79,7 @@
 
   function headline(items) {
     var html = items.map(function (h) {
-      return '<div class="fig"><b>' + esc(h.value) + "</b><span>" + esc(h.label) + "</span></div>";
+      return '<div class="fig"><b>' + esc(TERM(h.value)) + "</b><span>" + esc(TERM(h.label)) + "</span></div>";
     }).join("");
     all("headline").forEach(function (host) { host.innerHTML = html; });
   }
@@ -68,12 +97,12 @@
         return;
       }
       host.innerHTML = '<div class="diagram"></div>' +
-        '<p class="diagcap">План залу · 18,00 × 12,00 м · бар 9,6 м</p>';
+        '<p class="diagcap">' + esc(T("js.plan.cap", "План залу · 18,00 × 12,00 м · бар 9,6 м")) + '</p>';
       var box = host.querySelector(".diagram");
       if (window.noxDiagram) {
         window.noxDiagram(box, { id: "plan" + n });
       } else {
-        box.innerHTML = '<img src="/assets/plan.svg" alt="План залу nøx">';
+        box.innerHTML = '<img src="/assets/plan.svg" alt="' + esc(T("js.plan.alt", "План залу nøx")) + '">';
       }
     });
   }
@@ -86,20 +115,26 @@
     if ($("arranged")) $("arranged").innerHTML = data.arranged.map(row).join("");
   }
 
+  // A row says as much as the calendar knows about the night: the date with
+  // its weekday, when it starts, who runs it, and who plays.
   function evRow(e, past) {
-    var when = esc(e.dateText || e.date) + (e.year ? " " + esc(e.year) : "");
+    var wd = weekdays(e), meta = evMeta(e);
     var right = (!past && e.tickets)
-      ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>' : "";
+      ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">' +
+        esc(T("js.tickets", "Квитки")) + '</a>' : "";
     return '<div class="ev' + (past ? " past" : "") + '">' +
-      '<div class="d">' + when + "</div>" +
+      '<div class="d">' + evDate(e) +
+        (wd ? '<span class="wd">' + esc(wd) + "</span>" : "") + "</div>" +
       '<div><div class="t">' + esc(e.title) + "</div>" +
-      (e.promoter ? '<div class="p">' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + "</div>" : "") +
+      (meta ? '<div class="p">' + esc(meta) + "</div>" : "") +
+      (e.lineup ? '<p class="lu">' + esc(e.lineup) + "</p>" : "") +
       "</div><div>" + right + "</div></div>";
   }
 
   function empty(text) {
-    return '<div class="none"><p>' + text + "</p>" +
-      '<a class="btn machine" href="/booking">Забронювати дату</a></div>';
+    return '<div class="none"><p>' + esc(text) + "</p>" +
+      '<a class="btn machine" href="/booking">' +
+      esc(T("js.none.cta", "Забронювати дату")) + "</a></div>";
   }
 
   // The head of the calendar: the nearest night, given the whole width, with
@@ -112,7 +147,7 @@
     var up = data.upcoming || [], past = data.past || [];
     var e = up[0] || past[0];               // past comes newest first
     if (!e) {
-      host.innerHTML = empty("Найближчі вечори зʼявляться тут. Дати ще вільні.");
+      host.innerHTML = empty(T("js.none.upcoming", "Найближчі вечори зʼявляться тут. Дати ще вільні."));
       return;
     }
 
@@ -123,17 +158,21 @@
           ? ' srcset="' + esc(e.posterSmall) + " 720w, " + esc(e.poster) + ' 1080w"' +
             ' sizes="(max-width:860px) 92vw, 440px"'
           : "") +
-        ' alt="' + esc(e.title) + ' — афіша" loading="lazy"></div>';
+        ' alt="' + esc(e.title) + " — " + esc(T("js.poster.alt", "афіша")) + '" loading="lazy"></div>';
     }
+
+    var wd = weekdays(e), meta = evMeta(e);
 
     host.innerHTML = '<div class="feat">' + poster +
       '<div class="fbody">' +
-        '<div class="d">' + esc(e.dateText || e.date) + (e.year ? " " + esc(e.year) : "") + "</div>" +
+        '<div class="d">' + evDate(e) +
+          (wd ? '<span class="wd">' + esc(wd) + "</span>" : "") + "</div>" +
         '<div class="t">' + esc(e.title) + "</div>" +
-        (e.promoter ? '<div class="p">' + esc(e.promoter) + (e.time ? " · " + esc(e.time) : "") + "</div>" : "") +
+        (meta ? '<div class="p">' + esc(meta) + "</div>" : "") +
         (e.lineup ? '<p class="line">' + esc(e.lineup) + "</p>" : "") +
         (e.tickets
-          ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">Квитки</a>' : "") +
+          ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">' +
+            esc(T("js.tickets", "Квитки")) + "</a>" : "") +
       "</div></div>";
   }
 
@@ -144,7 +183,7 @@
     var rest = (data.upcoming || []).slice(1);
     host.innerHTML = rest.length
       ? rest.map(function (e) { return evRow(e, false); }).join("")
-      : empty("Далі поки порожньо — дати вільні.");
+      : empty(T("js.none.later", "Далі поки порожньо — дати вільні."));
   }
 
   // Compact "next night" block for the home page.
@@ -152,12 +191,14 @@
     var host = $("next");
     if (!host) return;
     if (data.upcoming && data.upcoming.length) {
-      var e = data.upcoming[0];
-      host.innerHTML = '<div class="next"><div class="d">' +
-        esc(e.dateText || e.date) + (e.year ? " " + esc(e.year) : "") + "</div>" +
-        '<div class="t">' + esc(e.title) + "</div></div>";
+      var e = data.upcoming[0], wd = weekdays(e), meta = evMeta(e);
+      host.innerHTML = '<div class="next"><div class="d">' + evDate(e) +
+        (wd ? '<span class="wd">' + esc(wd) + "</span>" : "") + "</div>" +
+        '<div class="t">' + esc(e.title) + "</div>" +
+        (meta ? '<div class="p">' + esc(meta) + "</div>" : "") + "</div>";
     } else {
-      host.innerHTML = '<div class="next"><div class="t">Дати на найближчі місяці ще вільні</div></div>';
+      host.innerHTML = '<div class="next"><div class="t">' +
+        esc(T("js.next.free", "Дати на найближчі місяці ще вільні")) + "</div></div>";
     }
   }
 
@@ -192,7 +233,8 @@
        "guests", "artists", "music", "social", "comment", "website"].forEach(function (k) {
         if (form.elements[k]) body[k] = form.elements[k].value.trim();
       });
-      btn.disabled = true; msg.className = "msg"; msg.textContent = "Надсилаємо…";
+      btn.disabled = true; msg.className = "msg";
+      msg.textContent = T("js.sending", "Надсилаємо…");
 
       fetch("/api/rent", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
@@ -202,21 +244,28 @@
           if (res.ok && res.j.ok) {
             form.reset();
             msg.className = "msg ok";
-            msg.textContent = "Заявку отримано. Відповімо найближчим часом.";
+            msg.textContent = T("js.sent", "Заявку отримано. Відповімо найближчим часом.");
           } else {
             msg.className = "msg err";
-            msg.textContent = (res.j && res.j.error) || "Не вдалося надіслати. Спробуйте ще раз.";
+            msg.textContent = (res.j && res.j.error) ||
+              T("js.failed", "Не вдалося надіслати. Спробуйте ще раз.");
           }
         })
         .catch(function () {
           msg.className = "msg err";
-          msg.textContent = "Немає звʼязку. Спробуйте ще раз або подзвоніть.";
+          msg.textContent = T("js.offline", "Немає звʼязку. Спробуйте ще раз або подзвоніть.");
         })
         .then(function () { btn.disabled = false; });
     });
   }
 
+  // The last payload is kept so a change of language can simply paint again:
+  // everything built here carries language, and re-rendering is cheaper than
+  // teaching each block to translate itself in place.
+  var LAST = null;
+
   function paint(d) {
+    LAST = d;
     headline(d.headline || FALLBACK.headline);
     visual(d.media || []);
     rent(d.rent || FALLBACK.rent);
@@ -227,6 +276,7 @@
 
   stickyBar();
   bookingForm();
+  document.addEventListener("nox:lang", function () { if (LAST) paint(LAST); });
 
   fetch("/api/site", { headers: { Accept: "application/json" } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })

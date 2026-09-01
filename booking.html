@@ -30,47 +30,49 @@
 <div class="bar stuck" id="bar">
   <a class="wm" href="/"><img src="/assets/logo.svg" alt="" width="26" height="26"><span>nøx</span></a>
   <nav>
-    <a href="/">Головна</a>
-    <a href="/events">Афіша</a>
-    <a class="cta" href="/booking" aria-current="page">Забронювати</a>
+    <a href="/" data-i18n="nav.home">Головна</a>
+    <a href="/events" data-i18n="nav.events">Афіші</a>
+    <a class="cta" href="/booking" aria-current="page" data-i18n="nav.booking">Забронювати</a>
   </nav>
+  <div class="lang" role="group" aria-label="Мова" data-i18n-aria="lang.label">
+    <button type="button" data-lang="uk" aria-pressed="true">укр</button>
+    <button type="button" data-lang="en" aria-pressed="false">eng</button>
+  </div>
 </div>
 
 <main>
 
   <header class="phead">
     <div class="inner">
-      <p class="mark">Оренда</p>
-      <h1>Ваш вечір<br>у цьому залі</h1>
-      <p class="lead">Зал на 300–350 гостей. Розкажіть про дату — відповімо, чи вільна, і що можемо взяти на себе.</p>
+      <h1 data-i18n="booking.h1">Оренда</h1>
     </div>
   </header>
 
   <section id="cina">
     <div class="inner">
-      <p class="mark rise">Вартість</p>
-      <h2 class="rise">Що входить</h2>
+      <p class="mark rise" data-i18n="booking.price.mark">Вартість</p>
+      <h2 class="rise" data-i18n="booking.price.h2">Що входить</h2>
       <div class="price rise">
-        <p class="pnum">15 000 ₴<small>базова вартість майданчика</small></p>
+        <p class="pnum">15 000 ₴<small data-i18n="booking.price.sub">базова вартість майданчика</small></p>
         <ul class="list">
           <li>
-            <b>Зал із нашим баром</b>
-            <span>Бар на майданчику працює наш.</span>
-            <em>незмінна позиція</em>
+            <b data-i18n="booking.price.i1.b">Зал із нашим баром</b>
+            <span data-i18n="booking.price.i1.s">Бар на майданчику працює наш.</span>
+            <em data-i18n="booking.price.fixed">незмінна позиція</em>
           </li>
           <li>
-            <b>Фейсер і охорона</b>
-            <span>Наші люди на вході та в залі.</span>
-            <em>незмінна позиція</em>
+            <b data-i18n="booking.price.i2.b">Фейсер і охорона</b>
+            <span data-i18n="booking.price.i2.s">Наші люди на вході та в залі.</span>
+            <em data-i18n="booking.price.fixed">незмінна позиція</em>
           </li>
           <li>
-            <b>Наш технік</b>
-            <span>Він же керує світлом. Можна додати свого техніка або замінити ним нашого.</span>
-            <em class="can">можна доповнити або замінити</em>
+            <b data-i18n="booking.price.i3.b">Наш технік</b>
+            <span data-i18n="booking.price.i3.s">Він же керує світлом. Можна додати свого техніка або замінити ним нашого.</span>
+            <em class="can" data-i18n="booking.price.can">можна доповнити або замінити</em>
           </li>
           <li>
-            <b>Базовий звук і світло</b>
-            <span>Технічне забезпечення залу входить у вартість.</span>
+            <b data-i18n="booking.price.i4.b">Базовий звук і світло</b>
+            <span data-i18n="booking.price.i4.s">Технічне забезпечення залу входить у вартість.</span>
           </li>
         </ul>
       </div>
@@ -79,69 +81,69 @@
 
   <section id="dati">
     <div class="inner">
-      <p class="mark rise">Заявка</p>
+      <p class="mark rise" data-i18n="booking.form.mark">Заявка</p>
       <div class="book rise">
         <form id="rentform" autocomplete="on">
           <div class="fields">
             <div class="f">
-              <label for="r-name">Хто ви <span>*</span></label>
-              <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди">
+              <label for="r-name"><i data-i18n="f.name">Хто ви</i> <span>*</span></label>
+              <input id="r-name" name="name" required maxlength="200" placeholder="Імʼя або назва команди" data-i18n-placeholder="f.name.ph">
             </div>
             <div class="f">
-              <label for="r-contact">Звʼязок <span>*</span></label>
-              <input id="r-contact" name="contact" required maxlength="200" placeholder="Телефон або пошта">
+              <label for="r-contact"><i data-i18n="f.contact">Звʼязок</i> <span>*</span></label>
+              <input id="r-contact" name="contact" required maxlength="200" placeholder="Телефон або пошта" data-i18n-placeholder="f.contact.ph">
             </div>
             <div class="f">
-              <label for="r-tg">Telegram для звʼязку <span>*</span></label>
-              <input id="r-tg" name="telegram" required maxlength="200" placeholder="@нік або t.me/…"
+              <label for="r-tg"><i data-i18n="f.tg">Telegram для звʼязку</i> <span>*</span></label>
+              <input id="r-tg" name="telegram" required maxlength="200" placeholder="@нік або t.me/…" data-i18n-placeholder="f.tg.ph"
                      autocapitalize="off" autocorrect="off" spellcheck="false">
             </div>
             <div class="f">
-              <label for="r-date">Дата <span>*</span></label>
+              <label for="r-date"><i data-i18n="f.date">Дата</i> <span>*</span></label>
               <input id="r-date" name="date" type="date" required>
             </div>
             <div class="f" role="group" aria-labelledby="r-time-l">
-              <p class="lbl" id="r-time-l">Час</p>
+              <p class="lbl" id="r-time-l" data-i18n="f.time">Час</p>
               <div class="span">
-                <select id="r-from" name="time_from" aria-label="Початок"><option value="">—</option></select>
+                <select id="r-from" name="time_from" aria-label="Початок" data-i18n-aria="f.time.from"><option value="">—</option></select>
                 <i>—</i>
-                <select id="r-to" name="time_to" aria-label="Кінець"><option value="">—</option></select>
+                <select id="r-to" name="time_to" aria-label="Кінець" data-i18n-aria="f.time.to"><option value="">—</option></select>
               </div>
             </div>
             <div class="f">
-              <label for="r-guests">Скільки гостей чекаєте</label>
+              <label for="r-guests" data-i18n="f.guests">Скільки гостей чекаєте</label>
               <input id="r-guests" name="guests" maxlength="200" placeholder="200–300">
             </div>
             <div class="f">
-              <label for="r-artists">Скільки артистів</label>
+              <label for="r-artists" data-i18n="f.artists">Скільки артистів</label>
               <input id="r-artists" name="artists" type="number" min="1" max="99" inputmode="numeric" placeholder="5">
             </div>
             <div class="f" role="radiogroup" aria-labelledby="r-music-l">
-              <p class="lbl" id="r-music-l">Музика</p>
+              <p class="lbl" id="r-music-l" data-i18n="f.music">Музика</p>
               <div class="pick">
-                <label><input type="radio" name="music" value="Електронна" checked><span>Електронна</span></label>
-                <label><input type="radio" name="music" value="Жива"><span>Жива</span></label>
+                <label><input type="radio" name="music" value="Електронна" checked><span data-i18n="f.music.electronic">Електронна</span></label>
+                <label><input type="radio" name="music" value="Жива"><span data-i18n="f.music.live">Жива</span></label>
               </div>
             </div>
             <div class="f wide">
-              <label for="r-event">Що за вечір</label>
-              <input id="r-event" name="event" maxlength="200" placeholder="Назва, формат, музика">
+              <label for="r-event" data-i18n="f.event">Що за вечір</label>
+              <input id="r-event" name="event" maxlength="200" placeholder="Назва, формат, музика" data-i18n-placeholder="f.event.ph">
             </div>
             <div class="f wide">
-              <label for="r-social">Соцмережі події</label>
-              <input id="r-social" name="social" maxlength="300" placeholder="instagram.com/… , t.me/… або сторінка події">
+              <label for="r-social" data-i18n="f.social">Соцмережі події</label>
+              <input id="r-social" name="social" maxlength="300" placeholder="instagram.com/… , t.me/… або сторінка події" data-i18n-placeholder="f.social.ph">
             </div>
             <div class="f wide">
-              <label for="r-comment">Що потрібно від нас</label>
-              <textarea id="r-comment" name="comment" maxlength="2000" placeholder="Звук, світло, бармени, тайминг"></textarea>
+              <label for="r-comment" data-i18n="f.comment">Що потрібно від нас</label>
+              <textarea id="r-comment" name="comment" maxlength="2000" placeholder="Звук, світло, бармени, тайминг" data-i18n-placeholder="f.comment.ph"></textarea>
             </div>
           </div>
           <div class="hp" aria-hidden="true">
-            <label for="r-website">Не заповнюйте</label>
+            <label for="r-website" data-i18n="f.hp">Не заповнюйте</label>
             <input id="r-website" name="website" tabindex="-1" autocomplete="off">
           </div>
           <div class="formfoot">
-            <button class="btn" type="submit" id="rentbtn">Надіслати</button>
+            <button class="btn" type="submit" id="rentbtn" data-i18n="f.submit">Надіслати</button>
             <span class="msg" id="rentmsg" role="status" aria-live="polite"></span>
           </div>
         </form>
@@ -151,6 +153,7 @@
 
 </main>
 
+<script src="/assets/i18n.js"></script>
 <script src="/assets/fx.js"></script>
 <script src="/assets/site.js"></script>
 </body>
