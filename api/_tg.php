@@ -1,11 +1,14 @@
 <?php
-// Telegram notification for the site's forms. The e-mail is the record; this
-// is the nudge — a rental enquiry should reach a phone before it reaches an
-// inbox nobody has open.
+// Telegram notification for the site's forms. The file written in rent.php is
+// the record; this is how anyone hears about it.
 //
 // Configured in nox_config.php, outside the web root:
 //   TG_TOKEN  bot token
-//   TG_CHAT   chat id (the nøx group is negative, a private chat is positive)
+//   TG_CHAT   chat id. A person is positive — 6535254719 — and has to send the
+//             bot /start once, because a bot cannot write first. A group is
+//             negative — -1004298991246 — and the bot has to be a member. A
+//             minus in front of a personal id asks for a group that is not
+//             there, and Telegram answers "chat not found".
 //   TG_TOPIC  optional forum topic id; omit or 0 for the group's General
 require_once __DIR__ . '/_config.php';
 
