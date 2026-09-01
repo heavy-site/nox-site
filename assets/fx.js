@@ -252,12 +252,20 @@
     host.className = "glyphs";
     host.setAttribute("aria-hidden", "true");
 
+    // A turn and a little size on each, off one seed: arbitrary enough that
+    // the six do not read as a set, fixed enough that the page looks the same
+    // every time it opens. The stroke is divided by the scale so a figure
+    // blown up does not come with a fatter line.
+    var rnd = seeded(90126);
     MARGIN_FIGURES.forEach(function (f) {
+      var turn = rnd() * 360, scale = 0.88 + rnd() * 0.3;
       var svg = svgEl("svg", {
         viewBox: "-100 -100 200 200",
         class: "gl gl-" + f[0],
-        fill: "none", stroke: "#2E9BF0", "stroke-width": "1.1"
+        fill: "none", stroke: "#2E9BF0",
+        "stroke-width": (1.15 / scale).toFixed(2)
       });
+      svg.style.transform = "rotate(" + turn.toFixed(1) + "deg) scale(" + scale.toFixed(3) + ")";
       f[1](svg);
       host.appendChild(svg);
     });

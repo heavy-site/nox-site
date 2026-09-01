@@ -65,24 +65,25 @@ a{ color:var(--pale); }
    але під текстом. Кожна намальована у власному квадраті й ставиться тут, тож
    нічого не розтягується. */
 .glyphs{ position:fixed; inset:0; z-index:0; pointer-events:none; }
-.gl{ position:absolute; width:var(--s); height:var(--s); overflow:visible; opacity:.16; }
-.gl-vesica { --s:15vmin; left:2.5vw;  top:15vh; }
-.gl-rings  { --s:12vmin; right:3vw;   top:9vh; }
-.gl-held   { --s:13vmin; left:4.5vw;  bottom:13vh; }
-.gl-earth  { --s:14vmin; right:2.5vw; bottom:21vh; }
-.gl-squared{ --s:9vmin;  left:1.5vw;  top:52vh; opacity:.12; }
-.gl-eye    { --s:10vmin; right:6vw;   top:47vh; opacity:.12; }
+/* Поворот і масштаб кожній фігурі роздає скрипт — тут лише розмір і місце. */
+.gl{ position:absolute; width:var(--s); height:var(--s); overflow:visible; opacity:.15; }
+.gl-vesica { --s:26vmin; left:1vw;    top:11vh; }
+.gl-rings  { --s:21vmin; right:1.5vw; top:6vh; }
+.gl-held   { --s:23vmin; left:2vw;    bottom:9vh; }
+.gl-earth  { --s:24vmin; right:1vw;   bottom:17vh; }
+.gl-squared{ --s:15vmin; left:0.5vw;  top:50vh; opacity:.11; }
+.gl-eye    { --s:17vmin; right:4vw;   top:45vh; opacity:.11; }
 
 /* Поля вужчають — середні фігури підуть першими, вони єдині на висоті тексту. */
-@media (max-width:1380px){
-  .gl{ opacity:.11; }
+@media (max-width:1500px){
+  .gl{ opacity:.10; }
   .gl-squared, .gl-eye{ display:none; }
-  .gl-vesica{ --s:12vmin; left:1vw; }
-  .gl-rings { --s:10vmin; right:1vw; }
-  .gl-held  { --s:11vmin; left:1vw; }
-  .gl-earth { --s:11vmin; right:1vw; }
+  .gl-vesica{ --s:20vmin; left:0; }
+  .gl-rings { --s:17vmin; right:0; }
+  .gl-held  { --s:18vmin; left:0; }
+  .gl-earth { --s:18vmin; right:0; }
 }
-@media (max-width:900px){ .glyphs{ display:none; } }
+@media (max-width:1000px){ .glyphs{ display:none; } }
 @media (prefers-reduced-motion:reduce){ .gl{ opacity:.10; } }
 
 /* ── HUD-рамка ─────────────────────────────────────────────────────── */
