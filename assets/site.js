@@ -96,8 +96,7 @@
         }).join("") + "</div>";
         return;
       }
-      host.innerHTML = '<div class="diagram"></div>' +
-        '<p class="diagcap">' + esc(T("js.plan.cap", "План залу · 18,00 × 12,00 м · бар 9,6 м")) + '</p>';
+      host.innerHTML = '<div class="diagram"></div>';
       var box = host.querySelector(".diagram");
       if (window.noxDiagram) {
         window.noxDiagram(box, { id: "plan" + n });

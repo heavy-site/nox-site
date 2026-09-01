@@ -282,10 +282,6 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 /* ── діаграма / галерея ────────────────────────────────────────────── */
 .diagram{ margin-top:clamp(40px,6vw,80px); display:grid; place-items:center; }
 .diagram svg{ width:min(1120px,100%); height:auto; overflow:visible; }
-.diagcap{
-  margin:22px 0 0; text-align:center; font-family:var(--hud); font-size:10px;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--dust);
-}
 .gallery{ display:grid; gap:2px; grid-template-columns:1fr; margin-top:clamp(40px,6vw,80px); }
 @media (min-width:780px){ .gallery{ grid-template-columns:repeat(2,1fr); } }
 .gallery figure{ margin:0; position:relative; background:var(--slab); overflow:hidden; }
@@ -366,10 +362,7 @@ h3{
   border:1px solid var(--line); transition:border-color .3s, background .3s;
 }
 .teaser:hover{ border-color:var(--gas); background:var(--slab); }
-.teaser em{ font-family:var(--hud); font-style:normal; font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:var(--gas); }
 .teaser b{ font-family:var(--rite); font-weight:400; font-size:clamp(28px,3.6vw,44px); line-height:1.02; text-transform:uppercase; letter-spacing:.05em; }
-.teaser span{ color:var(--ash); font-size:15.5px; line-height:1.55; max-width:40ch; }
-.teaser .go{ margin-top:8px; font-family:var(--hud); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--pale); }
 
 .next{ border-top:1px solid var(--line2); border-bottom:1px solid var(--line2); padding:30px 0; }
 .next .d{ font-family:var(--rite); font-weight:400; font-size:26px; color:var(--gas); letter-spacing:.015em; }
@@ -405,7 +398,7 @@ h3{
 }
 .mapfoot{
   margin:14px 0 0;
-  display:flex; flex-wrap:wrap; gap:8px 24px; justify-content:space-between;
+  display:flex; flex-wrap:wrap; gap:8px 24px;
   font-family:var(--hud); font-size:11px;
   letter-spacing:.16em; text-transform:uppercase; color:var(--dust);
 }
