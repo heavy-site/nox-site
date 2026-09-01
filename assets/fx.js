@@ -141,12 +141,94 @@
   }
 
   /* ── 2. the plan, drawn as a diagram ────────────────────────────── */
-  var GLYPHS = "NØX · НИЖНЬОЮРКІВСЬКА 31 · 50.4669 30.5008 · 215 M² · 300–350 · 18+ · ";
-
   function svgEl(name, attrs) {
     var e = document.createElementNS("http://www.w3.org/2000/svg", name);
     for (var k in attrs) e.setAttribute(k, attrs[k]);
     return e;
+  }
+
+  /* ── the ring of marks ───────────────────────────────────────────────
+     The turning rings used to carry the address and the coordinates as text
+     on a path, which read as a caption rather than a seal. What turns now is
+     a vocabulary of small marks — bar, cross, dots, chevron, ring, slash,
+     arrow, gate. The sequence comes from a seeded hash, so a given ring is
+     the same seal on every load rather than fresh noise each time. */
+  function seeded(seed) {
+    var s = seed >>> 0;
+    return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  }
+
+  function runeRing(r, n, size, colour, opacity, seed) {
+    var g = svgEl("g", {
+      fill: "none", stroke: colour, "stroke-opacity": opacity,
+      "stroke-width": "1", "stroke-linecap": "square"
+    });
+    var rnd = seeded(seed), s = size;
+    var f = function (v) { return v.toFixed(1); };
+
+    for (var i = 0; i < n; i++) {
+      var a = (i / n) * Math.PI * 2;
+      var m = svgEl("g", {
+        transform: "translate(" + f(Math.cos(a) * r) + "," + f(Math.sin(a) * r) + ") " +
+                   "rotate(" + f(a * 180 / Math.PI + 90) + ")"
+      });
+      var kind = (rnd() * 8) | 0, d = "";
+
+      if (kind === 5) {                       // ring
+        m.appendChild(svgEl("circle", { cx: 0, cy: 0, r: f(s * 0.42) }));
+      } else if (kind === 6) {                // two dots
+        m.appendChild(svgEl("circle", { cx: 0, cy: f(-s * 0.5), r: "1.1", fill: colour, "fill-opacity": opacity, stroke: "none" }));
+        m.appendChild(svgEl("circle", { cx: 0, cy: f(s * 0.5),  r: "1.1", fill: colour, "fill-opacity": opacity, stroke: "none" }));
+      } else {
+        if (kind === 0) d = "M0," + f(-s) + "V" + f(s);
+        if (kind === 1) d = "M0," + f(-s) + "V" + f(s) + "M" + f(-s * 0.5) + ",0H" + f(s * 0.5);
+        if (kind === 2) d = "M" + f(-s * 0.5) + "," + f(-s * 0.45) + "L0," + f(s * 0.45) + "L" + f(s * 0.5) + "," + f(-s * 0.45);
+        if (kind === 3) d = "M" + f(-s * 0.5) + "," + f(-s * 0.5) + "L" + f(s * 0.5) + "," + f(s * 0.5);
+        if (kind === 4) d = "M0," + f(-s) + "V" + f(s * 0.2) +
+                            "M" + f(-s * 0.45) + "," + f(s * 0.2) + "L0," + f(s) + "L" + f(s * 0.45) + "," + f(s * 0.2);
+        if (kind === 7) d = "M" + f(-s * 0.45) + "," + f(-s * 0.6) + "H" + f(s * 0.45) +
+                            "M" + f(-s * 0.45) + "," + f(s * 0.6) + "H" + f(s * 0.45) +
+                            "M0," + f(-s * 0.6) + "V" + f(s * 0.6);
+        m.appendChild(svgEl("path", { d: d }));
+      }
+      g.appendChild(m);
+    }
+    return g;
+  }
+
+  /* ── the still geometry ──────────────────────────────────────────────
+     Figures that do not turn, so the turning ones have something fixed to
+     turn against: a hexagram, a square standing on its corner, a crown of
+     spokes. Everything is a whisper — one pixel wide, a tenth opaque. */
+  function sacred(o) {
+    var g = svgEl("g", { fill: "none", stroke: o.colour, "stroke-width": "1" });
+
+    function poly(r, sides, phase, op) {
+      if (!r) return;
+      var pts = [];
+      for (var i = 0; i < sides; i++) {
+        var a = phase + (i / sides) * Math.PI * 2;
+        pts.push((Math.cos(a) * r).toFixed(1) + "," + (Math.sin(a) * r).toFixed(1));
+      }
+      g.appendChild(svgEl("polygon", { points: pts.join(" "), "stroke-opacity": op }));
+    }
+
+    poly(o.star, 3, -Math.PI / 2, o.starOp);   // the two triangles of a hexagram
+    poly(o.star, 3, Math.PI / 2, o.starOp);
+    poly(o.square, 4, 0, o.squareOp);          // on its corner, being at phase 0
+
+    if (o.spokes) {
+      var sp = svgEl("g", { "stroke-opacity": o.spokeOp });
+      for (var k = 0; k < o.spokes; k++) {
+        var b = (k / o.spokes) * Math.PI * 2, r1 = o.spokeR, r2 = r1 + o.spokeLen;
+        sp.appendChild(svgEl("line", {
+          x1: (Math.cos(b) * r1).toFixed(1), y1: (Math.sin(b) * r1).toFixed(1),
+          x2: (Math.cos(b) * r2).toFixed(1), y2: (Math.sin(b) * r2).toFixed(1)
+        }));
+      }
+      g.appendChild(sp);
+    }
+    return g;
   }
 
   function diagram(host, opts) {
@@ -156,14 +238,6 @@
       role: "img",
       "aria-label": "План залу nøx: танцювальна зона з колонами, барна стійка 9,6 метра, санвузол, гардероб"
     });
-
-    var defs = svgEl("defs");
-    defs.appendChild(svgEl("path", {
-      id: "ring-" + opts.id,
-      d: "M 0,-405 A 405,405 0 1,1 -0.01,-405",
-      fill: "none"
-    }));
-    svg.appendChild(defs);
 
     // outer rings
     [[470, ".18", "1"], [452, ".10", "1"], [352, ".14", "1"]].forEach(function (r) {
@@ -194,17 +268,15 @@
     }));
     svg.appendChild(spin);
 
-    // the address running around the circle
-    var textG = svgEl("g", { class: "spin-slow" });
-    var txt = svgEl("text", {
-      "font-family": "JetBrains Mono, ui-monospace, monospace",
-      "font-size": "17", "letter-spacing": "5.5",
-      fill: "#9A9486", "fill-opacity": ".62"
-    });
-    var tp = svgEl("textPath", { href: "#ring-" + opts.id });
-    tp.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#ring-" + opts.id);
-    tp.textContent = GLYPHS + GLYPHS;
-    txt.appendChild(tp); textG.appendChild(txt); svg.appendChild(textG);
+    // marks turning around the plan, where the address used to run
+    var runes = svgEl("g", { class: "spin-slow" });
+    runes.appendChild(runeRing(405, 44, 9, "#B9E2FF", ".40", 31122026));
+    svg.appendChild(runes);
+
+    // a crown of spokes outside everything, fixed
+    svg.appendChild(sacred({
+      colour: "#2E9BF0", spokes: 36, spokeR: 484, spokeLen: 11, spokeOp: ".22"
+    }));
 
     // cardinal reticles
     [[0, -470], [470, 0], [0, 470], [-470, 0]].forEach(function (p) {
@@ -229,20 +301,19 @@
     var R = 500;
     var svg = svgEl("svg", { viewBox: "-500 -500 1000 1000", "aria-hidden": "true" });
 
-    var defs = svgEl("defs");
-    defs.appendChild(svgEl("path", { id: "ring-hero", d: "M 0,-462 A 462,462 0 1,1 -0.01,-462", fill: "none" }));
-    svg.appendChild(defs);
+    // Still first, so everything that turns turns over it. The hexagram and
+    // the standing square sit inside the mark's own ring, which is hollow,
+    // so they read through it.
+    svg.appendChild(sacred({
+      colour: "#2E9BF0",
+      star: 248, starOp: ".13",
+      square: 336, squareOp: ".10",
+      spokes: 24, spokeR: 474, spokeLen: 15, spokeOp: ".20"
+    }));
 
-    var textG = svgEl("g", { class: "spin-slow" });
-    var txt = svgEl("text", {
-      "font-family": "JetBrains Mono, ui-monospace, monospace",
-      "font-size": "16", "letter-spacing": "6",
-      fill: "#9A9486", "fill-opacity": ".5"
-    });
-    var tp = svgEl("textPath", { href: "#ring-hero" });
-    tp.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#ring-hero");
-    tp.textContent = GLYPHS + GLYPHS;
-    txt.appendChild(tp); textG.appendChild(txt); svg.appendChild(textG);
+    var ring = svgEl("g", { class: "spin-slow" });
+    ring.appendChild(runeRing(462, 54, 9, "#B9E2FF", ".46", 20260901));
+    svg.appendChild(ring);
 
     var spin = svgEl("g", { class: "spin" });
     spin.appendChild(svgEl("circle", {
@@ -612,8 +683,8 @@
 
     function tick() {
       var d = target - scrollY;
-      if (Math.abs(d) < 0.5) { running = false; own = false; return; }
-      scrollTo(0, scrollY + d * 0.085);
+      if (Math.abs(d) < 0.3) { running = false; own = false; return; }
+      scrollTo(0, scrollY + d * 0.055);
       requestAnimationFrame(tick);
     }
 
@@ -631,7 +702,7 @@
       e.preventDefault();
       if (!own) { target = scrollY; own = true; }
       var px = e.deltaMode === 1 ? dy * 42 : e.deltaMode === 2 ? dy * innerHeight : dy;
-      target = Math.min(limit(), Math.max(0, target + px * 1.25));
+      target = Math.min(limit(), Math.max(0, target + px * 1.4));
       if (!running) { running = true; requestAnimationFrame(tick); }
     }, { passive: false });
 
