@@ -792,6 +792,23 @@
     addEventListener("scroll", function () { if (!running) target = scrollY; }, { passive: true });
   }
 
+  /* Who owns the scroll. On the site it is the page itself. The one-file
+     preview keeps three routes in one document and gives a route its own box
+     to scroll — then the document stands still while the reader moves, and
+     anything that reads the page's scroll reads nothing. A box that owns the
+     scroll says so with data-nox-scroller. */
+  function scrollerEl() {
+    return document.querySelector("[data-nox-scroller]:not([hidden])");
+  }
+
+  function scrollProgress() {
+    var el = scrollerEl();
+    var y = el ? el.scrollTop : (pageYOffset || document.documentElement.scrollTop || 0);
+    var span = el ? (el.scrollHeight - el.clientHeight)
+                  : (document.documentElement.scrollHeight - innerHeight);
+    return span > 0 ? Math.min(1, Math.max(0, y / span)) : 0;
+  }
+
   /* ── the waveform ───────────────────────────────────────────────────
      A dense stack of short horizontal dashes in the left gutter, all anchored
      to the left edge. At rest they are stubs. The swell rides the scroll
@@ -828,21 +845,16 @@
     addEventListener("resize", size, { passive: true });
     size();
 
-    function progress() {
-      var span = document.documentElement.scrollHeight - innerHeight;
-      return span > 0 ? Math.min(1, Math.max(0, scrollY / span)) : 0;
-    }
-
     var visible = true;
     document.addEventListener("visibilitychange", function () { visible = !document.hidden; });
 
-    var p = progress();
+    var p = scrollProgress();
     (function frame(now) {
       requestAnimationFrame(frame);
       if (!visible || W < 8) return;
 
       var t = now / 1000;
-      p += (progress() - p) * 0.09;          // the swell follows, it does not snap
+      p += (scrollProgress() - p) * 0.09;    // the swell follows, it does not snap
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth = 1;
 

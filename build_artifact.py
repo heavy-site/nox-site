@@ -76,6 +76,7 @@ PAYLOAD = {
 css = read("assets", "site.css")
 fx = read("assets", "fx.js")
 site = read("assets", "site.js")
+i18n = read("assets", "i18n.js")
 
 plan_uri = data_uri_svg("assets/plan.svg")
 logo_uri = data_uri_svg("assets/logo-mark.svg")
@@ -105,10 +106,14 @@ nav = """
 <div class="bar" id="bar">
   <a class="wm" href="#/"><img src="__LOGO__" alt="" width="26" height="26"><span>nøx</span></a>
   <nav>
-    <a href="#/" data-route="home">Головна</a>
-    <a href="#/events" data-route="events">Афіша</a>
-    <a class="cta" href="#/booking" data-route="booking">Забронювати</a>
+    <a href="#/" data-route="home" data-i18n="nav.home">Головна</a>
+    <a href="#/events" data-route="events" data-i18n="nav.events">Афіші</a>
+    <a class="cta" href="#/booking" data-route="booking" data-i18n="nav.booking">Забронювати</a>
   </nav>
+  <div class="lang" role="group" aria-label="Мова" data-i18n-aria="lang.label">
+    <button type="button" data-lang="uk" aria-pressed="true">укр</button>
+    <button type="button" data-lang="en" aria-pressed="false">eng</button>
+  </div>
 </div>
 """.replace("__LOGO__", logo_inline_uri)
 
@@ -116,19 +121,55 @@ router = """
 <script>
 (function(){
   var pages = ["home","events","booking"];
+  /* One scrollTo is not enough on a route change. The preview runs inside the
+     artifact shell, and the shell puts the scroll position back on its own —
+     it remembers it in sessionStorage and restores it whenever the frame is
+     resized or promoted, which is exactly what a route change causes. So the
+     route that opened was the old page's position, seen through a shorter
+     page. We hold the top for a short while instead, the same way fx.js holds
+     it on load, and let go the instant the reader touches anything so a real
+     gesture is never fought. The shell's own note of the position is zeroed
+     too, so a restore that lands after the hold lands at the top. */
+  function holdTop(){
+    try { sessionStorage.setItem("__frame_scroll", JSON.stringify({ y: 0 })); } catch (e) {}
+    var loose = false;
+    function release(){ loose = true; }
+    ["wheel","touchstart","keydown","pointerdown"].forEach(function(t){
+      addEventListener(t, release, { passive: true, once: true });
+    });
+    var until = Date.now() + 1200;
+    (function hold(){
+      if (scrollY !== 0) scrollTo(0,0);
+      if (!loose && Date.now() < until) requestAnimationFrame(hold);
+      else ["wheel","touchstart","keydown","pointerdown"].forEach(function(t){
+        removeEventListener(t, release);
+      });
+    })();
+  }
+
   function show(){
     var h = location.hash.replace(/^#\\/?/, "") || "home";
     if (pages.indexOf(h) < 0) h = "home";
     pages.forEach(function(p){
       var el = document.getElementById("page-" + p);
-      if (el) el.hidden = (p !== h);
+      if (!el) return;
+      el.hidden = (p !== h);
+      // A route the reader comes back to opens at its own top, not where it
+      // was left — the same as following a link on the site itself.
+      if (el.hidden) return;
+      el.scrollTop = 0;
+      // The side routes scroll inside themselves, and a keyboard scrolls what
+      // has focus — so the route that opens takes it. preventScroll, because
+      // taking focus must not undo the top we just set.
+      el.tabIndex = -1;
+      try { el.focus({ preventScroll: true }); } catch (e) {}
     });
     document.querySelectorAll(".bar nav a[data-route]").forEach(function(a){
       if (a.dataset.route === h) a.setAttribute("aria-current","page");
       else a.removeAttribute("aria-current");
     });
     document.getElementById("bar").classList.toggle("stuck", h !== "home");
-    scrollTo(0,0);
+    holdTop();
     document.dispatchEvent(new CustomEvent("nox:route", { detail: h }));
   }
   addEventListener("hashchange", show);
@@ -162,6 +203,19 @@ out = """<title>nøx — сайт майданчика</title>
 <style>
 %s
 .page[hidden]{ display:none !important; }
+
+/* Усі три сторінки живуть в одному документі, тож смуга прокрутки в них одна:
+   з прокрученої головної читач потрапляв у середину афіші, і ні scrollTo, ні
+   пам'ять оболонки тут ні до чого — це та сама прокрутка. Бічні сторінки
+   дістають власну. Поки відкрита котрась із них, документ рівно на висоту
+   екрана: прокручувати в ньому нічого, переносити нічого, а оболонці нічого
+   відновлювати. Головна лишається на прокрутці документа — на ній тримаються
+   і відкриття зі знаком, і хвиля в лівому полі. */
+#page-events:not([hidden]),
+#page-booking:not([hidden]){
+  height:100svh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
 </style>
 
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -173,14 +227,15 @@ out = """<title>nøx — сайт майданчика</title>
 %s
 
 <div class="page" id="page-home">%s</div>
-<div class="page" id="page-events" hidden>%s</div>
-<div class="page" id="page-booking" hidden>%s</div>
+<div class="page" id="page-events" data-nox-scroller hidden>%s</div>
+<div class="page" id="page-booking" data-nox-scroller hidden>%s</div>
 
 %s
 %s
 <script>%s</script>
 <script>%s</script>
-""" % (css, nav, pages["home"], pages["events"], pages["booking"], stub, router, fx, site)
+<script>%s</script>
+""" % (css, nav, pages["home"], pages["events"], pages["booking"], stub, router, i18n, fx, site)
 
 os.makedirs(OUT_DIR, exist_ok=True)
 path = os.path.join(OUT_DIR, "nox-site.html")
