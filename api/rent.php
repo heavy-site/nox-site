@@ -34,14 +34,19 @@ if (!nox_throttle('rent')) {
 $get = fn(string $k) => trim((string)($body[$k] ?? ''));
 
 $entry = [
-    'name'    => $get('name'),
-    'contact' => $get('contact'),
-    'event'   => $get('event'),
-    'date'    => $get('date'),
-    'guests'  => $get('guests'),
-    'comment' => $get('comment'),
-    'ts'      => time(),
-    'ip'      => $_SERVER['REMOTE_ADDR'] ?? '',
+    'name'      => $get('name'),
+    'contact'   => $get('contact'),
+    'event'     => $get('event'),
+    'date'      => $get('date'),
+    'time_from' => $get('time_from'),
+    'time_to'   => $get('time_to'),
+    'guests'    => $get('guests'),
+    'artists'   => $get('artists'),
+    'music'     => $get('music'),
+    'social'    => $get('social'),
+    'comment'   => $get('comment'),
+    'ts'        => time(),
+    'ip'        => $_SERVER['REMOTE_ADDR'] ?? '',
 ];
 
 foreach (['name', 'contact', 'date'] as $f) {
@@ -51,8 +56,9 @@ foreach (['name', 'contact', 'date'] as $f) {
         exit;
     }
 }
-foreach (['name', 'contact', 'event', 'date', 'guests'] as $f) {
-    if (mb_strlen($entry[$f]) > 200) { $entry[$f] = mb_substr($entry[$f], 0, 200); }
+foreach (['name', 'contact', 'event', 'date', 'time_from', 'time_to',
+          'guests', 'artists', 'music', 'social'] as $f) {
+    if (mb_strlen($entry[$f]) > 300) { $entry[$f] = mb_substr($entry[$f], 0, 300); }
 }
 $entry['comment'] = mb_substr($entry['comment'], 0, 2000);
 

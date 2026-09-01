@@ -44,26 +44,68 @@ function tg_contact(string $v): array {
     return ['📞', tg_esc($v)];
 }
 
-/* A rental enquiry, laid out to be read on a phone: what the night is, then
-   who is asking and how to reach them, then the detail. The date leads — it
-   is the only field that can decide the answer on its own. */
+/* A rental enquiry, laid out to be read on a phone: when the night is, who is
+   asking and how to reach them, then what the night actually is. The date and
+   the hours lead, because between them they decide most answers on their own.
+   Every line below the head is optional and simply does not appear. */
 function tg_enquiry(array $e): string {
     list($icon, $contact) = tg_contact($e['contact']);
+    $v = function (string $k) use ($e) { return trim((string)($e[$k] ?? '')); };
 
     $out  = '<b>◆ ЗАЯВКА НА ОРЕНДУ</b>' . "\n\n";
-    $out .= '📅 <b>' . tg_date($e['date']) . '</b>' . "\n";
-    $out .= '👤 <b>' . tg_esc($e['name']) . '</b>' . "\n";
+    $out .= '📅 <b>' . tg_date($v('date')) . '</b>' . "\n";
+
+    $hours = tg_hours($v('time_from'), $v('time_to'));
+    if ($hours !== '') $out .= '🕘 <b>' . $hours . '</b>' . "\n";
+
+    $out .= '👤 <b>' . tg_esc($v('name')) . '</b>' . "\n";
     $out .= $icon . ' ' . $contact;
 
-    if (trim($e['event'])   !== '') $out .= "\n\n" . '🎧 ' . tg_esc($e['event']);
-    if (trim($e['guests'])  !== '') $out .= "\n" . '👥 ' . tg_esc($e['guests']) . ' гостей';
-    if (trim($e['comment']) !== '') {
-        $out .= "\n\n" . '<blockquote>' . tg_esc($e['comment']) . '</blockquote>';
+    if ($v('event') !== '') $out .= "\n\n" . '🎧 ' . tg_esc($v('event'));
+
+    // Music and the size of the line-up belong together — one is the shape of
+    // the night, the other is how much of it has to be plugged in.
+    $set = [];
+    if ($v('music') !== '')   $set[] = tg_esc($v('music')) . ' музика';
+    if ($v('artists') !== '') $set[] = tg_esc($v('artists')) . ' ' . tg_plural((int)$v('artists'), 'артист', 'артисти', 'артистів');
+    if ($set) {
+        $live = mb_stripos($v('music'), 'жив') === 0;
+        $out .= "\n" . ($live ? '🎸 ' : '🎛 ') . implode(' · ', $set);
     }
+
+    if ($v('guests') !== '') $out .= "\n" . '👥 ' . tg_esc($v('guests')) . ' гостей';
+    if ($v('social') !== '') $out .= "\n" . '🔗 ' . tg_esc($v('social'));
+
+    if ($v('comment') !== '') $out .= "\n\n" . '<blockquote>' . tg_esc($v('comment')) . '</blockquote>';
 
     $now = new DateTime('now', new DateTimeZone('Europe/Kyiv'));
     $out .= "\n\n" . '<i>' . $now->format('d.m, H:i') . ' · noxpl4ce.com</i>';
     return $out;
+}
+
+// 22:00 and 06:00 -> "22:00 — 06:00 · 8 год". Either end alone still reads.
+function tg_hours(string $from, string $to): string {
+    $ok = function ($t) { return (bool)preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $t); };
+    if (!$ok($from) && !$ok($to)) return '';
+    if (!$ok($to))   return tg_esc($from) . ' — ?';
+    if (!$ok($from)) return '? — ' . tg_esc($to);
+
+    $m = function ($t) { list($h, $i) = explode(':', $t); return (int)$h * 60 + (int)$i; };
+    $len = $m($to) - $m($from);
+    if ($len <= 0) $len += 24 * 60;                 // a night that crosses midnight
+    $h = intdiv($len, 60); $i = $len % 60;
+    $span = $h . ' год' . ($i ? ' ' . $i . ' хв' : '');
+    return tg_esc($from) . ' — ' . tg_esc($to) . ' · ' . $span;
+}
+
+// 1 артист, 2 артисти, 5 артистів.
+function tg_plural(int $n, string $one, string $few, string $many): string {
+    $n = abs($n) % 100;
+    if ($n >= 11 && $n <= 19) return $many;
+    $n %= 10;
+    if ($n === 1) return $one;
+    if ($n >= 2 && $n <= 4) return $few;
+    return $many;
 }
 
 // Returns true only on Telegram's own ok:true. Never throws and never blocks

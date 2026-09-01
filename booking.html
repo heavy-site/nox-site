@@ -64,12 +64,35 @@
               <input id="r-date" name="date" type="date" required>
             </div>
             <div class="f">
+              <label for="r-from">Час</label>
+              <div class="span">
+                <input id="r-from" name="time_from" type="time" step="900" aria-label="Початок">
+                <i>—</i>
+                <input id="r-to" name="time_to" type="time" step="900" aria-label="Кінець">
+              </div>
+            </div>
+            <div class="f">
               <label for="r-guests">Скільки гостей чекаєте</label>
               <input id="r-guests" name="guests" maxlength="200" placeholder="200–300">
+            </div>
+            <div class="f">
+              <label for="r-artists">Скільки артистів</label>
+              <input id="r-artists" name="artists" type="number" min="1" max="99" inputmode="numeric" placeholder="5">
+            </div>
+            <div class="f" role="radiogroup" aria-labelledby="r-music-l">
+              <p class="lbl" id="r-music-l">Музика</p>
+              <div class="pick">
+                <label><input type="radio" name="music" value="Електронна" checked><span>Електронна</span></label>
+                <label><input type="radio" name="music" value="Жива"><span>Жива</span></label>
+              </div>
             </div>
             <div class="f wide">
               <label for="r-event">Що за вечір</label>
               <input id="r-event" name="event" maxlength="200" placeholder="Назва, формат, музика">
+            </div>
+            <div class="f wide">
+              <label for="r-social">Соцмережі події</label>
+              <input id="r-social" name="social" maxlength="300" placeholder="instagram.com/… , t.me/… або сторінка події">
             </div>
             <div class="f wide">
               <label for="r-comment">Що потрібно від нас</label>
