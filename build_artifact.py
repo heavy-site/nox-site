@@ -227,8 +227,8 @@ out = """<title>nøx — сайт майданчика</title>
 %s
 
 <div class="page" id="page-home">%s</div>
-<div class="page" id="page-events" hidden>%s</div>
-<div class="page" id="page-booking" hidden>%s</div>
+<div class="page" id="page-events" data-nox-scroller hidden>%s</div>
+<div class="page" id="page-booking" data-nox-scroller hidden>%s</div>
 
 %s
 %s
