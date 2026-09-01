@@ -128,7 +128,19 @@ router = """
       else a.removeAttribute("aria-current");
     });
     document.getElementById("bar").classList.toggle("stuck", h !== "home");
+    // This preview is served inside a frame, and the scrollbar the reader is
+    // using belongs to the page around it — scrollTo here moves a document
+    // that is not the one scrolled, so a new route opened halfway down.
+    // Scrolling an element into view walks every ancestor scrollport, the
+    // frame's parent included, so the top of the route is the top of what the
+    // reader sees. Instant, because the page asks for smooth scrolling and a
+    // route change is not a scroll.
     scrollTo(0,0);
+    var top = document.getElementById("toproute");
+    if (top && top.scrollIntoView) {
+      try { top.scrollIntoView({ block: "start", behavior: "instant" }); }
+      catch (e) { top.scrollIntoView(true); }
+    }
     document.dispatchEvent(new CustomEvent("nox:route", { detail: h }));
   }
   addEventListener("hashchange", show);
@@ -164,6 +176,7 @@ out = """<title>nøx — сайт майданчика</title>
 .page[hidden]{ display:none !important; }
 </style>
 
+<span id="toproute" aria-hidden="true" style="position:absolute;top:0;left:0;width:1px;height:1px"></span>
 <canvas id="fx" aria-hidden="true"></canvas>
 <canvas id="wave" aria-hidden="true"></canvas>
 <div class="film" aria-hidden="true"></div>
