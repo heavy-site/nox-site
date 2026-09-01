@@ -63,12 +63,12 @@
               <label for="r-date">Дата <span>*</span></label>
               <input id="r-date" name="date" type="date" required>
             </div>
-            <div class="f">
-              <label for="r-from">Час</label>
+            <div class="f" role="group" aria-labelledby="r-time-l">
+              <p class="lbl" id="r-time-l">Час</p>
               <div class="span">
-                <input id="r-from" name="time_from" type="time" step="900" aria-label="Початок">
+                <select id="r-from" name="time_from" aria-label="Початок"><option value="">—</option></select>
                 <i>—</i>
-                <input id="r-to" name="time_to" type="time" step="900" aria-label="Кінець">
+                <select id="r-to" name="time_to" aria-label="Кінець"><option value="">—</option></select>
               </div>
             </div>
             <div class="f">
