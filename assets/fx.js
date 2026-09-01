@@ -196,6 +196,79 @@
     return g;
   }
 
+  /* ── figures in the margins ──────────────────────────────────────────
+     The centre carries the seal; these stand out at the sides, fixed to the
+     window rather than the page, so they hold still while everything scrolls
+     past them. Old geometry drawn plainly: a vesica, three linked rings, a
+     triangle in a circle, earth's downward triangle, a squared circle, an eye.
+     Each is drawn in its own -100…100 box and placed by CSS, so nothing is
+     stretched and the margins decide the size. */
+  function circle(g, cx, cy, r, op) {
+    g.appendChild(svgEl("circle", { cx: cx, cy: cy, r: r, "stroke-opacity": op || "1" }));
+  }
+  function tri(g, r, down, op) {
+    var pts = [], base = down ? Math.PI / 2 : -Math.PI / 2;
+    for (var i = 0; i < 3; i++) {
+      var a = base + (i / 3) * Math.PI * 2;
+      pts.push((Math.cos(a) * r).toFixed(1) + "," + (Math.sin(a) * r).toFixed(1));
+    }
+    g.appendChild(svgEl("polygon", { points: pts.join(" "), "stroke-opacity": op || "1" }));
+  }
+
+  var MARGIN_FIGURES = [
+    // vesica piscis: two circles meeting through each other's centre
+    ["vesica", function (g) { circle(g, -32, 0, 64); circle(g, 32, 0, 64); }],
+    // three rings, linked
+    ["rings", function (g) {
+      for (var i = 0; i < 3; i++) {
+        var a = -Math.PI / 2 + (i / 3) * Math.PI * 2;
+        circle(g, (Math.cos(a) * 30).toFixed(1), (Math.sin(a) * 30).toFixed(1), 54);
+      }
+    }],
+    // a triangle held in a circle
+    ["held", function (g) { circle(g, 0, 0, 86); tri(g, 86, false); }],
+    // earth: the downward triangle, barred
+    ["earth", function (g) {
+      tri(g, 88, true);
+      g.appendChild(svgEl("line", { x1: -46, y1: 28, x2: 46, y2: 28 }));
+    }],
+    // the squared circle: circle, square on its corner, circle again
+    ["squared", function (g) {
+      circle(g, 0, 0, 88);
+      g.appendChild(svgEl("polygon", { points: "0,-88 88,0 0,88 -88,0" }));
+      circle(g, 0, 0, 44);
+    }],
+    // an eye: two arcs and a pupil
+    ["eye", function (g) {
+      g.appendChild(svgEl("path", { d: "M-90,0 A 96,96 0 0,1 90,0 A 96,96 0 0,1 -90,0 Z" }));
+      circle(g, 0, 0, 22);
+      g.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 7, fill: "#2E9BF0", "fill-opacity": ".5", stroke: "none" }));
+    }]
+  ];
+
+  function marginSigils() {
+    if (document.querySelector(".glyphs")) return;
+    var host = document.createElement("div");
+    host.className = "glyphs";
+    host.setAttribute("aria-hidden", "true");
+
+    MARGIN_FIGURES.forEach(function (f) {
+      var svg = svgEl("svg", {
+        viewBox: "-100 -100 200 200",
+        class: "gl gl-" + f[0],
+        fill: "none", stroke: "#2E9BF0", "stroke-width": "1.1"
+      });
+      f[1](svg);
+      host.appendChild(svg);
+    });
+
+    // Behind the content but in front of the vignette: the burn darkens the
+    // edges hard, which is exactly where these live.
+    var burn = document.querySelector(".burn");
+    if (burn && burn.parentNode) burn.parentNode.insertBefore(host, burn.nextSibling);
+    else document.body.appendChild(host);
+  }
+
   /* ── the still geometry ──────────────────────────────────────────────
      Figures that do not turn, so the turning ones have something fixed to
      turn against: a hexagram, a square standing on its corner, a crown of
@@ -683,8 +756,8 @@
 
     function tick() {
       var d = target - scrollY;
-      if (Math.abs(d) < 0.3) { running = false; own = false; return; }
-      scrollTo(0, scrollY + d * 0.055);
+      if (Math.abs(d) < 0.25) { running = false; own = false; return; }
+      scrollTo(0, scrollY + d * 0.038);
       requestAnimationFrame(tick);
     }
 
@@ -702,7 +775,7 @@
       e.preventDefault();
       if (!own) { target = scrollY; own = true; }
       var px = e.deltaMode === 1 ? dy * 42 : e.deltaMode === 2 ? dy * innerHeight : dy;
-      target = Math.min(limit(), Math.max(0, target + px * 1.4));
+      target = Math.min(limit(), Math.max(0, target + px * 1.55));
       if (!running) { running = true; requestAnimationFrame(tick); }
     }, { passive: false });
 
@@ -861,6 +934,7 @@
   function boot() {
     fromTheTop();
     voidLayer();
+    marginSigils();
     waveform();
     glitch();
     reveals();

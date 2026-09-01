@@ -59,6 +59,32 @@ a{ color:var(--pale); }
   background:radial-gradient(115% 75% at 50% 8%, transparent 42%, rgba(6,7,10,.86) 82%, var(--void) 100%);
 }
 
+/* ── фігури на полях ───────────────────────────────────────────────────
+   Стоять у бічних полях, прибиті до вікна, а не до сторінки: усе прокручується
+   повз них. Понад затемненням, бо воно глушить саме краї, де вони й живуть,
+   але під текстом. Кожна намальована у власному квадраті й ставиться тут, тож
+   нічого не розтягується. */
+.glyphs{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+.gl{ position:absolute; width:var(--s); height:var(--s); overflow:visible; opacity:.16; }
+.gl-vesica { --s:15vmin; left:2.5vw;  top:15vh; }
+.gl-rings  { --s:12vmin; right:3vw;   top:9vh; }
+.gl-held   { --s:13vmin; left:4.5vw;  bottom:13vh; }
+.gl-earth  { --s:14vmin; right:2.5vw; bottom:21vh; }
+.gl-squared{ --s:9vmin;  left:1.5vw;  top:52vh; opacity:.12; }
+.gl-eye    { --s:10vmin; right:6vw;   top:47vh; opacity:.12; }
+
+/* Поля вужчають — середні фігури підуть першими, вони єдині на висоті тексту. */
+@media (max-width:1380px){
+  .gl{ opacity:.11; }
+  .gl-squared, .gl-eye{ display:none; }
+  .gl-vesica{ --s:12vmin; left:1vw; }
+  .gl-rings { --s:10vmin; right:1vw; }
+  .gl-held  { --s:11vmin; left:1vw; }
+  .gl-earth { --s:11vmin; right:1vw; }
+}
+@media (max-width:900px){ .glyphs{ display:none; } }
+@media (prefers-reduced-motion:reduce){ .gl{ opacity:.10; } }
+
 /* ── HUD-рамка ─────────────────────────────────────────────────────── */
 .frame{ position:fixed; inset:12px; z-index:30; pointer-events:none; }
 .frame i{ position:absolute; width:16px; height:16px; border:1px solid var(--line2); }
