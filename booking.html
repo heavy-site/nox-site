@@ -46,8 +46,40 @@
     </div>
   </header>
 
+  <section id="cina">
+    <div class="inner">
+      <p class="mark rise">Вартість</p>
+      <h2 class="rise">Що входить</h2>
+      <div class="price rise">
+        <p class="pnum">15 000 ₴<small>базова вартість майданчика</small></p>
+        <ul class="list">
+          <li>
+            <b>Зал із нашим баром</b>
+            <span>Бар на майданчику працює наш.</span>
+            <em>незмінна позиція</em>
+          </li>
+          <li>
+            <b>Фейсер і охорона</b>
+            <span>Наші люди на вході та в залі.</span>
+            <em>незмінна позиція</em>
+          </li>
+          <li>
+            <b>Наш технік</b>
+            <span>Він же керує світлом. Можна додати свого техніка або замінити ним нашого.</span>
+            <em class="can">можна доповнити або замінити</em>
+          </li>
+          <li>
+            <b>Базовий звук і світло</b>
+            <span>Технічне забезпечення залу входить у вартість.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <section id="dati">
     <div class="inner">
+      <p class="mark rise">Заявка</p>
       <div class="book rise">
         <form id="rentform" autocomplete="on">
           <div class="fields">
@@ -57,7 +89,12 @@
             </div>
             <div class="f">
               <label for="r-contact">Звʼязок <span>*</span></label>
-              <input id="r-contact" name="contact" required maxlength="200" placeholder="Telegram, телефон або пошта">
+              <input id="r-contact" name="contact" required maxlength="200" placeholder="Телефон або пошта">
+            </div>
+            <div class="f">
+              <label for="r-tg">Telegram для звʼязку <span>*</span></label>
+              <input id="r-tg" name="telegram" required maxlength="200" placeholder="@нік або t.me/…"
+                     autocapitalize="off" autocorrect="off" spellcheck="false">
             </div>
             <div class="f">
               <label for="r-date">Дата <span>*</span></label>

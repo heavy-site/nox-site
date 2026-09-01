@@ -61,6 +61,10 @@ function tg_enquiry(array $e): string {
     $out .= '👤 <b>' . tg_esc($v('name')) . '</b>' . "\n";
     $out .= $icon . ' ' . $contact;
 
+    // Telegram is a field of its own now — that is where the venue answers,
+    // so it gets its own line even if the contact above is already a username.
+    if ($v('telegram') !== '') $out .= "\n" . '💬 ' . tg_esc($v('telegram'));
+
     if ($v('event') !== '') $out .= "\n\n" . '🎧 ' . tg_esc($v('event'));
 
     // Music and the size of the line-up belong together — one is the shape of

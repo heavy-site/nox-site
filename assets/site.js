@@ -188,7 +188,7 @@
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var btn = $("rentbtn"), msg = $("rentmsg"), body = {};
-      ["name", "contact", "event", "date", "time_from", "time_to",
+      ["name", "contact", "telegram", "event", "date", "time_from", "time_to",
        "guests", "artists", "music", "social", "comment", "website"].forEach(function (k) {
         if (form.elements[k]) body[k] = form.elements[k].value.trim();
       });

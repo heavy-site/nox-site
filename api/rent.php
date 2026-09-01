@@ -36,6 +36,7 @@ $get = fn(string $k) => trim((string)($body[$k] ?? ''));
 $entry = [
     'name'      => $get('name'),
     'contact'   => $get('contact'),
+    'telegram'  => $get('telegram'),
     'event'     => $get('event'),
     'date'      => $get('date'),
     'time_from' => $get('time_from'),
@@ -56,7 +57,10 @@ foreach (['name', 'contact', 'date'] as $f) {
         exit;
     }
 }
-foreach (['name', 'contact', 'event', 'date', 'time_from', 'time_to',
+// Telegram is required by the form, not here: a cached copy of an older page
+// must still be able to send an enquiry through rather than fail on a field
+// it does not know about.
+foreach (['name', 'contact', 'telegram', 'event', 'date', 'time_from', 'time_to',
           'guests', 'artists', 'music', 'social'] as $f) {
     if (mb_strlen($entry[$f]) > 300) { $entry[$f] = mb_substr($entry[$f], 0, 300); }
 }
