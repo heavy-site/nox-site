@@ -1,6 +1,7 @@
 <?php
 // Venue rental enquiry from the "оренда" section.
 require_once __DIR__ . '/_mail.php';
+require_once __DIR__ . '/_tg.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -79,6 +80,15 @@ resend_send(
     ])),
     $replyTo
 );
+
+tg_send(tg_rows('Заявка на оренду', [
+    'Організатор' => $entry['name'],
+    'Контакт'     => $entry['contact'],
+    'Дата'        => $entry['date'],
+    'Подія'       => $entry['event'],
+    'Гостей'      => $entry['guests'],
+    'Коментар'    => $entry['comment'],
+]));
 
 // The enquiry is saved either way, so the sender always gets a clean answer.
 echo json_encode(['ok' => true]);
