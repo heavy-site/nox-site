@@ -164,6 +164,15 @@
   function bookingForm() {
     var form = $("rentform");
     if (!form) return;
+
+    // Nobody books a night that has been. Kyiv time, not the visitor's, so the
+    // floor matches the calendar the venue actually runs on.
+    var day = $("r-date");
+    if (day && day.type === "date") {
+      var kyiv = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Kyiv" }));
+      var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+      day.min = kyiv.getFullYear() + "-" + pad(kyiv.getMonth() + 1) + "-" + pad(kyiv.getDate());
+    }
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var btn = $("rentbtn"), msg = $("rentmsg"), body = {};

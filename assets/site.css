@@ -453,6 +453,19 @@ input,textarea{
 input::placeholder,textarea::placeholder{ color:#4A4640; }
 input:focus,textarea:focus{ outline:none; border-bottom-color:var(--gas); }
 textarea{ min-height:100px; resize:vertical; }
+
+/* Поле дати — рідне, з календарем браузера. color-scheme:dark вмикає темний
+   календар і робить видимою іконку, яка інакше малюється чорним по чорному. */
+input[type="date"]{
+  color-scheme:dark;
+  font-family:var(--hud); font-size:15px; letter-spacing:.04em;
+  min-height:34px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator{
+  filter:invert(1) brightness(.72) sepia(1) hue-rotate(170deg) saturate(4);
+  cursor:pointer; opacity:.9;
+}
+input[type="date"]:hover::-webkit-calendar-picker-indicator{ opacity:1; }
 .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 .formfoot{ display:flex; align-items:center; gap:22px; margin:36px 0 0; flex-wrap:wrap; }
 .msg{ font-family:var(--hud); font-size:11px; letter-spacing:.12em; color:var(--dust); }
