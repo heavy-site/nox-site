@@ -15,15 +15,12 @@ foreach ($candidates as $path) {
     if (is_readable($path)) { require_once $path; break; }
 }
 
-if (!defined('RESEND_API_KEY')) define('RESEND_API_KEY', '');
-if (!defined('MAIL_FROM'))      define('MAIL_FROM', '');
-if (!defined('MAIL_TO'))        define('MAIL_TO', 'e.pyvovar@gmail.com');
-
-// Telegram. Empty token or chat simply turns the notification off — the form
-// keeps working and says so in the log.
-if (!defined('TG_TOKEN'))       define('TG_TOKEN', '');
-if (!defined('TG_CHAT'))        define('TG_CHAT', '');
-if (!defined('TG_TOPIC'))       define('TG_TOPIC', 0);
+// Telegram is where an enquiry goes. Empty token or chat simply turns the
+// notification off — the form keeps working, the enquiry still lands on disk,
+// and the log says why nothing was sent.
+if (!defined('TG_TOKEN'))  define('TG_TOKEN', '');
+if (!defined('TG_CHAT'))   define('TG_CHAT', '');
+if (!defined('TG_TOPIC'))  define('TG_TOPIC', 0);
 
 // Writable scratch dir for request logs and throttling. Two levels up from
 // api/, not three: three is /home, where mkdir fails and every write is lost

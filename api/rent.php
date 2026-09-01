@@ -1,6 +1,5 @@
 <?php
 // Venue rental enquiry from the "оренда" section.
-require_once __DIR__ . '/_mail.php';
 require_once __DIR__ . '/_tg.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -57,28 +56,15 @@ foreach (['name', 'contact', 'event', 'date', 'guests'] as $f) {
 }
 $entry['comment'] = mb_substr($entry['comment'], 0, 2000);
 
-// Keep a copy on disk even if the mail provider is down.
+// Written down before anything is sent, so an enquiry survives the bot being
+// down, misconfigured, or not made yet. This file is the record; Telegram is
+// only how someone hears about it.
 $dir = NOX_DATA_DIR . '/rent';
 if (!is_dir($dir)) @mkdir($dir, 0750, true);
 @file_put_contents(
     $dir . '/' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.json',
     json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
     LOCK_EX
-);
-
-$replyTo = filter_var($entry['contact'], FILTER_VALIDATE_EMAIL) ? $entry['contact'] : '';
-
-resend_send(
-    'Заявка на оренду — ' . ($entry['date'] ?: $entry['name']),
-    mail_shell('Заявка на оренду майданчика', mail_rows([
-        'Організатор' => $entry['name'],
-        'Контакт'     => $entry['contact'],
-        'Подія'       => $entry['event'],
-        'Дата'        => $entry['date'],
-        'Гостей'      => $entry['guests'],
-        'Коментар'    => $entry['comment'],
-    ])),
-    $replyTo
 );
 
 tg_send(tg_rows('Заявка на оренду', [
@@ -90,5 +76,5 @@ tg_send(tg_rows('Заявка на оренду', [
     'Коментар'    => $entry['comment'],
 ]));
 
-// The enquiry is saved either way, so the sender always gets a clean answer.
+// The enquiry is on disk either way, so the sender always gets a clean answer.
 echo json_encode(['ok' => true]);
