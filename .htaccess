@@ -3,6 +3,12 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # The certificate is in place, but nothing sent visitors to it: whoever typed
+  # noxpl4ce.com was served over plain HTTP and saw "Not secure". First rule in
+  # the file, so a plain-HTTP request never reaches the ones below.
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
   # Extensionless API routes → PHP files
   RewriteRule ^api/site/?$   /api/site.php   [L,QSA]
   RewriteRule ^api/rent/?$   /api/rent.php   [L,QSA]
