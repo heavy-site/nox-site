@@ -47,6 +47,8 @@
     "booking.price.i3.s": "He runs the light as well. You can add your own technician, or put yours in his place.",
     "booking.price.i4.b": "Basic sound and light",
     "booking.price.i4.s": "The hall's own equipment is part of the rate.",
+    "booking.price.i5.b": "Donation, 50 ₴ per guest",
+    "booking.price.i5.s": "At every event except charity ones, we take 50 ₴ per person at the door as a donation.",
     "booking.price.fixed": "fixed position",
     "booking.price.can": "can be added to or replaced",
     "booking.form.mark": "Enquiry",
