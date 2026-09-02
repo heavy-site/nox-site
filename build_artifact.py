@@ -79,11 +79,25 @@ site = read("assets", "site.js")
 i18n = read("assets", "i18n.js")
 
 plan_uri = data_uri_svg("assets/plan.svg")
+plan_en_uri = data_uri_svg("assets/plan-en.svg")
 logo_uri = data_uri_svg("assets/logo-mark.svg")
 logo_inline_uri = data_uri_svg("assets/logo.svg")
 
-fx = fx.replace('"/assets/logo-mark.svg"', json.dumps(logo_uri)).replace('"/assets/plan.svg"', json.dumps(plan_uri))
-site = site.replace("'/assets/plan.svg'", json.dumps(plan_uri)).replace('"/assets/plan.svg"', json.dumps(plan_uri))
+fx = fx.replace('"/assets/logo-mark.svg"', json.dumps(logo_uri))
+
+
+# Both drawings of the room travel inside the bundle: the plan carries its own
+# words, so English has a file of its own.
+def inline_plans(js):
+    for path, uri in (("/assets/plan-en.svg", plan_en_uri), ("/assets/plan.svg", plan_uri)):
+        for quoted in ('"%s"' % path, "'%s'" % path):
+            js = js.replace(quoted, json.dumps(uri))
+    return js
+
+
+fx = inline_plans(fx)
+site = inline_plans(site)
+
 # The painter writes its own links — the empty-state "Забронювати дату" button
 # among them. Rewriting only the pages left those pointing at /booking, which
 # is nothing at all inside a hash-routed bundle.

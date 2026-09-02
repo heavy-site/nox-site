@@ -85,6 +85,7 @@
     "js.failed": "Could not send it. Please try again.",
     "js.offline": "No connection. Try again, or call us.",
     "js.plan.alt": "Floor plan of nøx",
+    "js.plan.aria": "Floor plan of nøx: the dance floor with its columns, a 9.6 m bar counter, restrooms, cloakroom",
     "js.poster.alt": "poster",
 
     "lang.label": "Language"
