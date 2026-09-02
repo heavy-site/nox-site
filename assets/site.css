@@ -441,8 +441,9 @@ h3{
 .phead p{ margin:26px 0 0; }
 
 /* ── вартість ──────────────────────────────────────────────────────── */
-/* Спершу число, під ним — що саме за нього дають. Позначку носить лише те,
-   що можна змінити; незмінні позиції мовчать, і зайвого шуму на списку немає. */
+/* Спершу число, під ним — що саме за нього дають. Кольором світиться те, що
+   не обговорюється: умова, яку орендар має побачити, а не пропустити. Те, що
+   можна доповнити чи замінити, лишається тихим — воно й так відкрите. */
 .price{ max-width:820px; }
 .pnum{
   margin:0 0 clamp(28px,4vw,44px); color:var(--bone);
@@ -456,9 +457,9 @@ h3{
 .list li em{
   display:inline-block; margin-top:11px; font-style:normal;
   font-family:var(--hud); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase;
-  color:var(--dust); border:1px solid var(--line2); padding:4px 9px;
+  color:var(--gas); border:1px solid rgba(46,155,240,.5); padding:4px 9px;
 }
-.list li em.can{ color:var(--gas); border-color:rgba(46,155,240,.5); }
+.list li em.can{ color:var(--dust); border-color:var(--line2); }
 
 /* ── форма ─────────────────────────────────────────────────────────── */
 /* На сторінці оренди тепер лише форма, тож вона й тримає всю колонку —
