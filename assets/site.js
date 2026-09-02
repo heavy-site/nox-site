@@ -84,6 +84,13 @@
     all("headline").forEach(function (host) { host.innerHTML = html; });
   }
 
+  // The words of the plan are drawn into the file itself, so the English room
+  // is a file of its own.
+  function planSrc() {
+    return (window.noxLang && window.noxLang() === "en")
+      ? "/assets/plan-en.svg" : "/assets/plan.svg";
+  }
+
   // Photos when there are photos; the drawing of the room until then.
   function visual(media) {
     all("visual").forEach(function (host, n) {
@@ -101,7 +108,8 @@
       if (window.noxDiagram) {
         window.noxDiagram(box, { id: "plan" + n });
       } else {
-        box.innerHTML = '<img src="/assets/plan.svg" alt="' + esc(T("js.plan.alt", "План залу nøx")) + '">';
+        box.innerHTML = '<img src="' + planSrc() + '" alt="' +
+          esc(T("js.plan.alt", "План залу nøx")) + '">';
       }
     });
   }

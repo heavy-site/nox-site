@@ -141,6 +141,11 @@
   }
 
   /* ── 2. the plan, drawn as a diagram ────────────────────────────── */
+  function planHref() {
+    return (window.noxLang && window.noxLang() === "en")
+      ? "/assets/plan-en.svg" : "/assets/plan.svg";
+  }
+
   function svgEl(name, attrs) {
     var e = document.createElementNS("http://www.w3.org/2000/svg", name);
     for (var k in attrs) e.setAttribute(k, attrs[k]);
@@ -317,7 +322,9 @@
     var svg = svgEl("svg", {
       viewBox: "-" + R + " -" + R + " " + (R * 2) + " " + (R * 2),
       role: "img",
-      "aria-label": "План залу nøx: танцювальна зона з колонами, барна стійка 9,6 метра, санвузол, гардероб"
+      "aria-label": (window.noxT || function (k, uk) { return uk; })(
+        "js.plan.aria",
+        "План залу nøx: танцювальна зона з колонами, барна стійка 9,6 метра, санвузол, гардероб")
     });
 
     // outer rings
@@ -366,10 +373,12 @@
       }));
     });
 
-    // the real room in the middle
+    // The real room in the middle. Its words are drawn into the file, so the
+    // English room is a file of its own; the diagram is rebuilt on a change of
+    // language, and picks up the right one then.
     var w = opts.planWidth || 745, h = w * (13400 / 20200);
     svg.appendChild(svgEl("image", {
-      href: "/assets/plan.svg", x: -w / 2, y: -h / 2, width: w, height: h,
+      href: planHref(), x: -w / 2, y: -h / 2, width: w, height: h,
       opacity: opts.planOpacity || ".9"
     }));
 
