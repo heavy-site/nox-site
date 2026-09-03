@@ -492,9 +492,15 @@ input[type="date"], input[type="number"], .span select{
   font-family:var(--hud); font-size:15px; letter-spacing:.04em;
   min-height:34px;
 }
+/* Кнопку календаря малює сам браузер, і колір їй задає не CSS, а схема. При
+   color-scheme:dark вона вже світла — старий invert() перефарбовував її назад
+   у чорне по чорному, і в Chrome та Edge кнопки просто не було видно. Firefox
+   цього псевдоправила не знає, тому там вона лишалась на місці. brightness(0)
+   гасить будь-який вихідний колір у чорний, invert(1) робить його білим — тож
+   іконка світла незалежно від того, якою її намалював браузер. */
 input[type="date"]::-webkit-calendar-picker-indicator{
-  filter:invert(1) brightness(.72) sepia(1) hue-rotate(170deg) saturate(4);
-  cursor:pointer; opacity:.9;
+  filter:brightness(0) invert(1);
+  cursor:pointer; opacity:.7;
 }
 input[type="date"]:hover::-webkit-calendar-picker-indicator{ opacity:1; }
 
@@ -513,6 +519,10 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{ opacity:1; }
 }
 .span select:hover{ border-bottom-color:var(--dust); }
 .span select:focus{ outline:none; border-bottom-color:var(--gas); }
+/* Сам список відкриває система, і фон він бере з поля — а поле прозоре, тож у
+   Chrome та Edge світлі цифри лягали на біле й читалися ледве. Пунктам тому
+   потрібен свій колір, заданий явно. */
+.span select option{ background:var(--slab); color:var(--bone); }
 
 /* Вибір із двох: радіокнопка сама схована, видно лише напис у рамці. */
 .pick{ display:flex; gap:10px; padding:6px 0 0; flex-wrap:wrap; }
