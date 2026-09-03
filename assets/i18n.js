@@ -37,6 +37,7 @@
 
     "booking.h1": "Rental",
     "booking.price.mark": "Price",
+    "booking.test.note": "We are running in test mode, so the price is lower for now.",
     "booking.price.h2": "What is included",
     "booking.price.sub": "base rate for the venue",
     "booking.price.i1.b": "The hall with our bar",
