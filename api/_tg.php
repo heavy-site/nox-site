@@ -59,8 +59,9 @@ function tg_enquiry(array $e): string {
     $hours = tg_hours($v('time_from'), $v('time_to'));
     if ($hours !== '') $out .= '🕘 <b>' . $hours . '</b>' . "\n";
 
-    $out .= '👤 <b>' . tg_esc($v('name')) . '</b>' . "\n";
-    $out .= $icon . ' ' . $contact;
+    $out .= '👤 <b>' . tg_esc($v('name')) . '</b>';
+    // A booking added by hand in /admin may have no contact at all.
+    if ($v('contact') !== '') $out .= "\n" . $icon . ' ' . $contact;
 
     // Telegram is a field of its own now — that is where the venue answers,
     // so it gets its own line even if the contact above is already a username.
