@@ -57,6 +57,18 @@ foreach (['name', 'contact', 'date'] as $f) {
         exit;
     }
 }
+if (!nox_valid_date($entry['date'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Оберіть дату в календарі']);
+    exit;
+}
+// A day already held by a confirmed night is not offered twice. The page says
+// so before the form is sent; this is for a page that did not know yet.
+if (nox_conflict($entry['date'], '')) {
+    http_response_code(409);
+    echo json_encode(['error' => 'Ця дата вже зайнята. Оберіть іншу, будь ласка.', 'busy' => true]);
+    exit;
+}
 // Telegram is required by the form, not here: a cached copy of an older page
 // must still be able to send an enquiry through rather than fail on a field
 // it does not know about.
@@ -71,13 +83,27 @@ $entry['comment'] = mb_substr($entry['comment'], 0, 2000);
 // only how someone hears about it.
 $dir = NOX_DATA_DIR . '/rent';
 if (!is_dir($dir)) @mkdir($dir, 0750, true);
+$file = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.json';
 @file_put_contents(
-    $dir . '/' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.json',
+    $dir . '/' . $file,
     json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
     LOCK_EX
 );
 
-tg_send(tg_enquiry($entry));
+// Then the database, where the enquiry becomes a booking with a status. If
+// that fails the file is still there, and /admin takes it in on its next visit.
+$id = 0;
+if ($db = nox_db()) {
+    try {
+        $id = nox_booking_insert($db, $entry + ['created_at' => $entry['ts']], 'rent/' . $file);
+    } catch (Throwable $e) {
+        nox_log('RENT db insert failed: ' . $e->getMessage());
+    }
+}
+
+$b = $id ? nox_booking($id) : null;
+$sent = $b ? tg_send(tg_booking_text($b), tg_booking_keyboard($b)) : tg_send(tg_enquiry($entry));
+if ($b && $sent) nox_booking_update($id, ['tg_message_id' => (int)$sent['message_id']]);
 
 // The enquiry is on disk either way, so the sender always gets a clean answer.
 echo json_encode(['ok' => true]);

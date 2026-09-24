@@ -11,6 +11,7 @@
 //             there, and Telegram answers "chat not found".
 //   TG_TOPIC  optional forum topic id; omit or 0 for the group's General
 require_once __DIR__ . '/_config.php';
+require_once __DIR__ . '/_db.php';
 
 function tg_esc(string $v): string {
     // Telegram's HTML parse mode only forbids these three; anything else,
@@ -82,7 +83,10 @@ function tg_enquiry(array $e): string {
 
     if ($v('comment') !== '') $out .= "\n\n" . '<blockquote>' . tg_esc($v('comment')) . '</blockquote>';
 
-    $now = new DateTime('now', new DateTimeZone('Europe/Kyiv'));
+    // When it came in — not when this text was drawn, since a booking's
+    // message is drawn again every time its status changes.
+    $now = new DateTime('@' . (int)($e['ts'] ?? $e['created_at'] ?? time()));
+    $now->setTimezone(new DateTimeZone('Europe/Kyiv'));
     $out .= "\n\n" . '<i>' . $now->format('d.m, H:i') . ' · noxpl4ce.com</i>';
     return $out;
 }
@@ -112,21 +116,13 @@ function tg_plural(int $n, string $one, string $few, string $many): string {
     return $many;
 }
 
-// Returns true only on Telegram's own ok:true. Never throws and never blocks
-// the reply to the visitor: a form that worked must not look broken because
-// a notification did not go out.
-function tg_send(string $text): bool {
-    if (TG_TOKEN === '' || TG_CHAT === '') { nox_log('TG skipped: not configured'); return false; }
+// One call to the Bot API. The decoded result on Telegram's own ok:true, null
+// on anything else. Never throws and never blocks the reply to the visitor: a
+// form that worked must not look broken because a notification did not go out.
+function tg_call(string $method, array $params) {
+    if (TG_TOKEN === '') { nox_log('TG skipped: no token'); return null; }
 
-    $params = [
-        'chat_id'                  => TG_CHAT,
-        'text'                     => $text,
-        'parse_mode'               => 'HTML',
-        'disable_web_page_preview' => 'true',
-    ];
-    if (TG_TOPIC) $params['message_thread_id'] = TG_TOPIC;
-
-    $url = 'https://api.telegram.org/bot' . TG_TOKEN . '/sendMessage';
+    $url = 'https://api.telegram.org/bot' . TG_TOKEN . '/' . $method;
     $body = http_build_query($params);
     $res = null;
 
@@ -152,7 +148,98 @@ function tg_send(string $text): bool {
         ]]));
     }
 
-    $ok = is_string($res) && (json_decode($res, true)['ok'] ?? false) === true;
-    if (!$ok) nox_log('TG failed: ' . substr((string)$res, 0, 300));
-    return $ok;
+    $j = is_string($res) ? json_decode($res, true) : null;
+    if (($j['ok'] ?? false) !== true) {
+        nox_log('TG ' . $method . ' failed: ' . substr((string)$res, 0, 300));
+        return null;
+    }
+    return $j['result'];
+}
+
+// A message to the venue's chat, with buttons under it when there are any.
+// The sent message on success, null otherwise.
+function tg_send(string $text, ?array $keyboard = null) {
+    if (TG_TOKEN === '' || TG_CHAT === '') { nox_log('TG skipped: not configured'); return null; }
+    $params = [
+        'chat_id'                  => TG_CHAT,
+        'text'                     => $text,
+        'parse_mode'               => 'HTML',
+        'disable_web_page_preview' => 'true',
+    ];
+    if (TG_TOPIC) $params['message_thread_id'] = TG_TOPIC;
+    if ($keyboard) $params['reply_markup'] = json_encode(['inline_keyboard' => $keyboard]);
+    return tg_call('sendMessage', $params);
+}
+
+/* ── a booking in the chat ───────────────────────────────────────────────
+   The enquiry message carries the booking's status at its foot and the
+   buttons that move it on: confirm or decline a new one, cancel a confirmed
+   one, reopen one that was turned down. Pressed in the chat or changed in
+   /admin, the message is drawn again, so the chat never shows a status the
+   database does not hold. The buttons exist only once the bot's webhook is
+   connected from /admin — before that a press would go nowhere. */
+const TG_STATE_LINE = [
+    'new'       => '🟡 <b>Нова заявка</b>',
+    'expired'   => '⚪️ <b>Без відповіді — дата минула</b>',
+    'booked'    => '✅ <b>Підтверджено</b>',
+    'past'      => '✔️ <b>Відбулося</b>',
+    'declined'  => '✖️ <b>Відхилено</b>',
+    'cancelled' => '↩️ <b>Скасовано</b>',
+];
+
+function tg_booking_text(array $b): string {
+    $text = tg_enquiry($b);
+    $state = nox_state($b);
+    $line = TG_STATE_LINE[$state] ?? '';
+    if ($state !== 'new' && $b['updated_at']) {
+        $at = new DateTime('@' . (int)$b['updated_at']);
+        $at->setTimezone(new DateTimeZone('Europe/Kyiv'));
+        $line .= ' · ' . $at->format('d.m, H:i');
+    }
+    return $text . "\n" . $line . ' · #' . $b['id'];
+}
+
+function tg_booking_keyboard(array $b): ?array {
+    if (nox_meta('tg_hook') !== '1') return null;
+    $id = (int)$b['id'];
+    $row = [];
+    switch (nox_state($b)) {
+        case 'new':
+            $row[] = ['text' => '✅ Підтвердити', 'callback_data' => 'confirmed:' . $id];
+            $row[] = ['text' => '✖️ Відхилити',  'callback_data' => 'declined:' . $id];
+            break;
+        case 'booked':
+            $row[] = ['text' => '↩️ Скасувати бронь', 'callback_data' => 'cancelled:' . $id];
+            break;
+        case 'declined':
+        case 'cancelled':
+        case 'expired':
+            $row[] = ['text' => '↺ Повернути в нові', 'callback_data' => 'new:' . $id];
+            break;
+    }
+    $open = [['text' => 'Відкрити в адмінці', 'url' => NOX_SITE_URL . '/admin?id=' . $id]];
+    return $row ? [$row, $open] : [$open];
+}
+
+// Draws the booking's message again after its status changed.
+function tg_sync_booking(int $id): void {
+    $b = nox_booking($id);
+    if (!$b || !(int)$b['tg_message_id'] || TG_CHAT === '') return;
+    $params = [
+        'chat_id'                  => TG_CHAT,
+        'message_id'               => (int)$b['tg_message_id'],
+        'text'                     => tg_booking_text($b),
+        'parse_mode'               => 'HTML',
+        'disable_web_page_preview' => 'true',
+    ];
+    $kb = tg_booking_keyboard($b);
+    if ($kb) $params['reply_markup'] = json_encode(['inline_keyboard' => $kb]);
+    tg_call('editMessageText', $params);
+}
+
+// The secret Telegram sends back with every webhook call, so the endpoint can
+// tell the bot from anyone else posting to it. Worked out from the token, so
+// there is nothing more to keep in the config.
+function tg_hook_secret(): string {
+    return substr(hash('sha256', 'nox-hook|' . TG_TOKEN), 0, 48);
 }

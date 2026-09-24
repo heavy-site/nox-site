@@ -46,7 +46,9 @@ function nox_included(): array {
     ];
 }
 
-// Calendar. Newest first; the upcoming/past split is computed from the dates.
+// The calendar as it was written before the bookings had a database. It seeds
+// the database once, on its first run, and it is what the site shows on a host
+// without SQLite. New nights are added in /admin, not here.
 function nox_events(): array {
     return [
         [
@@ -68,10 +70,13 @@ function nox_events(): array {
     ];
 }
 
+// Confirmed nights marked for the listing, from the database; the list above
+// only when there is no database to read.
 function nox_split_events(): array {
-    $today = (new DateTime('now', new DateTimeZone('Europe/Kyiv')))->format('Y-m-d');
+    require_once __DIR__ . '/_db.php';
+    $today = nox_today();
     $upcoming = $past = [];
-    foreach (nox_events() as $e) {
+    foreach (nox_public_events() ?? nox_events() as $e) {
         if (($e['dateEnd'] ?: $e['date']) >= $today) { $upcoming[] = $e; } else { $past[] = $e; }
     }
     usort($upcoming, fn($a, $b) => strcmp($a['date'], $b['date']));

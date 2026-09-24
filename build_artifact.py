@@ -70,6 +70,7 @@ PAYLOAD = {
     "media": [],
     "upcoming": [e for e in EVENTS if (e["dateEnd"] or e["date"]) >= today],
     "past": [e for e in EVENTS if (e["dateEnd"] or e["date"]) < today],
+    "busy": [],
 }
 
 # ── assets ─────────────────────────────────────────────────────────────

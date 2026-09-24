@@ -76,6 +76,7 @@ def payload():
         "media": media(),
         "upcoming": sorted([e for e in EVENTS if (e["dateEnd"] or e["date"]) >= today], key=lambda e: e["date"]),
         "past": sorted([e for e in EVENTS if (e["dateEnd"] or e["date"]) < today], key=lambda e: e["date"], reverse=True),
+        "busy": [],
     }
 
 

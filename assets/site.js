@@ -209,6 +209,19 @@
     }
   }
 
+  // Days already held by a confirmed night, from the payload. The form says so
+  // the moment one is picked, instead of after it is filled in and sent.
+  var BUSY = [];
+  function busyCheck() {
+    var day = $("r-date"), msg = $("rentmsg");
+    if (!day || !msg) return;
+    var taken = day.value && BUSY.indexOf(day.value) >= 0;
+    var text = T("js.busy", "Ця дата вже зайнята. Оберіть іншу, будь ласка.");
+    day.setCustomValidity(taken ? text : "");
+    if (taken) { msg.className = "msg err"; msg.textContent = text; }
+    else if (msg.textContent === text) { msg.className = "msg"; msg.textContent = ""; }
+  }
+
   function bookingForm() {
     var form = $("rentform");
     if (!form) return;
@@ -233,6 +246,10 @@
       var pad = function (n) { return (n < 10 ? "0" : "") + n; };
       day.min = kyiv.getFullYear() + "-" + pad(kyiv.getMonth() + 1) + "-" + pad(kyiv.getDate());
     }
+    if (day) {
+      day.addEventListener("change", busyCheck);
+      day.addEventListener("input", busyCheck);
+    }
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var btn = $("rentbtn"), msg = $("rentmsg"), body = {};
@@ -252,6 +269,10 @@
             form.reset();
             msg.className = "msg ok";
             msg.textContent = T("js.sent", "Заявку отримано. Відповімо найближчим часом.");
+          } else if (res.j && res.j.busy) {
+            // Taken since the page was opened: the form learns the day too.
+            if (day && day.value && BUSY.indexOf(day.value) < 0) BUSY.push(day.value);
+            busyCheck();
           } else {
             msg.className = "msg err";
             msg.textContent = (res.j && res.j.error) ||
@@ -273,6 +294,8 @@
 
   function paint(d) {
     LAST = d;
+    BUSY = d.busy || [];
+    busyCheck();
     headline(d.headline || FALLBACK.headline);
     visual(d.media || []);
     rent(d.rent || FALLBACK.rent);
