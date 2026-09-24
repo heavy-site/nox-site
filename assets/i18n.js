@@ -87,6 +87,7 @@
     "js.sent": "Enquiry received. We will come back to you shortly.",
     "js.failed": "Could not send it. Please try again.",
     "js.offline": "No connection. Try again, or call us.",
+    "js.busy": "This date is already booked. Please pick another.",
     "js.plan.alt": "Floor plan of nøx",
     "js.plan.aria": "Floor plan of nøx: the dance floor with its columns, a 4.1 m bar counter, restrooms, cloakroom",
     "js.poster.alt": "poster",

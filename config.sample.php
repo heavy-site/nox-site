@@ -21,3 +21,11 @@ define('NOX_DATA_DIR', '/home/noxplcec/nox_data');
 define('TG_TOKEN', 'REPLACE_WITH_BOT_TOKEN');
 define('TG_CHAT',  '6535254719');
 define('TG_TOPIC', 0);
+
+// /admin — the bookings. Closed while this is empty. The password itself, or
+// better its hash: php -r 'echo password_hash("your password", PASSWORD_DEFAULT);'
+define('NOX_ADMIN_PASS', '');
+
+// Where the site lives: the Telegram webhook and the "open in admin" button
+// point here.
+define('NOX_SITE_URL', 'https://noxpl4ce.com');

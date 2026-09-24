@@ -22,6 +22,14 @@ if (!defined('TG_TOKEN'))  define('TG_TOKEN', '');
 if (!defined('TG_CHAT'))   define('TG_CHAT', '');
 if (!defined('TG_TOPIC'))  define('TG_TOPIC', 0);
 
+// The admin at /admin is closed until a password is set. Either the password
+// itself or a password_hash() of it.
+if (!defined('NOX_ADMIN_PASS')) define('NOX_ADMIN_PASS', '');
+
+// Where the site lives, for links that leave it: the button under a booking in
+// Telegram, the webhook the bot is pointed at.
+if (!defined('NOX_SITE_URL'))   define('NOX_SITE_URL', 'https://noxpl4ce.com');
+
 // Writable scratch dir for request logs and throttling. Two levels up from
 // api/, not three: three is /home, where mkdir fails and every write is lost
 // silently, because these calls are deliberately suppressed.
