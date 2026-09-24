@@ -18,13 +18,16 @@ function h($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'
 
 // Sessions live in the data dir with a long life of their own: the host's
 // shared defaults would sign a phone out every twenty-odd minutes.
+// Lax, not Strict: a link from Telegram is a visit from another site, and a
+// Strict cookie would stay behind and ask for the password every time. Every
+// action is a POST with its own token, which Lax never carries across sites.
 $sess = NOX_DATA_DIR . '/sessions';
 if (!is_dir($sess)) @mkdir($sess, 0700, true);
 if (is_dir($sess) && is_writable($sess)) session_save_path($sess);
 ini_set('session.gc_maxlifetime', (string)(30 * 86400));
 session_name('noxadm');
 session_set_cookie_params([
-    'lifetime' => 30 * 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Strict',
+    'lifetime' => 30 * 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax',
     'secure'   => ($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off',
 ]);
 session_start();
@@ -149,13 +152,74 @@ input:focus,select:focus,textarea:focus{ outline:1px solid var(--gas); border-co
 .hint{ color:var(--dust); font-size:12px; }
 .foot{ margin-top:34px; padding-top:16px; border-top:1px solid var(--line2); color:var(--ash); font-size:13px; }
 .login{ max-width:340px; margin:14vh auto 0; display:grid; gap:12px; }
+.m a{ color:var(--pale); text-decoration:none; }
+.m a:hover{ text-decoration:underline; }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.chip{ display:inline-flex; align-items:stretch; border:1px solid var(--line2); background:var(--pit); }
+.chip > a, .chip > span{ padding:7px 10px; color:var(--bone); text-decoration:none; font-size:14px; }
+.chip > a:hover{ color:var(--hot); }
+.chip.sub > a{ font-size:12px; color:var(--ash); padding:7px 9px; }
+.cp{ border:0; border-left:1px solid var(--line2); background:transparent; color:var(--ash);
+  padding:0 10px; cursor:pointer; font:13px var(--hud); }
+.cp:hover{ color:var(--hot); }
+.cp.ok, .btn.ok{ color:var(--ok); }
+details.mv summary{ list-style:none; }
+details.mv summary::-webkit-details-marker{ display:none; }
+details.mv form{ display:flex; gap:6px; margin-top:6px; }
+details.mv input{ width:auto; padding:6px 8px; font-size:14px; }
 @media (max-width:720px){
   .card{ grid-template-columns:1fr; }
   .card .side{ justify-items:start; }
 }
 </style>
 </head>
-<body><div class="wrap"><?= $body ?></div></body>
+<body><div class="wrap"><?= $body ?></div>
+<script>
+(function () {
+  // Copy: navigator.clipboard where the page may use it, a hidden textarea
+  // where it may not (some in-app browsers, Telegram's among them).
+  function fallback(t) {
+    var a = document.createElement("textarea");
+    a.value = t; a.setAttribute("readonly", ""); a.style.position = "fixed"; a.style.opacity = "0";
+    document.body.appendChild(a); a.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    a.remove();
+    return ok;
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-copy]");
+    if (!b) return;
+    e.preventDefault();
+    var t = b.getAttribute("data-copy");
+    var done = function () {
+      var was = b.textContent;
+      b.textContent = b.classList.contains("cp") ? "✓" : "✓ Скопійовано";
+      b.classList.add("ok");
+      setTimeout(function () { b.textContent = was; b.classList.remove("ok"); }, 1400);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(t).then(done, function () { if (fallback(t)) done(); });
+    } else if (fallback(t)) done();
+  });
+
+  // Moving the start of a night moves its end with it, so a two-day night
+  // stays two days long.
+  var start = document.querySelector("form.edit input[name=date]"),
+      end = document.querySelector("form.edit input[name=date_end]");
+  if (start && end) {
+    var was = start.value;
+    start.addEventListener("change", function () {
+      if (was && end.value && start.value) {
+        var d = new Date(Date.parse(end.value) + Date.parse(start.value) - Date.parse(was));
+        end.value = d.toISOString().slice(0, 10);
+      }
+      was = start.value;
+    });
+  }
+})();
+</script>
+</body>
 </html><?php
     exit;
 }
@@ -258,6 +322,29 @@ if ($action !== '') {
             flash('Збережено.');
             go(ADM . '?id=' . $id);
 
+        // A new date from the list. The end moves with the start, a confirmed
+        // night still may not land on a held day, and the listing and the
+        // Telegram message follow on their own.
+        case 'move':
+            $b = nox_booking($id);
+            $to = (string)($_POST['date'] ?? '');
+            if (!$b || !nox_valid_date($to)) { flash('Вкажіть дату.', 'err'); go($back); }
+            $end = '';
+            if ($b['date_end'] !== '') {
+                $days = (new DateTime($b['date']))->diff(new DateTime($b['date_end']))->days;
+                $end = (new DateTime($to))->modify('+' . $days . ' days')->format('Y-m-d');
+            }
+            if ($b['status'] === 'confirmed' && ($c = nox_conflict($to, $end, $id))) {
+                flash('Дата вже зайнята: #' . $c['id'] . ' ' . nox_booking_label($c) . '.', 'err');
+                go($back);
+            }
+            nox_booking_update($id, ['date' => $to, 'date_end' => $end]);
+            tg_sync_booking($id);
+            nox_log('BOOKING #' . $id . ' moved ' . $b['date'] . ' -> ' . $to . ' by admin');
+            $shown = $b['status'] === 'confirmed' && (int)$b['published'];
+            flash('#' . $id . ' перенесено на ' . tg_date($to) . ($shown ? ' — в афіші теж.' : '.'));
+            go($back);
+
         case 'delete':
             nox_booking_delete($id);
             nox_log('BOOKING #' . $id . ' deleted by admin');
@@ -332,6 +419,113 @@ function hours(array $b): string {
     return ($b['time_from'] ?: '?') . '–' . ($b['time_to'] ?: '?');
 }
 
+/* ── contacts that open where they came from ─────────────────────────
+   A Telegram handle opens the chat, a phone number the dialler — and Viber,
+   WhatsApp and Telegram by that number — an address the mail app, a link its
+   page. Only https, tel, mailto and viber come out of here, whatever was
+   typed into the form. */
+function phone_digits(string $v): string {
+    if (preg_match('/[^\d\s()+\-.]/', $v)) return '';
+    $d = preg_replace('/\D+/', '', $v);
+    if (strlen($d) === 10 && $d[0] === '0') $d = '38' . $d;        // 063… -> 38063…
+    return strlen($d) >= 10 && strlen($d) <= 15 ? $d : '';
+}
+
+function phone_label(string $d): string {
+    if (strlen($d) === 12 && substr($d, 0, 3) === '380') {
+        return '+' . substr($d, 0, 3) . ' ' . substr($d, 3, 2) . ' ' . substr($d, 5, 3) . ' ' .
+            substr($d, 8, 2) . ' ' . substr($d, 10, 2);
+    }
+    return '+' . $d;
+}
+
+function tg_handle(string $v): string {
+    $v = preg_replace('#^(https?://)?(www\.)?(t\.me|telegram\.me)/#i', '', trim($v));
+    $v = preg_replace('#[/?].*$#', '', ltrim($v, '@'));
+    return preg_match('/^[A-Za-z][A-Za-z0-9_]{3,31}$/', $v) ? $v : '';
+}
+
+// [kind, label, href, what the copy button copies]; kind "sub" is a second
+// way into the same contact and carries no copy button of its own.
+function contact_links(array $b): array {
+    $out = [];
+    $seen = [];
+    $tg = function (string $v) use (&$out, &$seen) {
+        if ($v === '' || isset($seen['tg:' . strtolower($v)])) return;
+        $seen['tg:' . strtolower($v)] = 1;
+        $out[] = ['tg', '✈ @' . $v, 'https://t.me/' . $v, '@' . $v];
+    };
+    $phone = function (string $d) use (&$out, &$seen) {
+        if (isset($seen['ph:' . $d])) return;
+        $seen['ph:' . $d] = 1;
+        $out[] = ['tel', '📞 ' . phone_label($d), 'tel:+' . $d, '+' . $d];
+        $out[] = ['sub', 'Viber', 'viber://chat?number=%2B' . $d, ''];
+        $out[] = ['sub', 'WhatsApp', 'https://wa.me/' . $d, ''];
+        $out[] = ['sub', 'Telegram', 'https://t.me/+' . $d, ''];
+    };
+    foreach (['telegram', 'contact'] as $f) {
+        $v = trim((string)($b[$f] ?? ''));
+        if ($v === '') continue;
+        if (filter_var($v, FILTER_VALIDATE_EMAIL)) { $out[] = ['mail', '✉ ' . $v, 'mailto:' . $v, $v]; continue; }
+        if (($d = phone_digits($v)) !== '') { $phone($d); continue; }
+        if (($h = tg_handle($v)) !== '' && ($f === 'telegram' || $v[0] === '@' || stripos($v, 't.me/') !== false)) { $tg($h); continue; }
+        $out[] = ['txt', $v, '', $v];
+    }
+    foreach (preg_split('/[\s,]+/', trim((string)($b['social'] ?? ''))) as $t) {
+        if ($t === '' || strpos($t, '.') === false) continue;
+        $url = preg_match('#^https?://#i', $t) ? $t : 'https://' . $t;
+        if (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $url)) continue;
+        $label = preg_replace('#^(https?://)?(www\.)?#i', '', rtrim($t, '/'));
+        if (mb_strlen($label) > 40) $label = mb_substr($label, 0, 38) . '…';
+        $out[] = ['url', '🔗 ' . $label, $url, $url];
+    }
+    return $out;
+}
+
+function contact_chips(array $b): string {
+    $html = '';
+    foreach (contact_links($b) as list($kind, $label, $href, $copy)) {
+        $web = strpos($href, 'https://') === 0;
+        $html .= '<span class="chip' . ($kind === 'sub' ? ' sub' : '') . '">' .
+            ($href !== '' ? '<a href="' . h($href) . '"' . ($web ? ' target="_blank" rel="noopener"' : '') . '>' . h($label) . '</a>'
+                          : '<span>' . h($label) . '</span>') .
+            ($copy !== '' ? '<button type="button" class="cp" data-copy="' . h($copy) . '" title="Скопіювати">⧉</button>' : '') .
+            '</span>';
+    }
+    return $html;
+}
+
+// The name, then each contact as a link, for a line in the list.
+function contact_line(array $b): string {
+    $bits = trim((string)$b['name']) !== '' ? [h($b['name'])] : [];
+    foreach (contact_links($b) as list($kind, $label, $href)) {
+        if ($kind === 'sub' || $kind === 'url') continue;
+        $text = preg_replace('/^\S+ /u', '', $label);             // no icon in a line of text
+        $bits[] = $href !== '' ? '<a href="' . h($href) . '"' . (strpos($href, 'https://') === 0 ? ' target="_blank" rel="noopener"' : '') . '>' . h($text) . '</a>' : h($text);
+    }
+    return implode(' · ', $bits);
+}
+
+// A booking as text, to paste into a chat or a note.
+function booking_summary(array $b, string $stateLabel): string {
+    $lines = ['#' . $b['id'] . ' · ' . nox_booking_label($b)];
+    $when = '📅 ' . tg_date($b['date']);
+    if ($b['date_end'] !== '' && $b['date_end'] !== $b['date']) $when .= ' → ' . tg_date($b['date_end']);
+    if (hours($b) !== '') $when .= ' · ' . hours($b);
+    $lines[] = $when;
+    if (trim($b['name']) !== '') $lines[] = '👤 ' . $b['name'];
+    foreach (contact_links($b) as list($kind, $label, , $copy)) {
+        if ($kind !== 'sub') $lines[] = $kind === 'txt' ? $copy : preg_replace('/^(\S+) .*/u', '$1 ', $label) . $copy;
+    }
+    $set = array_filter([$b['guests'] !== '' ? $b['guests'] . ' гостей' : '', $b['music'],
+        $b['artists'] !== '' ? $b['artists'] . ' ' . tg_plural((int)$b['artists'], 'артист', 'артисти', 'артистів') : '']);
+    if ($set) $lines[] = '👥 ' . implode(' · ', $set);
+    if (trim($b['event']) !== '' && trim($b['title']) !== '') $lines[] = '🎧 ' . $b['event'];
+    if (trim($b['comment']) !== '') $lines[] = '💬 ' . $b['comment'];
+    $lines[] = 'Статус: ' . $stateLabel . ((int)$b['published'] && $b['status'] === 'confirmed' ? ' · в афіші' : '');
+    return implode("\n", $lines);
+}
+
 function status_button(array $b, string $to, string $label, string $cls, string $back): string {
     return '<form class="inline" method="post" action="' . ADM . '">' . csrf_field() .
         '<input type="hidden" name="action" value="status"><input type="hidden" name="id" value="' . (int)$b['id'] . '">' .
@@ -380,14 +574,18 @@ if (isset($_GET['id'])) {
             (strpos((string)$b['source'], 'rent/') === 0 ? ' з форми на сайті' : (strpos((string)$b['source'], 'seed:') === 0 ? ' з афіші, що була в коді' : ' вручну')) .
             ' · змінена ' . h(date('d.m.Y H:i', (int)$b['updated_at'])) . '</p>') .
         ($clash ? '<div class="warn">⚠ На цю дату вже підтверджено #' . (int)$clash['id'] . ' ' . h(nox_booking_label($clash)) . '</div>' : '') .
-        ($others ? '<div class="warn">На цю дату є ще ' . $others . ' ' . tg_plural($others, 'нова заявка', 'нові заявки', 'нових заявок') . '</div>' : '');
+        ($others ? '<div class="warn">На цю дату є ще ' . $others . ' ' . tg_plural($others, 'нова заявка', 'нові заявки', 'нових заявок') . '</div>' : '') .
+        ($isNew ? '' : '<div class="chips">' . contact_chips($b) .
+            '<button type="button" class="btn small" data-copy="' . h(booking_summary($b, $STATE[$state][0])) . '">⧉ Скопіювати все</button></div>');
+    $shown = !$isNew && $b['status'] === 'confirmed' && (int)$b['published'];
 
-    $form = '<form method="post" action="' . ADM . '" style="margin-top:16px">' . csrf_field() .
+    $form = '<form class="edit" method="post" action="' . ADM . '" style="margin-top:16px">' . csrf_field() .
         '<input type="hidden" name="action" value="save"><input type="hidden" name="id" value="' . (int)$b['id'] . '">' .
         '<fieldset><legend>Коли</legend><div class="grid">' . $statusSel .
             $field('date', 'Дата', 'date', '', ' required') .
             $field('date_end', 'Закінчується (якщо після півночі чи кілька днів)', 'date') .
             $field('time_from', 'Початок', 'time') . $field('time_to', 'Кінець', 'time') .
+            ($shown ? '<p class="hint" style="grid-column:1/-1;margin:0">Бронь в афіші: нова дата зʼявиться на сторінці «Афіші» одразу після збереження.</p>' : '') .
         '</div></fieldset>' .
         '<fieldset><legend>Організатор</legend><div class="grid">' .
             $field('name', 'Хто', 'text') . $field('contact', 'Телефон або пошта') .
@@ -442,7 +640,7 @@ foreach ($rows as $b) {
     $when = tg_date($b['date']);
     if ($b['date_end'] !== '' && $b['date_end'] !== $b['date']) $when .= ' → ' . date('d.m', strtotime($b['date_end']));
     list($dmy, $wd) = array_pad(explode(', ', $when, 2), 2, '');
-    $who = array_filter([$b['name'], $b['telegram'], $b['contact']], fn($v) => trim($v) !== '');
+    $who = contact_line($b);
     $what = array_filter([$b['guests'] !== '' ? $b['guests'] . ' гостей' : '', $b['music'],
         $b['artists'] !== '' ? $b['artists'] . ' арт.' : '']);
 
@@ -455,6 +653,16 @@ foreach ($rows as $b) {
     }
 
     $acts = '';
+    // Moving a date is for nights still ahead; a past one is history.
+    $move = in_array($b['state'], ['new', 'booked', 'expired'], true)
+        ? '<details class="mv"><summary class="btn small">Перенести</summary>' .
+          '<form method="post" action="' . ADM . '">' . csrf_field() .
+          '<input type="hidden" name="action" value="move"><input type="hidden" name="id" value="' . (int)$b['id'] . '">' .
+          '<input type="hidden" name="back" value="' . h($back) . '">' .
+          '<input type="date" name="date" value="' . h($b['date']) . '" required>' .
+          '<button class="btn small main" type="submit">OK</button></form></details>'
+        : '';
+    $copy = '<button type="button" class="btn small" data-copy="' . h(booking_summary($b, $st[0])) . '">⧉ Копіювати</button>';
     switch ($b['state']) {
         case 'new':
             $acts = status_button($b, 'confirmed', 'Підтвердити', 'good', $back) . ' ' .
@@ -469,12 +677,13 @@ foreach ($rows as $b) {
         '<div class="d"><b>' . h($dmy) . '</b><span>' . h($wd) . '</span>' .
             (hours($b) !== '' ? '<span>' . h(hours($b)) . '</span>' : '') . '</div>' .
         '<div><div class="t"><a href="' . ADM . '?id=' . (int)$b['id'] . '">' . h(nox_booking_label($b)) . '</a></div>' .
-            ($who ? '<div class="m">' . h(implode(' · ', $who)) . '</div>' : '') .
+            ($who !== '' ? '<div class="m">' . $who . '</div>' : '') .
             ($what ? '<div class="m">' . h(implode(' · ', $what)) . '</div>' : '') . $warn . '</div>' .
         '<div class="side"><div class="row">' .
             ((int)$b['published'] && $b['status'] === 'confirmed' ? '<span class="tag pub">в афіші</span>' : '') .
             '<span class="tag ' . $st[1] . '">' . h($st[0]) . '</span></div>' .
-            ($acts ? '<div class="row">' . $acts . '</div>' : '') . '</div>' .
+            ($acts ? '<div class="row">' . $acts . '</div>' : '') .
+            '<div class="row">' . $move . $copy . '</div></div>' .
         '</div>';
 }
 if ($cards === '') $cards = '<div class="empty">Тут поки порожньо</div>';
