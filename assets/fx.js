@@ -324,7 +324,7 @@
       role: "img",
       "aria-label": (window.noxT || function (k, uk) { return uk; })(
         "js.plan.aria",
-        "План залу nøx: танцювальна зона з колонами, барна стійка 9,6 метра, санвузол, гардероб")
+        "План залу nøx: танцювальна зона з колонами, барна стійка 4,1 метра, санвузол, гардероб")
     });
 
     // outer rings
@@ -377,13 +377,324 @@
     // English room is a file of its own; the diagram is rebuilt on a change of
     // language, and picks up the right one then.
     var w = opts.planWidth || 745, h = w * (13400 / 20200);
-    svg.appendChild(svgEl("image", {
+    var img = svgEl("image", {
       href: planHref(), x: -w / 2, y: -h / 2, width: w, height: h,
       opacity: opts.planOpacity || ".9"
-    }));
+    });
+    svg.appendChild(img);
 
     host.appendChild(svg);
+    livePlan(host, svg, img, w, h, opts.planOpacity || ".9");
     return svg;
+  }
+
+  /* ── the cloakroom, taken by its top edge ────────────────────────────
+     The room is a picture, and a picture cannot be pulled by an edge, so the
+     cloakroom is cut out of the file and drawn again over it, live. Its floor
+     is packed the way a cloakroom is packed — a counter, a service aisle
+     behind it, rails of clothes with an aisle to every face — and what the
+     rails hold is counted. The bottom wall stays; the top edge moves. */
+  var CLOAK = {
+    x0: 250, x1: 2750, bottom: 11750,   // the room's own millimetres
+    minH: 1500, maxH: 5150,             // no higher than just under the columns
+    step: 50,
+    h: 2200                             // as drawn; kept across a rebuild
+  };
+  var COUNTER = 400, AISLE = 600, COAT = 550;   // mm
+  var PER_M = 15, PER_M_WINTER = 10;            // hangers to a metre of rail
+
+  // Bands of clothes across a span. A band is one rail and has to face an
+  // aisle; two can stand back to back. The first band either backs onto a
+  // wall or faces an aisle that is already there.
+  function packBands(span, aisleFirst) {
+    var out = [], pos = 0;
+    if (!aisleFirst) {
+      if (span < COAT) return out;
+      out.push(0);
+      pos = COAT;
+      if (span - pos < AISLE + COAT) return out;
+      pos += AISLE;
+    }
+    for (;;) {
+      var rem = span - pos;
+      if (rem >= 2 * COAT + AISLE) {
+        out.push(pos, pos + COAT);
+        pos += 2 * COAT + AISLE;
+      } else {
+        if (rem >= COAT) out.push(span - COAT);   // the last one backs onto the wall
+        return out;
+      }
+    }
+  }
+
+  // Rails run across the room or down it, whichever holds more.
+  function cloakLayout(h) {
+    var top = CLOAK.bottom - h, W = CLOAK.x1 - CLOAK.x0;
+    var y0 = top + COUNTER + AISLE, depth = Math.max(0, CLOAK.bottom - y0);
+    var L = W - AISLE;                        // an aisle along the open side
+    var across = packBands(depth, true), down = packBands(W, false);
+    var mAcross = across.length * L, mDown = down.length * depth;
+    var bands = mAcross >= mDown
+      ? across.map(function (y) { return { x: CLOAK.x0, y: y0 + y, w: L, h: COAT }; })
+      : down.map(function (x) { return { x: CLOAK.x0 + x, y: y0, w: COAT, h: depth }; });
+    var m = Math.max(mAcross, mDown) / 1000;
+    return {
+      top: top, bands: bands,
+      items: Math.floor(m * PER_M), winter: Math.floor(m * PER_M_WINTER)
+    };
+  }
+
+  /* ── the dance floor, set up one of two ways ─────────────────────────
+     The stage and its speakers are cut out of the picture with the cloakroom
+     and drawn again live, in whichever setup is picked: the stage by the
+     right wall with a speaker in each right-hand corner, or by the back wall
+     with a speaker in each back corner. Every speaker is turned to the middle of the
+     floor. plan.svg carries the first one, drawn the same way. */
+  var FLOOR_MID = [14200, 6000];
+  var STAGES = [
+    { booth: { x: 16142, y: 4635, w: 990, h: 2990 }, speakers: [[17050, 1000], [17050, 11000]] },
+    { booth: { x: 12705, y: 9600, w: 2990, h: 990 }, speakers: [[11500, 10900], [16900, 10900]] }
+  ];
+  var stagePick = 0;   // kept across a rebuild, like the cloakroom
+
+  // A speaker seen from above: the box, its face, and the sound going out of
+  // the face. Drawn facing down, then turned to the floor.
+  function speaker(parent, cx, cy) {
+    var turn = Math.atan2(-(FLOOR_MID[0] - cx), FLOOR_MID[1] - cy) * 180 / Math.PI;
+    var t = "translate(" + cx + " " + cy + ") rotate(" + turn.toFixed(1) + ")";
+    var spread = 40 * Math.PI / 180;
+    [[450, ".55"], [800, ".34"], [1150, ".18"]].forEach(function (a) {
+      var r = a[0], sx = Math.round(r * Math.sin(spread)), sy = Math.round(350 + r * Math.cos(spread));
+      parent.appendChild(svgEl("path", {
+        d: "M" + -sx + " " + sy + "A" + r + " " + r + " 0 0 1 " + sx + " " + sy, transform: t,
+        fill: "none", stroke: "#2E9BF0", "stroke-opacity": a[1], "stroke-width": "40", "stroke-linecap": "round"
+      }));
+    });
+    parent.appendChild(svgEl("rect", {
+      x: -400, y: -350, width: 800, height: 700, transform: t,
+      fill: "#E9E4D8", "fill-opacity": ".16", stroke: "#E9E4D8", "stroke-opacity": ".7", "stroke-width": "24"
+    }));
+    parent.appendChild(svgEl("line", {
+      x1: -400, y1: 350, x2: 400, y2: 350, transform: t, stroke: "#7FD4FF", "stroke-width": "70"
+    }));
+  }
+
+  function drawStage(parent, st, label) {
+    var b = st.booth;
+    st.speakers.forEach(function (p) { speaker(parent, p[0], p[1]); });
+    parent.appendChild(svgEl("rect", {
+      x: b.x, y: b.y, width: b.w, height: b.h,
+      fill: "#2E9BF0", "fill-opacity": ".2", stroke: "#B9E2FF", "stroke-width": "26"
+    }));
+    // The word runs along the stage, so on the tall one it is turned.
+    var cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    var name = svgEl("text", {
+      x: cx, y: cy + 120, "text-anchor": "middle",
+      "font-family": "ui-monospace, Menlo, monospace", "font-size": "340", "letter-spacing": "40", fill: "#B9E2FF"
+    });
+    if (b.h > b.w) name.setAttribute("transform", "rotate(-90 " + cx + " " + cy + ")");
+    name.textContent = label;
+    parent.appendChild(name);
+  }
+
+  function livePlan(host, svg, img, w, h, opacity) {
+    if (!window.Promise) return;
+    var T = window.noxT || function (k, uk) { return uk; };
+    var en = !!(window.noxLang && window.noxLang() === "en");
+    var num = function (mm) { var s = (mm / 1000).toFixed(2); return en ? s : s.replace(".", ","); };
+    var things = function (n) {
+      if (en) return n === 1 ? "item" : "items";
+      var a = n % 10, b = n % 100;
+      if (a === 1 && b !== 11) return "річ";
+      if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return "речі";
+      return "речей";
+    };
+    var fill = function (s, v) {
+      return s.replace(/\{(\w+)\}/g, function (_, k) { return v[k]; });
+    };
+
+    // Only once the file has been read and the live parts cut out of it are
+    // they drawn again; if anything fails, the picture keeps its own. The
+    // one-file preview carries the plan as a data: URI and allows no fetch,
+    // so that one is read in place.
+    var href = img.getAttribute("href"), b64 = /^data:[^,]*;base64,/.exec(href);
+    (b64 ? Promise.resolve().then(function () {
+      var bin = atob(href.slice(b64[0].length)), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    }) : fetch(href).then(function (r) {
+      return r.ok ? r.text() : Promise.reject(r.status);
+    })).then(function (text) {
+      var n = 0, cut = text.replace(/<g id="(?:cloakroom|stage)">[\s\S]*?<\/g>\s*/g,
+        function () { n++; return ""; });
+      if (n !== 2 || !svg.isConnected) return;
+      img.setAttribute("href", "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cut));
+      buildStage();
+      build();
+    }).catch(function () {});
+
+    // Everything live is drawn in the room's own millimetres.
+    var s = w / 20200;
+    var place = "translate(" + (-w / 2 + 700 * s) + " " + (-h / 2 + 700 * s) + ") scale(" + s + ")";
+
+    function buildStage() {
+      var g = svgEl("g", { class: "stage", opacity: opacity, transform: place });
+      svg.appendChild(g);
+
+      var pick = document.createElement("div");
+      pick.className = "stage-pick";
+      pick.setAttribute("role", "group");
+      pick.setAttribute("aria-label", T("js.stage.aria", "Сетап танцполу"));
+      var buttons = [
+        T("js.stage.1", "Сетап 1 · сцена біля правої стіни"),
+        T("js.stage.2", "Сетап 2 · сцена біля задньої стіни")
+      ].map(function (label, i) {
+        var bt = document.createElement("button");
+        bt.type = "button";
+        bt.textContent = label;
+        bt.addEventListener("click", function () {
+          if (stagePick !== i) { stagePick = i; draw(true); }
+        });
+        pick.appendChild(bt);
+        return bt;
+      });
+      host.appendChild(pick);
+
+      function draw(fresh) {
+        while (g.firstChild) g.removeChild(g.firstChild);
+        drawStage(g, STAGES[stagePick], T("js.stage.name", "СЦЕНА"));
+        buttons.forEach(function (bt, i) { bt.setAttribute("aria-pressed", i === stagePick ? "true" : "false"); });
+        if (fresh) {
+          g.classList.remove("in");
+          g.getBoundingClientRect();
+          g.classList.add("in");
+        }
+      }
+      draw(false);
+    }
+
+    function build() {
+      var MID = (CLOAK.x0 + CLOAK.x1) / 2;
+      var g = svgEl("g", { class: "cloak", opacity: opacity, transform: place });
+      var zone = svgEl("rect", {
+        x: CLOAK.x0, width: CLOAK.x1 - CLOAK.x0, fill: "#B9E2FF", "fill-opacity": ".12",
+        stroke: "#B9E2FF", "stroke-width": "26", "stroke-dasharray": "220 140"
+      });
+      var counter = svgEl("rect", {
+        x: CLOAK.x0, width: CLOAK.x1 - CLOAK.x0, height: COUNTER,
+        fill: "#E9E4D8", "fill-opacity": ".22", stroke: "#E9E4D8", "stroke-opacity": ".5", "stroke-width": "20"
+      });
+      var racks = svgEl("g", {});
+      var edge = svgEl("line", {
+        x1: CLOAK.x0, x2: CLOAK.x1, stroke: "#2E9BF0", "stroke-width": "46"
+      });
+      var grip = svgEl("rect", {
+        class: "grip", x: MID - 450, width: 900, height: 200, rx: 100, fill: "#2E9BF0"
+      });
+      var mono = "ui-monospace, Menlo, monospace";
+      var name = svgEl("text", {
+        x: CLOAK.x1 + 250, "font-family": mono, "font-size": "300", "letter-spacing": "28", fill: "#B9E2FF"
+      });
+      name.textContent = T("js.cloak.name", "ГАРДЕРОБ");
+      var count = svgEl("text", {
+        x: CLOAK.x1 + 250, "font-family": mono, "font-size": "460", "letter-spacing": "24", fill: "#2E9BF0"
+      });
+      var size = svgEl("text", {
+        x: CLOAK.x1 + 250, "font-family": mono, "font-size": "260", "letter-spacing": "24",
+        fill: "#B9E2FF", "fill-opacity": ".72"
+      });
+      // The whole cloakroom is the handle, and a strip above it: the edge
+      // alone is a few pixels on a phone.
+      var hit = svgEl("rect", {
+        class: "cloak-hit", x: CLOAK.x0 - 150, width: CLOAK.x1 - CLOAK.x0 + 300,
+        fill: "#000", "fill-opacity": "0", "pointer-events": "all"
+      });
+      [zone, counter, racks, edge, grip, name, count, size, hit].forEach(function (e) { g.appendChild(e); });
+      svg.appendChild(g);
+
+      var note = document.createElement("p");
+      note.className = "cloak-note";
+      var line = document.createElement("span");
+      // The same depth as a slider: the picture is an image to a screen
+      // reader, and a thumb is easier to hold than a cloakroom on a phone.
+      var range = document.createElement("input");
+      range.type = "range";
+      range.min = CLOAK.minH; range.max = CLOAK.maxH; range.step = CLOAK.step;
+      range.setAttribute("aria-label", T("js.cloak.aria", "Глибина гардеробу"));
+      range.addEventListener("input", function () { set(+range.value); });
+      var hint = document.createElement("small");
+      hint.textContent = T("js.cloak.hint",
+        "Потягніть гардероб на плані за верхній край. Рахунок — 15 речей на метр штанги, взимку 10.");
+      note.appendChild(line);
+      note.appendChild(range);
+      note.appendChild(hint);
+      host.appendChild(note);
+
+      function draw() {
+        var H = CLOAK.h, lay = cloakLayout(H), top = lay.top;
+        zone.setAttribute("y", top); zone.setAttribute("height", H);
+        counter.setAttribute("y", top);
+        edge.setAttribute("y1", top); edge.setAttribute("y2", top);
+        grip.setAttribute("y", top - 100);
+        hit.setAttribute("y", top - 700); hit.setAttribute("height", H + 700);
+        name.setAttribute("y", top + 330);
+        count.setAttribute("y", top + 880);
+        size.setAttribute("y", top + 1220);
+        while (racks.firstChild) racks.removeChild(racks.firstChild);
+        lay.bands.forEach(function (b) {
+          racks.appendChild(svgEl("rect", {
+            x: b.x, y: b.y, width: b.w, height: b.h,
+            fill: "#2E9BF0", "fill-opacity": ".22", stroke: "#2E9BF0", "stroke-opacity": ".6", "stroke-width": "18"
+          }));
+          var flat = b.w > b.h;
+          racks.appendChild(svgEl("line", {
+            x1: flat ? b.x : b.x + b.w / 2, x2: flat ? b.x + b.w : b.x + b.w / 2,
+            y1: flat ? b.y + b.h / 2 : b.y, y2: flat ? b.y + b.h / 2 : b.y + b.h,
+            stroke: "#B9E2FF", "stroke-width": "30"
+          }));
+        });
+        var v = {
+          w: num(CLOAK.x1 - CLOAK.x0), h: num(H),
+          n: lay.items, items: things(lay.items), c: lay.winter
+        };
+        count.textContent = "≈ " + lay.items + " " + v.items;
+        size.textContent = fill(T("js.cloak.size", "{w} × {h} м"), v);
+        line.textContent = fill(T("js.cloak.note", "Гардероб {w} × {h} м: ≈ {n} {items}, взимку ≈ {c}."), v);
+        range.value = H;
+        range.setAttribute("aria-valuetext", line.textContent);
+      }
+
+      function set(H) {
+        H = Math.round(H / CLOAK.step) * CLOAK.step;
+        H = Math.min(CLOAK.maxH, Math.max(CLOAK.minH, H));
+        if (H !== CLOAK.h) { CLOAK.h = H; draw(); }
+      }
+
+      // Pointer positions are read in the room's own millimetres.
+      var pt = svg.createSVGPoint();
+      function mmY(e) {
+        pt.x = e.clientX; pt.y = e.clientY;
+        return pt.matrixTransform(g.getScreenCTM().inverse()).y;
+      }
+      var drag = null;
+      hit.addEventListener("pointerdown", function (e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        drag = { y: mmY(e), h: CLOAK.h, id: e.pointerId };
+        try { hit.setPointerCapture(e.pointerId); } catch (err) {}
+        g.classList.add("dragging");
+      });
+      hit.addEventListener("pointermove", function (e) {
+        if (drag && e.pointerId === drag.id) set(drag.h - (mmY(e) - drag.y));
+      });
+      var end = function () { drag = null; g.classList.remove("dragging"); };
+      hit.addEventListener("pointerup", end);
+      hit.addEventListener("pointercancel", end);
+      // A finger on the cloakroom moves the cloakroom, not the page.
+      hit.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+
+      draw();
+    }
   }
 
   // The hero carries the mark itself, with the inscription turning around it.

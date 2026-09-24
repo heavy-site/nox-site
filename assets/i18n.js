@@ -88,8 +88,17 @@
     "js.failed": "Could not send it. Please try again.",
     "js.offline": "No connection. Try again, or call us.",
     "js.plan.alt": "Floor plan of nøx",
-    "js.plan.aria": "Floor plan of nøx: the dance floor with its columns, a 9.6 m bar counter, restrooms, cloakroom",
+    "js.plan.aria": "Floor plan of nøx: the dance floor with its columns, a 4.1 m bar counter, restrooms, cloakroom",
     "js.poster.alt": "poster",
+    "js.cloak.name": "CLOAKROOM",
+    "js.cloak.size": "{w} × {h} m",
+    "js.cloak.note": "Cloakroom {w} × {h} m: ≈ {n} {items}, ≈ {c} in winter.",
+    "js.cloak.hint": "Pull the cloakroom on the plan by its top edge. Counted at 15 items to a metre of rail, 10 in winter.",
+    "js.cloak.aria": "Cloakroom depth",
+    "js.stage.aria": "Dance floor setup",
+    "js.stage.name": "STAGE",
+    "js.stage.1": "Setup 1 · stage by the right wall",
+    "js.stage.2": "Setup 2 · stage by the back wall",
 
     "lang.label": "Language"
   };

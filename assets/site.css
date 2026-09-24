@@ -282,6 +282,29 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 /* ── діаграма / галерея ────────────────────────────────────────────── */
 .diagram{ margin-top:clamp(40px,6vw,80px); display:grid; place-items:center; }
 .diagram svg{ width:min(1120px,100%); height:auto; overflow:visible; }
+/* гардероб на плані тягнеться за верхній край; під планом — те саме повзунком */
+.diagram .cloak-hit{ cursor:ns-resize; touch-action:none; }
+.diagram .cloak .grip{ transition:fill .2s; }
+.diagram .cloak:hover .grip, .diagram .cloak.dragging .grip{ fill:var(--hot); }
+.cloak-note{
+  margin:18px 0 0; display:grid; gap:10px; justify-items:center; text-align:center;
+  font-family:var(--hud); font-size:12px; letter-spacing:.08em; color:var(--pale);
+}
+.cloak-note input{ width:min(320px,80vw); accent-color:var(--gas); }
+.cloak-note small{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--dust); }
+/* два сетапи танцполу: де стоїть сцена і куди дивляться колонки */
+.stage-pick{ margin-top:22px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.stage-pick button{
+  font-family:var(--hud); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ash); background:transparent; border:1px solid var(--line2);
+  padding:11px 16px; cursor:pointer; transition:color .2s, border-color .2s, background .2s;
+}
+.stage-pick button:hover{ color:var(--pale); border-color:var(--dust); }
+.stage-pick button[aria-pressed="true"]{ color:var(--bone); border-color:var(--gas); background:rgba(46,155,240,.12); }
+.stage-pick button:focus-visible{ outline:1px solid var(--hot); outline-offset:2px; }
+.diagram .stage.in{ animation:stage-in .45s ease both; }
+@keyframes stage-in{ from{ opacity:0; } }
+@media (prefers-reduced-motion:reduce){ .diagram .stage.in{ animation:none; } }
 .gallery{ display:grid; gap:2px; grid-template-columns:1fr; margin-top:clamp(40px,6vw,80px); }
 @media (min-width:780px){ .gallery{ grid-template-columns:repeat(2,1fr); } }
 .gallery figure{ margin:0; position:relative; background:var(--slab); overflow:hidden; }
