@@ -41,6 +41,12 @@
   // Venue figures the page can show even when the backend is unreachable —
   // an empty hero is worse than a slightly stale one.
   var FALLBACK = {
+    outside: [
+      { value: "28 м²",  label: "тераса, 4 × 7 м" },
+      { value: "≈ 50",   label: "гостей на терасі" },
+      { value: "203 м²", label: "парковка, 14 × 14,5 м" },
+      { value: "≈ 8",    label: "авто на парковці" }
+    ],
     headline: [
       { value: "215 м²",  label: "зал" },
       { value: "300–350", label: "гостей" },
@@ -77,11 +83,18 @@
     return Array.prototype.slice.call(document.querySelectorAll('[data-nox="' + name + '"]'));
   };
 
-  function headline(items) {
-    var html = items.map(function (h) {
+  // The figures. Above the plan they follow what the plan shows: the club's
+  // own, or the terrace's and the parking's when the ground outside is on.
+  function figs(items) {
+    return items.map(function (h) {
       return '<div class="fig"><b>' + esc(TERM(h.value)) + "</b><span>" + esc(TERM(h.label)) + "</span></div>";
     }).join("");
-    all("headline").forEach(function (host) { host.innerHTML = html; });
+  }
+  function headline(items, outside) {
+    var outsideOn = window.noxPlanView && window.noxPlanView() === "full" && outside && outside.length;
+    all("headline").forEach(function (host) {
+      host.innerHTML = figs(host.hasAttribute("data-plan-figs") && outsideOn ? outside : items);
+    });
   }
 
   // The words of the plan are drawn into the file itself, so the English room
@@ -91,9 +104,11 @@
       ? "/assets/plan-en.svg" : "/assets/plan.svg";
   }
 
-  // Photos when there are photos; the drawing of the room until then.
+  // Photos when there are photos. The drawing of the room lives on the
+  // organisers' page now, so without photos this stays empty.
   function visual(media) {
-    all("visual").forEach(function (host, n) {
+    all("visual").forEach(function (host) {
+      host.innerHTML = "";
       if (media && media.length) {
         host.innerHTML = '<div class="gallery">' + media.map(function (m, i) {
           var wide = (media.length % 2 === 1 && i === 0) ? ' class="wide"' : "";
@@ -101,12 +116,18 @@
             '" loading="lazy" decoding="async">' +
             (m.caption ? "<figcaption>" + esc(m.caption) + "</figcaption>" : "") + "</figure>";
         }).join("") + "</div>";
-        return;
       }
-      host.innerHTML = '<div class="diagram"></div>';
-      var box = host.querySelector(".diagram");
-      if (window.noxDiagram) {
-        window.noxDiagram(box, { id: "plan" + n });
+    });
+  }
+
+  // The plan for organisers: the room, the terrace and the parking, drawn the
+  // full width of the page, with the cloakroom and the stage live on it.
+  function plan() {
+    all("plan").forEach(function (host) {
+      host.innerHTML = '<div class="planfig"></div>';
+      var box = host.querySelector(".planfig");
+      if (window.noxPlan) {
+        window.noxPlan(box);
       } else {
         box.innerHTML = '<img src="' + planSrc() + '" alt="' +
           esc(T("js.plan.alt", "План залу nøx")) + '">';
@@ -193,6 +214,37 @@
       : empty(T("js.none.later", "Далі поки порожньо — дати вільні."));
   }
 
+  // The home page's posters: the nights ahead. Until there is one, the last
+  // ones that have been, newest first, so the block is never empty. A card
+  // ahead opens its tickets; one that has passed opens the listing.
+  function posters(data) {
+    var hosts = all("posters");
+    if (!hosts.length) return;
+    var up = data.upcoming || [], past = data.past || [];
+    var card = function (e, gone) {
+      var href = (!gone && e.tickets) ? e.tickets : "/events";
+      var out = /^https?:/.test(href) ? ' target="_blank" rel="noopener"' : "";
+      var src = e.posterSmall || e.poster;
+      var meta = evMeta(e);
+      return '<a class="pcard' + (gone ? " gone" : "") + '" href="' + esc(href) + '"' + out + ">" +
+        '<div class="pimg">' + (src
+          ? '<img src="' + esc(src) + '" alt="' + esc(e.title) + " — " + esc(T("js.poster.alt", "афіша")) +
+            '" loading="lazy" decoding="async">'
+          : '<span class="pname">' + esc(e.title) + "</span>") +
+          (gone ? '<em class="ptag">' + esc(T("js.poster.past", "минула")) + "</em>" : "") +
+        "</div>" +
+        '<div class="pmeta"><span class="d">' + evDate(e) + "</span>" +
+          "<b>" + esc(e.title) + "</b>" +
+          (meta ? "<span>" + esc(meta) + "</span>" : "") +
+          (!gone && e.tickets ? '<i class="pcta">' + esc(T("js.tickets", "Квитки")) + " →</i>" : "") +
+        "</div></a>";
+    };
+    var html = up.length
+      ? up.map(function (e) { return card(e, false); }).join("")
+      : past.slice(0, 3).map(function (e) { return card(e, true); }).join("");
+    hosts.forEach(function (host) { host.innerHTML = html; });
+  }
+
   // Compact "next night" block for the home page.
   function nextNight(data) {
     var host = $("next");
@@ -204,8 +256,8 @@
         '<div class="t">' + esc(e.title) + "</div>" +
         (meta ? '<div class="p">' + esc(meta) + "</div>" : "") + "</div>";
     } else {
-      host.innerHTML = '<div class="next"><div class="t">' +
-        esc(T("js.next.free", "Дати на найближчі місяці ще вільні")) + "</div></div>";
+      // No night ahead: the block stays empty rather than saying so.
+      host.innerHTML = "";
     }
   }
 
@@ -296,17 +348,23 @@
     LAST = d;
     BUSY = d.busy || [];
     busyCheck();
-    headline(d.headline || FALLBACK.headline);
+    headline(d.headline || FALLBACK.headline, d.outside || FALLBACK.outside);
     visual(d.media || []);
+    plan();
     rent(d.rent || FALLBACK.rent);
     feature(d);
     events(d);
     nextNight(d);
+    posters(d);
   }
 
   stickyBar();
   bookingForm();
   document.addEventListener("nox:lang", function () { if (LAST) paint(LAST); });
+  document.addEventListener("nox:planview", function () {
+    var d = LAST || FALLBACK;
+    headline(d.headline || FALLBACK.headline, d.outside || FALLBACK.outside);
+  });
 
   fetch("/api/site", { headers: { Accept: "application/json" } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })

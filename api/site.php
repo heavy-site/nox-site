@@ -10,6 +10,7 @@ $split = nox_split_events();
 echo json_encode([
     'venue'    => nox_venue(),
     'headline' => nox_headline(),
+    'outside'  => nox_outside(),
     'rent'     => nox_included(),
     'media'    => nox_media(),
     'upcoming' => $split['upcoming'],

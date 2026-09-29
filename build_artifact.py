@@ -46,6 +46,12 @@ EVENTS = [{
 }]
 today = datetime.date.today().isoformat()
 PAYLOAD = {
+    "outside": [
+        {"value": "28 м²", "label": "тераса, 4 × 7 м"},
+        {"value": "≈ 50", "label": "гостей на терасі"},
+        {"value": "203 м²", "label": "парковка, 14 × 14,5 м"},
+        {"value": "≈ 8", "label": "авто на парковці"},
+    ],
     "headline": [
         {"value": "215 м²", "label": "зал"},
         {"value": "300–350", "label": "гостей"},
@@ -103,6 +109,9 @@ site = inline_plans(site)
 # among them. Rewriting only the pages left those pointing at /booking, which
 # is nothing at all inside a hash-routed bundle.
 site = site.replace('href="/booking"', 'href="#/booking"')
+# A poster card of a past night opens the listing; its address is a string in
+# the script, not an href, so it is rewritten on its own.
+site = site.replace(': "/events";', ': "#/events";')
 
 # ── pages ──────────────────────────────────────────────────────────────
 pages = {"home": body_of("index.html"), "events": body_of("events.html"), "booking": body_of("booking.html")}
@@ -122,8 +131,8 @@ nav = """
   <a class="wm" href="#/"><img src="__LOGO__" alt="" width="26" height="26"><span>nøx</span></a>
   <nav>
     <a href="#/" data-route="home" data-i18n="nav.home">Головна</a>
-    <a href="#/events" data-route="events" data-i18n="nav.events">Афіші</a>
-    <a class="cta" href="#/booking" data-route="booking" data-i18n="nav.booking">Забронювати</a>
+    <a href="#/events" data-route="events" data-i18n="nav.events">Події</a>
+    <a class="cta" href="#/booking" data-route="booking" data-i18n="nav.booking">Організаторам</a>
   </nav>
   <div class="lang" role="group" aria-label="Мова" data-i18n-aria="lang.label">
     <button type="button" data-lang="uk" aria-pressed="true">укр</button>
@@ -162,8 +171,30 @@ router = """
     })();
   }
 
+  /* The route lives here, not only in the address. The app's viewer shows
+     the preview inside an embedded frame, where a link to "#/booking"
+     resolves against the viewer's own address and goes nowhere — so a click
+     on any route link is taken over and the page is switched in place. The
+     address follows when it can, and the hash still works where it does. */
+  var current = null;
+  function fromHash(){
+    var h = "";
+    try { h = location.hash.replace(/^#\\/?/, ""); } catch (e) {}
+    return pages.indexOf(h) >= 0 ? h : (h === "" ? "home" : null);
+  }
+  document.addEventListener("click", function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#/"], a[href="#/"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    var h = a.getAttribute("href").replace(/^#\\/?/, "") || "home";
+    if (pages.indexOf(h) < 0) return;
+    e.preventDefault();
+    current = h;
+    try { history.replaceState(null, "", "#/" + (h === "home" ? "" : h)); } catch (err) {}
+    show();
+  });
+
   function show(){
-    var h = location.hash.replace(/^#\\/?/, "") || "home";
+    var h = current || fromHash() || "home";
     if (pages.indexOf(h) < 0) h = "home";
     pages.forEach(function(p){
       var el = document.getElementById("page-" + p);
@@ -187,7 +218,7 @@ router = """
     holdTop();
     document.dispatchEvent(new CustomEvent("nox:route", { detail: h }));
   }
-  addEventListener("hashchange", show);
+  addEventListener("hashchange", function(){ var h = fromHash(); if (h) { current = h; show(); } });
   document.addEventListener("DOMContentLoaded", show);
   if (document.readyState !== "loading") show();
 })();

@@ -31,8 +31,8 @@
   <a class="wm" href="/"><img src="/assets/logo.svg" alt="" width="26" height="26"><span>nøx</span></a>
   <nav>
     <a href="/" data-i18n="nav.home">Головна</a>
-    <a href="/events" data-i18n="nav.events">Афіші</a>
-    <a class="cta" href="/booking" aria-current="page" data-i18n="nav.booking">Забронювати</a>
+    <a href="/events" data-i18n="nav.events">Події</a>
+    <a class="cta" href="/booking" aria-current="page" data-i18n="nav.booking">Організаторам</a>
   </nav>
   <div class="lang" role="group" aria-label="Мова" data-i18n-aria="lang.label">
     <button type="button" data-lang="uk" aria-pressed="true">укр</button>
@@ -48,13 +48,21 @@
     </div>
   </header>
 
+  <section id="plan">
+    <div class="inner">
+      <p class="mark rise" data-i18n="booking.plan.mark">Простір</p>
+      <h2 class="rise" data-i18n="booking.plan.h2">План майданчика</h2>
+      <div class="figs rise" data-nox="headline" data-plan-figs></div>
+      <div class="rise" data-nox="plan"></div>
+    </div>
+  </section>
+
   <section id="cina">
     <div class="inner">
       <p class="mark rise" data-i18n="booking.price.mark">Вартість</p>
       <h2 class="rise" data-i18n="booking.price.h2">Що входить</h2>
-      <p class="lead rise" data-i18n="booking.test.note">Ми працюємо в тестовому режимі, тому ціна наразі знижена.</p>
       <div class="price rise">
-        <p class="pnum">15 000 ₴<small data-i18n="booking.price.sub">базова вартість майданчика</small></p>
+        <p class="pnum">15 000 ₴<small data-i18n="booking.price.sub">за вечір · з 16:00 до 22:00</small></p>
         <ul class="list">
           <li>
             <b data-i18n="booking.price.i1.b">Зал із нашим баром</b>
@@ -80,7 +88,54 @@
             <span data-i18n="booking.price.i3.s">Він же керує світлом. Можна додати свого техніка або замінити ним нашого.</span>
             <em class="can" data-i18n="booking.price.can">можна доповнити або замінити</em>
           </li>
+          <li>
+            <b data-i18n="booking.price.i6.b">Гардероб, тераса й парковка</b>
+            <span data-i18n="booking.price.i6.s">Усе це — частина майданчика, окремо не рахується.</span>
+          </li>
         </ul>
+        <h3 class="extra" data-i18n="booking.extra.h3">Додатково</h3>
+        <ul class="list">
+          <li>
+            <b data-i18n="booking.extra.i1.b">Ранній заїзд на монтаж і підготовку</b>
+            <span data-i18n="booking.extra.i1.s">Оренда починається о 16:00. Якщо на монтаж, декор чи саундчек потрібно зайти раніше, кожна година до 16:00 оплачується окремо.</span>
+            <em data-i18n="booking.extra.i1.em">500 ₴ за кожну годину до 16:00</em>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="tehnika">
+    <div class="inner">
+      <p class="mark rise" data-i18n="booking.tech.mark">Техніка</p>
+      <h2 class="rise" data-i18n="booking.tech.h2">Технічне обладнання</h2>
+      <div class="cols tech rise">
+        <div>
+          <h3 data-i18n="booking.tech.sound">Звук · Electro-Voice</h3>
+          <ul class="list">
+            <li>
+              <b>Electro-Voice ETX-35P <i class="qty">× 2</i></b>
+              <span data-i18n="booking.tech.s1">Топи — активні трисмугові, 15″.</span>
+            </li>
+            <li>
+              <b>Electro-Voice ETX-18SP <i class="qty">× 4</i></b>
+              <span data-i18n="booking.tech.s2">Сабвуфери — активні, 18″.</span>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3 data-i18n="booking.tech.light">Світло</h3>
+          <ul class="list">
+            <li>
+              <b><span class="in" data-i18n="booking.tech.l1.b">LED bar, 24 канали</span> <i class="qty">× 6</i></b>
+              <span data-i18n="booking.tech.l1.s">Заливне світло по залу.</span>
+            </li>
+            <li>
+              <b><span class="in" data-i18n="booking.tech.l2.b">Адресна RGB LED-стрічка</span> <i class="qty">60 м</i></b>
+              <span data-i18n="booking.tech.l2.s">Керована, під настрій і таймінг вечора.</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>

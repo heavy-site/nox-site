@@ -342,7 +342,7 @@ if ($action !== '') {
             tg_sync_booking($id);
             nox_log('BOOKING #' . $id . ' moved ' . $b['date'] . ' -> ' . $to . ' by admin');
             $shown = $b['status'] === 'confirmed' && (int)$b['published'];
-            flash('#' . $id . ' перенесено на ' . tg_date($to) . ($shown ? ' — в афіші теж.' : '.'));
+            flash('#' . $id . ' перенесено на ' . tg_date($to) . ($shown ? ' — у «Подіях» на сайті теж.' : '.'));
             go($back);
 
         case 'delete':
@@ -585,7 +585,7 @@ if (isset($_GET['id'])) {
             $field('date', 'Дата', 'date', '', ' required') .
             $field('date_end', 'Закінчується (якщо після півночі чи кілька днів)', 'date') .
             $field('time_from', 'Початок', 'time') . $field('time_to', 'Кінець', 'time') .
-            ($shown ? '<p class="hint" style="grid-column:1/-1;margin:0">Бронь в афіші: нова дата зʼявиться на сторінці «Афіші» одразу після збереження.</p>' : '') .
+            ($shown ? '<p class="hint" style="grid-column:1/-1;margin:0">Бронь в афіші: нова дата зʼявиться на сторінці «Події» одразу після збереження.</p>' : '') .
         '</div></fieldset>' .
         '<fieldset><legend>Організатор</legend><div class="grid">' .
             $field('name', 'Хто', 'text') . $field('contact', 'Телефон або пошта') .

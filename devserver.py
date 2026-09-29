@@ -52,6 +52,12 @@ def payload():
     today = datetime.date.today().isoformat()
     return {
         "venue": {"address": "Нижньоюрківська 31, Київ"},
+        "outside": [
+            {"value": "28 м²", "label": "тераса, 4 × 7 м"},
+            {"value": "≈ 50", "label": "гостей на терасі"},
+            {"value": "203 м²", "label": "парковка, 14 × 14,5 м"},
+            {"value": "≈ 8", "label": "авто на парковці"},
+        ],
         "headline": [
             {"value": "215 м²", "label": "зал"},
             {"value": "300–350", "label": "гостей"},
