@@ -27,6 +27,18 @@ function nox_headline(): array {
     ];
 }
 
+// The ground outside, for the plan's second view. Capacities are estimates:
+// a standing guest takes about half a square metre, a parked car about 25
+// with its share of the drive.
+function nox_outside(): array {
+    return [
+        ['value' => '28 м²',   'label' => 'тераса, 4 × 7 м'],
+        ['value' => '≈ 50',    'label' => 'гостей на терасі'],
+        ['value' => '203 м²',  'label' => 'парковка, 14 × 14,5 м'],
+        ['value' => '≈ 8',     'label' => 'авто на парковці'],
+    ];
+}
+
 // What the organiser gets. Split into what is here and what is arranged.
 function nox_included(): array {
     return [

@@ -141,6 +141,11 @@
   }
 
   /* ── 2. the plan, drawn as a diagram ────────────────────────────── */
+  // The plan's own frame in millimetres: the room, the entrance square and
+  // the terrace under it, and the parking up to the gate. Everything drawn over the plan
+  // is placed through this, so it holds wherever the picture is shown.
+  var PLAN_VB = { x: -19000, y: -1000, w: 38500, h: 17200 };
+
   function planHref() {
     return (window.noxLang && window.noxLang() === "en")
       ? "/assets/plan-en.svg" : "/assets/plan.svg";
@@ -376,7 +381,7 @@
     // The real room in the middle. Its words are drawn into the file, so the
     // English room is a file of its own; the diagram is rebuilt on a change of
     // language, and picks up the right one then.
-    var w = opts.planWidth || 745, h = w * (13400 / 20200);
+    var w = opts.planWidth || 745, h = w * (PLAN_VB.h / PLAN_VB.w);
     var img = svgEl("image", {
       href: planHref(), x: -w / 2, y: -h / 2, width: w, height: h,
       opacity: opts.planOpacity || ".9"
@@ -497,7 +502,35 @@
     parent.appendChild(name);
   }
 
-  function livePlan(host, svg, img, w, h, opacity) {
+  // The plan on its own, the full width of its column: no rings, no seal —
+  // for the organisers, who read it rather than look at it. The live parts
+  // are the same as in the diagram.
+  // Two ways to look at it: the club alone — the default — or the club with
+  // the ground outside it. The choice is kept across a rebuild.
+  var PLAN_CLUB = { x: -700, y: -700, w: 20200, h: 13400 };
+  var planView = "club";
+  var vbOf = function (b) { return b.x + " " + b.y + " " + b.w + " " + b.h; };
+
+  function planFigure(host) {
+    var start = planView === "club" ? PLAN_CLUB : PLAN_VB;
+    var svg = svgEl("svg", {
+      viewBox: vbOf(start),
+      role: "img",
+      "aria-label": (window.noxT || function (k, uk) { return uk; })(
+        "js.plan.aria",
+        "План залу nøx: танцювальна зона з колонами, барна стійка 4,1 метра, санвузол, гардероб")
+    });
+    var img = svgEl("image", {
+      href: planHref(), x: PLAN_VB.x, y: PLAN_VB.y, width: PLAN_VB.w, height: PLAN_VB.h
+    });
+    svg.appendChild(img);
+    host.appendChild(svg);
+    livePlan(host, svg, img, PLAN_VB.w, PLAN_VB.h, "1", { views: true });
+    return svg;
+  }
+
+  function livePlan(host, svg, img, w, h, opacity, opts) {
+    opts = opts || {};
     if (!window.Promise) return;
     var T = window.noxT || function (k, uk) { return uk; };
     var en = !!(window.noxLang && window.noxLang() === "en");
@@ -528,14 +561,71 @@
       var n = 0, cut = text.replace(/<g id="(?:cloakroom|stage)">[\s\S]*?<\/g>\s*/g,
         function () { n++; return ""; });
       if (n !== 2 || !svg.isConnected) return;
-      img.setAttribute("href", "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cut));
+      var full = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cut);
+      img.setAttribute("href", full);
+      if (opts.views) buildViews(cut, full);
       buildStage();
       build();
     }).catch(function () {});
 
-    // Everything live is drawn in the room's own millimetres.
-    var s = w / 20200;
-    var place = "translate(" + (-w / 2 + 700 * s) + " " + (-h / 2 + 700 * s) + ") scale(" + s + ")";
+    // Everything live is drawn in the room's own millimetres, laid over the
+    // picture wherever the picture sits. The full-width plan is drawn in
+    // millimetres to begin with, so there nothing needs moving.
+    var s = w / PLAN_VB.w;
+    var ox = parseFloat(img.getAttribute("x")) || 0, oy = parseFloat(img.getAttribute("y")) || 0;
+    var place = opts.views ? "" :
+      "translate(" + (ox - PLAN_VB.x * s) + " " + (oy - PLAN_VB.y * s) + ") scale(" + s + ")";
+
+    // The club alone is the same drawing with the ground outside taken out
+    // and the frame drawn in to the room. Both pictures sit in the same
+    // millimetres, so the cloakroom and the stage stay where they are.
+    function buildViews(cut, full) {
+      var club = null;
+      try {
+        var doc = new DOMParser().parseFromString(cut, "image/svg+xml");
+        var out = doc.getElementById("outside");
+        if (out) {
+          out.parentNode.removeChild(out);
+          doc.documentElement.setAttribute("viewBox", vbOf(PLAN_CLUB));
+          club = "data:image/svg+xml;charset=utf-8," +
+            encodeURIComponent(new XMLSerializer().serializeToString(doc));
+        }
+      } catch (e) {}
+      // No club-only picture: the whole plan, and nothing to choose between.
+      if (!club) { svg.setAttribute("viewBox", vbOf(PLAN_VB)); return; }
+
+      var pick = document.createElement("div");
+      pick.className = "stage-pick view-pick";
+      pick.setAttribute("role", "group");
+      pick.setAttribute("aria-label", T("js.view.aria", "Що показати на плані"));
+      var buttons = [
+        ["club", T("js.view.club", "Лише клуб")],
+        ["full", T("js.view.full", "Клуб, тераса й парковка")]
+      ].map(function (v) {
+        var bt = document.createElement("button");
+        bt.type = "button";
+        bt.textContent = v[1];
+        bt.addEventListener("click", function () {
+          if (planView !== v[0]) { planView = v[0]; setView(); }
+        });
+        pick.appendChild(bt);
+        return [v[0], bt];
+      });
+      host.insertBefore(pick, svg);
+
+      function setView() {
+        var b = planView === "club" ? PLAN_CLUB : PLAN_VB;
+        img.setAttribute("href", planView === "club" ? club : full);
+        ["x", "y"].forEach(function (k) { img.setAttribute(k, b[k]); });
+        img.setAttribute("width", b.w);
+        img.setAttribute("height", b.h);
+        svg.setAttribute("viewBox", vbOf(b));
+        buttons.forEach(function (x) { x[1].setAttribute("aria-pressed", x[0] === planView ? "true" : "false"); });
+        // The figures above the plan follow the view.
+        document.dispatchEvent(new CustomEvent("nox:planview", { detail: planView }));
+      }
+      setView();
+    }
 
     function buildStage() {
       var g = svgEl("g", { class: "stage", opacity: opacity, transform: place });
@@ -1240,6 +1330,8 @@
   // Published before boot: site.js can paint from a cached or stubbed response
   // before DOMContentLoaded, and must not fall back to the plain plan then.
   window.noxDiagram = diagram;
+  window.noxPlan = planFigure;
+  window.noxPlanView = function () { return planView; };
 
   /* ── the page opens at the top ───────────────────────────────────────
      A browser restores the last scroll position on reload, and the one-file

@@ -265,6 +265,31 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 
 /* ── показники ─────────────────────────────────────────────────────── */
 .figs{ display:grid; gap:clamp(18px,2.4vw,32px); grid-template-columns:repeat(2,1fr); }
+#plan .figs{ margin-bottom:clamp(34px,5vw,64px); }
+
+/* ── картки афіш на головній ─────────────────────────────────────── */
+/* Кожен вечір — афіша цілком (вони вертикальні, 9:16), під нею дата й назва. Минулі
+   підписані, майбутні ведуть на квитки. Кольори афіш — їхні власні. */
+.posters{ display:grid; gap:clamp(16px,2.4vw,28px); grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr)); }
+.pcard{ display:block; text-decoration:none; color:inherit; background:var(--pit);
+  border:1px solid var(--line); transition:border-color .3s, background .3s; }
+.pcard:hover{ border-color:var(--gas); background:var(--slab); }
+.pimg{ position:relative; aspect-ratio:9 / 16; overflow:hidden; background:var(--slab); display:grid; place-items:center; }
+.pimg img{ width:100%; height:100%; object-fit:cover; transition:transform .8s; }
+.pcard:hover .pimg img{ transform:scale(1.02); }
+/* Перший екран закріплений, і коли він відпускає, під словами лишається його
+   порожній низ. Афіші заходять на цю порожнечу, а не чекають під нею. */
+#afishi{ padding-top:clamp(28px,4vw,56px); margin-top:-17svh; z-index:2; }
+@media (max-width:700px){ #afishi{ margin-top:-26svh; } }
+.pname{ font-family:var(--rite); font-size:32px; text-transform:uppercase; text-align:center; padding:20px; }
+.ptag{ position:absolute; top:12px; left:12px; font-style:normal; font-family:var(--hud); font-size:10.5px;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--bone); background:rgba(6,7,10,.78);
+  border:1px solid var(--line2); padding:5px 9px; }
+.pmeta{ display:grid; gap:6px; padding:16px 18px 20px; }
+.pmeta .d{ font-family:var(--hud); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--gas); }
+.pmeta b{ font-family:var(--rite); font-weight:400; font-size:26px; line-height:1.05; text-transform:uppercase; letter-spacing:.03em; }
+.pmeta span:not(.d){ font-size:14px; color:var(--ash); }
+.pcta{ font-style:normal; font-family:var(--hud); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--pale); margin-top:6px; }
 @media (min-width:920px){ .figs{ grid-template-columns:repeat(4,1fr); } }
 .fig{ position:relative; padding:18px 0 0; border-top:1px solid var(--line2); }
 .fig::before{
@@ -282,6 +307,11 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 /* ── діаграма / галерея ────────────────────────────────────────────── */
 .diagram{ margin-top:clamp(40px,6vw,80px); display:grid; place-items:center; }
 .diagram svg{ width:min(1120px,100%); height:auto; overflow:visible; }
+/* План для організаторів — на всю ширину колонки, без кола навколо. */
+.planfig{ margin-top:clamp(28px,4vw,48px); }
+.planfig svg, .planfig > img{ display:block; width:100%; height:auto; overflow:visible; }
+.planfig .cloak-note{ max-width:none; margin-left:auto; margin-right:auto; }
+.planfig .view-pick{ margin:0 0 clamp(18px,2.5vw,28px); }
 /* гардероб на плані тягнеться за верхній край; під планом — те саме повзунком */
 .diagram .cloak-hit{ cursor:ns-resize; touch-action:none; }
 .diagram .cloak .grip{ transition:fill .2s; }
@@ -381,7 +411,7 @@ h3{
 @media (min-width:860px){ .teasers{ grid-template-columns:1fr 1fr; } }
 .teaser{
   position:relative; background:var(--pit); padding:clamp(30px,4vw,56px);
-  display:grid; gap:14px; align-content:start; text-decoration:none; color:inherit;
+  display:grid; gap:14px; align-content:center; text-decoration:none; color:inherit;
   border:1px solid var(--line); transition:border-color .3s, background .3s;
 }
 .teaser:hover{ border-color:var(--gas); background:var(--slab); }
@@ -468,14 +498,17 @@ h3{
    не обговорюється: умова, яку орендар має побачити, а не пропустити. Те, що
    можна доповнити чи замінити, лишається тихим — воно й так відкрите. */
 .price{ max-width:820px; }
+/* Ціна й те, за що вона, — в один рядок: число, а праворуч час. Де рядку
+   тісно, підпис сам переходить під число. */
 .pnum{
   margin:0 0 clamp(28px,4vw,44px); color:var(--bone);
   font-family:var(--rite); font-weight:400;
   font-size:clamp(48px,8vw,96px); line-height:1; letter-spacing:.015em;
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px clamp(18px,3vw,36px);
 }
 .pnum small{
-  display:block; margin-top:16px; font-family:var(--hud); font-size:10px;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--dust);
+  display:block; font-family:var(--hud); font-size:clamp(13px,1.5vw,16px); line-height:1.5;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--pale);
 }
 .list li em{
   display:inline-block; margin-top:11px; font-style:normal;
@@ -483,6 +516,24 @@ h3{
   color:var(--gas); border:1px solid rgba(46,155,240,.5); padding:4px 9px;
 }
 .list li em.can{ color:var(--dust); border-color:var(--line2); }
+.price h3.extra{ margin-top:clamp(34px,4vw,48px); }
+
+/* ── техніка ───────────────────────────────────────────────────────── */
+.tech{ max-width:980px; gap:clamp(28px,4vw,56px); }
+.list b .in{ display:inline; margin:0; font-size:inherit; color:inherit; }
+.list b .qty{ font-style:normal; font-family:var(--hud); font-weight:400; font-size:12px;
+  letter-spacing:.14em; color:var(--gas); margin-left:6px; white-space:nowrap; }
+
+/* На сторінці для організаторів ці списки — головне, що читають: умови й
+   техніка. Тож тут вони крупніші, а пояснення світліші, ніж деінде. */
+.price .list li, .tech .list li{ padding:20px 0 20px 28px; }
+.price .list li::before, .tech .list li::before{ top:22px; font-size:9px; }
+.price .list b, .tech .list b{ font-size:clamp(18px,1.9vw,21px); }
+.price .list li > span, .tech .list li > span{ font-size:clamp(15.5px,1.5vw,17px); color:var(--ash); margin-top:6px; }
+.price .list li em{ font-size:11.5px; padding:5px 11px; margin-top:13px; }
+.price .list li em.can{ color:var(--ash); border-color:var(--dust); }
+.price h3, .tech h3{ font-size:12.5px; }
+.tech .list b .qty{ font-size:14px; }
 
 /* ── форма ─────────────────────────────────────────────────────────── */
 /* На сторінці оренди тепер лише форма, тож вона й тримає всю колонку —
@@ -492,7 +543,7 @@ h3{
 @media (min-width:640px){ .fields{ grid-template-columns:1fr 1fr; } }
 .f{ display:grid; gap:9px; }
 .f.wide{ grid-column:1 / -1; }
-label,.lbl{ font-family:var(--hud); font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--dust); }
+label,.lbl{ font-family:var(--hud); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--bone); }
 /* Заголовок групи, а не підпис до одного поля: у групи перемикачів немає
    єдиного контрола, на який міг би вказувати label. */
 .lbl{ margin:0; }
@@ -504,7 +555,9 @@ input,textarea{
   background:transparent; border:0; border-bottom:1px solid var(--line2);
   padding:11px 0; width:100%; border-radius:0; transition:border-color .25s;
 }
-input::placeholder,textarea::placeholder{ color:#4A4640; }
+/* Підказка світла, щоб читалась, але не біла до кінця — інакше її не відрізнити
+   від уже вписаного. */
+input::placeholder,textarea::placeholder{ color:rgba(233,228,216,.55); }
 input:focus,textarea:focus{ outline:none; border-bottom-color:var(--gas); }
 textarea{ min-height:100px; resize:vertical; }
 
@@ -531,13 +584,13 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{ opacity:1; }
    не рідним полем часу: те малюється в локалі браузера й англійською показує
    10:00 PM, і сказати йому інакше нічим. Список завжди 24-годинний. */
 .span{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
-.span i{ font-style:normal; color:var(--dust); }
+.span i{ font-style:normal; color:var(--ash); }
 .span select{
   appearance:none; -webkit-appearance:none; cursor:pointer;
   background:transparent; color:var(--bone); border:0;
   border-bottom:1px solid var(--line2); border-radius:0;
   padding:11px 22px 11px 0; width:100%; transition:border-color .25s;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%236B665C' stroke-width='1.4'/></svg>");
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23E9E4D8' stroke-width='1.4'/></svg>");
   background-repeat:no-repeat; background-position:right 2px center; background-size:10px 6px;
 }
 .span select:hover{ border-bottom-color:var(--dust); }
@@ -554,12 +607,27 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{ opacity:1; }
 .pick span{
   display:inline-block; padding:9px 16px; border:1px solid var(--line2);
   font-family:var(--hud); font-size:10px; letter-spacing:.18em;
-  text-transform:uppercase; color:var(--dust); transition:.2s;
+  text-transform:uppercase; color:var(--bone); transition:.2s;
 }
-.pick label:hover span{ border-color:var(--dust); color:var(--bone); }
+.pick label:hover span{ border-color:var(--ash); color:var(--bone); }
 .pick input:checked + span{ border-color:var(--gas); color:var(--gas); }
 .pick input:focus-visible + span{ outline:1px solid var(--pale); outline-offset:3px; }
 .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+
+/* Заявка крупніша за решту сторінки: її заповнюють, а не проглядають. */
+.book{ max-width:900px; }
+.book .fields{ gap:30px 36px; }
+.book .f{ gap:12px; }
+.book label, .book .lbl{ font-size:clamp(13px,1.3vw,15px); letter-spacing:.16em; }
+.book input, .book textarea{ font-size:clamp(18px,1.8vw,20px); padding:14px 0; }
+.book input[type="date"], .book input[type="number"], .book .span select{ font-size:clamp(17px,1.7vw,19px); min-height:44px; }
+.book .span select{ padding:14px 26px 14px 0; background-size:12px 7px; }
+.book textarea{ min-height:130px; }
+.book .pick{ gap:12px; }
+.book .pick span{ font-size:clamp(12.5px,1.2vw,14px); padding:13px 22px; }
+.book .formfoot{ margin-top:44px; gap:26px; }
+.book .btn{ font-size:clamp(13px,1.3vw,15px); padding:19px 44px; }
+.book .msg{ font-size:clamp(13px,1.3vw,15px); }
 .formfoot{ display:flex; align-items:center; gap:22px; margin:36px 0 0; flex-wrap:wrap; }
 .msg{ font-family:var(--hud); font-size:11px; letter-spacing:.12em; color:var(--dust); }
 .msg.ok{ color:var(--pale); }
