@@ -561,9 +561,30 @@
       var n = 0, cut = text.replace(/<g id="(?:cloakroom|stage)">[\s\S]*?<\/g>\s*/g,
         function () { n++; return ""; });
       if (n !== 2 || !svg.isConnected) return;
-      var full = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cut);
-      img.setAttribute("href", full);
-      if (opts.views) buildViews(cut, full);
+      // The drawing goes into the page itself, as an <svg> inside the <svg>,
+      // not as a picture. Safari sizes an <image> of an SVG by the file's own
+      // idea of its size rather than by the box it is given, so on iPhones
+      // the walls came out several times larger than the stage and the
+      // cloakroom laid over them, and ran off the page. A nested <svg> is
+      // scaled into its box the same way everywhere.
+      var plan = null;
+      try {
+        var doc = new DOMParser().parseFromString(cut, "image/svg+xml");
+        if (!doc.getElementsByTagName("parsererror").length) plan = document.importNode(doc.documentElement, true);
+      } catch (e) {}
+      if (plan) {
+        ["x", "y", "width", "height", "opacity"].forEach(function (k) {
+          if (img.hasAttribute(k)) plan.setAttribute(k, img.getAttribute(k));
+        });
+        plan.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        plan.removeAttribute("role");
+        plan.removeAttribute("aria-label");
+        plan.setAttribute("aria-hidden", "true");
+        svg.replaceChild(plan, img);
+      } else {
+        img.setAttribute("href", "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cut));
+      }
+      if (opts.views) buildViews(plan);
       buildStage();
       build();
     }).catch(function () {});
@@ -576,23 +597,13 @@
     var place = opts.views ? "" :
       "translate(" + (ox - PLAN_VB.x * s) + " " + (oy - PLAN_VB.y * s) + ") scale(" + s + ")";
 
-    // The club alone is the same drawing with the ground outside taken out
-    // and the frame drawn in to the room. Both pictures sit in the same
+    // The club alone is the same drawing with the ground outside hidden and
+    // the frame drawn in to the room. Both frames are in the same
     // millimetres, so the cloakroom and the stage stay where they are.
-    function buildViews(cut, full) {
-      var club = null;
-      try {
-        var doc = new DOMParser().parseFromString(cut, "image/svg+xml");
-        var out = doc.getElementById("outside");
-        if (out) {
-          out.parentNode.removeChild(out);
-          doc.documentElement.setAttribute("viewBox", vbOf(PLAN_CLUB));
-          club = "data:image/svg+xml;charset=utf-8," +
-            encodeURIComponent(new XMLSerializer().serializeToString(doc));
-        }
-      } catch (e) {}
-      // No club-only picture: the whole plan, and nothing to choose between.
-      if (!club) { svg.setAttribute("viewBox", vbOf(PLAN_VB)); return; }
+    function buildViews(plan) {
+      var out = plan && plan.querySelector("#outside");
+      // Nothing to hide: the whole plan, and nothing to choose between.
+      if (!out) { svg.setAttribute("viewBox", vbOf(PLAN_VB)); return; }
 
       var pick = document.createElement("div");
       pick.className = "stage-pick view-pick";
@@ -615,10 +626,11 @@
 
       function setView() {
         var b = planView === "club" ? PLAN_CLUB : PLAN_VB;
-        img.setAttribute("href", planView === "club" ? club : full);
-        ["x", "y"].forEach(function (k) { img.setAttribute(k, b[k]); });
-        img.setAttribute("width", b.w);
-        img.setAttribute("height", b.h);
+        out.style.display = planView === "club" ? "none" : "";
+        plan.setAttribute("viewBox", vbOf(b));
+        ["x", "y"].forEach(function (k) { plan.setAttribute(k, b[k]); });
+        plan.setAttribute("width", b.w);
+        plan.setAttribute("height", b.h);
         svg.setAttribute("viewBox", vbOf(b));
         buttons.forEach(function (x) { x[1].setAttribute("aria-pressed", x[0] === planView ? "true" : "false"); });
         // The figures above the plan follow the view.
