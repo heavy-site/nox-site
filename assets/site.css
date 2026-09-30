@@ -306,16 +306,17 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 
 /* ── діаграма / галерея ────────────────────────────────────────────── */
 .diagram{ margin-top:clamp(40px,6vw,80px); display:grid; place-items:center; }
-.diagram svg{ width:min(1120px,100%); height:auto; overflow:visible; }
+.diagram > svg{ width:min(1120px,100%); height:auto; overflow:visible; }
 /* План для організаторів — на всю ширину колонки, без кола навколо. */
 .planfig{ margin-top:clamp(28px,4vw,48px); }
-.planfig svg, .planfig > img{ display:block; width:100%; height:auto; overflow:visible; }
+.planfig > svg, .planfig > img{ display:block; width:100%; height:auto; overflow:visible; }
 .planfig .cloak-note{ max-width:none; margin-left:auto; margin-right:auto; }
 .planfig .view-pick{ margin:0 0 clamp(18px,2.5vw,28px); }
 /* гардероб на плані тягнеться за верхній край; під планом — те саме повзунком */
-.diagram .cloak-hit{ cursor:ns-resize; touch-action:none; }
-.diagram .cloak .grip{ transition:fill .2s; }
-.diagram .cloak:hover .grip, .diagram .cloak.dragging .grip{ fill:var(--hot); }
+.diagram .cloak-hit, .planfig .cloak-hit{ cursor:ns-resize; touch-action:none; }
+.diagram .cloak .grip, .planfig .cloak .grip{ transition:fill .2s; }
+.diagram .cloak:hover .grip, .diagram .cloak.dragging .grip,
+.planfig .cloak:hover .grip, .planfig .cloak.dragging .grip{ fill:var(--hot); }
 .cloak-note{
   margin:18px 0 0; display:grid; gap:10px; justify-items:center; text-align:center;
   font-family:var(--hud); font-size:12px; letter-spacing:.08em; color:var(--pale);
@@ -332,9 +333,9 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 .stage-pick button:hover{ color:var(--pale); border-color:var(--dust); }
 .stage-pick button[aria-pressed="true"]{ color:var(--bone); border-color:var(--gas); background:rgba(46,155,240,.12); }
 .stage-pick button:focus-visible{ outline:1px solid var(--hot); outline-offset:2px; }
-.diagram .stage.in{ animation:stage-in .45s ease both; }
+.diagram .stage.in, .planfig .stage.in{ animation:stage-in .45s ease both; }
 @keyframes stage-in{ from{ opacity:0; } }
-@media (prefers-reduced-motion:reduce){ .diagram .stage.in{ animation:none; } }
+@media (prefers-reduced-motion:reduce){ .diagram .stage.in, .planfig .stage.in{ animation:none; } }
 .gallery{ display:grid; gap:2px; grid-template-columns:1fr; margin-top:clamp(40px,6vw,80px); }
 @media (min-width:780px){ .gallery{ grid-template-columns:repeat(2,1fr); } }
 .gallery figure{ margin:0; position:relative; background:var(--slab); overflow:hidden; }
