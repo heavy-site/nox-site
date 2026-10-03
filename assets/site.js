@@ -272,7 +272,7 @@
         '<button type="button" class="tl-c" data-go="ev-' + esc(e.id) + '">' +
           '<span class="tl-dot" aria-hidden="true"></span>' +
           '<span class="tl-d">' + esc(DTEXT(e.dateText || e.date)) + "</span>" +
-          '<span class="tl-card">' +
+          '<span class="tl-card' + (src ? "" : " bare") + '">' +
             (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async">' : "") +
             '<span class="tl-b">' +
               (i === 0 ? '<em class="tl-now">' + esc(T("js.line.now", "найближча")) + "</em>" : "") +
