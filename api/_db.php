@@ -15,7 +15,7 @@ const NOX_STATUSES = ['new', 'confirmed', 'declined', 'cancelled'];
 // What the organiser sends, and what the venue adds for the listing.
 const NOX_ENQUIRY_FIELDS = ['name', 'contact', 'telegram', 'event', 'date', 'date_end',
     'time_from', 'time_to', 'guests', 'artists', 'music', 'social', 'comment'];
-const NOX_PUBLIC_FIELDS = ['title', 'promoter', 'lineup', 'tickets', 'poster', 'poster_small'];
+const NOX_PUBLIC_FIELDS = ['title', 'promoter', 'genre', 'lineup', 'tickets', 'post', 'poster', 'poster_small'];
 
 // null when the host has no SQLite: then the site falls back to the calendar
 // written in _venue.php and the form keeps writing files, as it always did.
@@ -45,7 +45,20 @@ function nox_db(): ?PDO {
 
 function nox_db_migrate(PDO $db): void {
     $v = (int)$db->query('PRAGMA user_version')->fetchColumn();
-    if ($v >= 1) return;
+    if ($v >= 2) return;
+    if ($v === 1) {
+        // A night's genres and the post that announces it, for the listing.
+        // The write lock comes first, so a second request racing this one
+        // finds the columns already there.
+        $db->exec('BEGIN IMMEDIATE');
+        if ((int)$db->query('PRAGMA user_version')->fetchColumn() === 1) {
+            $db->exec("ALTER TABLE bookings ADD COLUMN genre TEXT NOT NULL DEFAULT ''");
+            $db->exec("ALTER TABLE bookings ADD COLUMN post TEXT NOT NULL DEFAULT ''");
+            $db->exec('PRAGMA user_version = 2');
+        }
+        $db->exec('COMMIT');
+        return;
+    }
 
     $db->beginTransaction();
     $db->exec("CREATE TABLE IF NOT EXISTS bookings (
@@ -69,8 +82,10 @@ function nox_db_migrate(PDO $db): void {
         published     INTEGER NOT NULL DEFAULT 0,  -- shown in the listing
         title         TEXT NOT NULL DEFAULT '',
         promoter      TEXT NOT NULL DEFAULT '',
+        genre         TEXT NOT NULL DEFAULT '',
         lineup        TEXT NOT NULL DEFAULT '',
         tickets       TEXT NOT NULL DEFAULT '',
+        post          TEXT NOT NULL DEFAULT '',    -- the announcement, e.g. Instagram
         poster        TEXT NOT NULL DEFAULT '',
         poster_small  TEXT NOT NULL DEFAULT '',
         note          TEXT NOT NULL DEFAULT '',    -- for the venue only
@@ -85,16 +100,19 @@ function nox_db_migrate(PDO $db): void {
     // and shown, exactly as they were on the site.
     require_once __DIR__ . '/_venue.php';
     foreach (nox_events() as $e) {
+        $hours = explode('–', $e['time'] ?? '') + ['', ''];
         nox_booking_insert($db, [
             'status' => 'confirmed', 'published' => 1,
             'date' => $e['date'], 'date_end' => $e['dateEnd'] ?? '',
+            'time_from' => $hours[0], 'time_to' => $hours[1],
             'title' => $e['title'], 'event' => $e['title'],
             'promoter' => $e['promoter'] ?? '', 'name' => $e['promoter'] ?? '',
-            'lineup' => $e['lineup'] ?? '', 'tickets' => $e['tickets'] ?? '',
+            'genre' => $e['genre'] ?? '',
+            'lineup' => $e['lineup'] ?? '', 'tickets' => $e['tickets'] ?? '', 'post' => $e['post'] ?? '',
             'poster' => $e['poster'] ?? '', 'poster_small' => $e['posterSmall'] ?? '',
         ], 'seed:' . $e['id']);
     }
-    $db->exec('PRAGMA user_version = 1');
+    $db->exec('PRAGMA user_version = 2');
     $db->commit();
 
     nox_db_sync_files($db);
@@ -293,12 +311,14 @@ function nox_public_events(): ?array {
             'id'          => 'b' . $b['id'],
             'title'       => nox_booking_label(['title' => $b['title'], 'event' => $b['event'], 'name' => '']),
             'promoter'    => $b['promoter'],
+            'genre'       => $b['genre'],
             'date'        => $b['date'],
             'dateEnd'     => $b['date_end'],
             'dateText'    => nox_date_text($b['date'], $b['date_end']),
             'year'        => substr(nox_last_day($b), 0, 4),
             'time'        => $time,
             'tickets'     => $b['tickets'],
+            'post'        => $b['post'],
             'lineup'      => $b['lineup'],
             'poster'      => $b['poster'],
             'posterSmall' => $b['poster_small'],
