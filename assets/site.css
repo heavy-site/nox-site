@@ -427,6 +427,7 @@ h3{
   border:1px solid var(--line2); background:var(--pit); transform-origin:top center;
   transition:transform .3s cubic-bezier(.2,.7,.2,1), border-color .3s, background .3s, box-shadow .3s; }
 .tl-card img{ width:84px; height:auto; display:block; }
+.tl-card.bare{ grid-template-columns:1fr; }
 .tl-b{ display:grid; gap:5px; min-width:0; }
 .tl-b b{ font-family:var(--rite); font-weight:400; font-size:22px; line-height:1.05; text-transform:uppercase;
   letter-spacing:.03em; color:var(--bone); }

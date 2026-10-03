@@ -45,7 +45,8 @@ function nox_db(): ?PDO {
 
 function nox_db_migrate(PDO $db): void {
     $v = (int)$db->query('PRAGMA user_version')->fetchColumn();
-    if ($v >= 2) return;
+    if ($v >= 3) return;
+    if ($v === 2) { nox_db_fill_nights($db); return; }
     if ($v === 1) {
         // A night's genres and the post that announces it, for the listing.
         // The write lock comes first, so a second request racing this one
@@ -57,6 +58,7 @@ function nox_db_migrate(PDO $db): void {
             $db->exec('PRAGMA user_version = 2');
         }
         $db->exec('COMMIT');
+        nox_db_fill_nights($db);
         return;
     }
 
@@ -112,10 +114,41 @@ function nox_db_migrate(PDO $db): void {
             'poster' => $e['poster'] ?? '', 'poster_small' => $e['posterSmall'] ?? '',
         ], 'seed:' . $e['id']);
     }
-    $db->exec('PRAGMA user_version = 2');
+    $db->exec('PRAGMA user_version = 3');
     $db->commit();
 
     nox_db_sync_files($db);
+}
+
+// Once: the nights written in _venue.php lend their bookings in the table
+// what those still lack — poster, genres, lineup, links. Only an empty field
+// is written, so anything typed in the admin stays as it was.
+function nox_db_fill_nights(PDO $db): void {
+    require_once __DIR__ . '/_venue.php';
+    $db->exec('BEGIN IMMEDIATE');
+    if ((int)$db->query('PRAGMA user_version')->fetchColumn() !== 2) { $db->exec('COMMIT'); return; }
+    $map = ['title' => 'title', 'promoter' => 'promoter', 'genre' => 'genre', 'date_end' => 'dateEnd',
+            'lineup' => 'lineup', 'tickets' => 'tickets', 'post' => 'post',
+            'poster' => 'poster', 'poster_small' => 'posterSmall'];
+    $find = $db->prepare("SELECT * FROM bookings WHERE date = ? AND status = 'confirmed'");
+    foreach (nox_events() as $e) {
+        $hours = explode('–', $e['time'] ?? '') + ['', ''];
+        $from = $map + ['time_from' => 0, 'time_to' => 1];
+        $find->execute([$e['date']]);
+        foreach ($find->fetchAll() as $b) {
+            $set = []; $vals = [];
+            foreach ($from as $col => $key) {
+                $val = trim((string)(is_int($key) ? $hours[$key] : ($e[$key] ?? '')));
+                if ($val === '' || trim((string)$b[$col]) !== '') continue;
+                $set[] = $col . ' = ?'; $vals[] = $val;
+            }
+            if (!$set) continue;
+            $vals[] = time(); $vals[] = (int)$b['id'];
+            $db->prepare('UPDATE bookings SET ' . implode(', ', $set) . ', updated_at = ? WHERE id = ?')->execute($vals);
+        }
+    }
+    $db->exec('PRAGMA user_version = 3');
+    $db->exec('COMMIT');
 }
 
 // Every enquiry file that is not in the table yet is taken in. The files are
