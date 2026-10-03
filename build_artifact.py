@@ -43,6 +43,23 @@ EVENTS = [{
     "tickets": "https://he4vy.com/tickets",
     "lineup": "Mr.bilich, kaplini, MRX, mad cult, secret guest",
     "poster": data_uri_jpeg("assets/insane-poster-720.jpg"),
+}, {
+    "id": "heavy-oct", "title": "HEAVY", "promoter": "", "genre": "Heavy EDM",
+    "date": "2026-10-24", "dateEnd": "",
+    "dateText": "24 жовтня", "year": "2026", "time": "18:00–22:00",
+    "tickets": "https://he4vy.com/tickets", "post": "https://www.instagram.com/reel/DeCShr_szA7/",
+    "lineup": "18:00–20:00 Mad Cult b2b Artem\n20:00–21:00 Toxic Killer\n21:00–22:00 Smolyakov",
+    "poster": data_uri_jpeg("assets/heavy-poster-720.jpg"),
+}, {
+    "id": "mysterium-2", "title": "Mysterium · Episode II", "promoter": "",
+    "genre": "Hardbass, Breakcore, Neotrance, Hard Trance, Melodic Hard Techno",
+    "date": "2026-10-31", "dateEnd": "2026-11-01",
+    "dateText": "31 жовтня – 1 листопада", "year": "2026", "time": "16:00–22:00",
+    "tickets": "https://asura.company/b/bcae524ae6",
+    "post": "https://www.instagram.com/p/Dd9NEhOqDfQ/",
+    "lineup": "День 1: ASURA NBLCK, QKI, MILLAREN, SVZHST nps, 1240+, AUDIOVOVA\n"
+              "День 2: ASURA NBLCK, SKY MAVKA, VERARTUM, TEMP3R, DINASTIA",
+    "poster": data_uri_jpeg("assets/mysterium-poster-720.jpg"),
 }]
 today = datetime.date.today().isoformat()
 PAYLOAD = {
@@ -74,9 +91,9 @@ PAYLOAD = {
         ],
     },
     "media": [],
-    "upcoming": [e for e in EVENTS if (e["dateEnd"] or e["date"]) >= today],
-    "past": [e for e in EVENTS if (e["dateEnd"] or e["date"]) < today],
-    "busy": [],
+    "upcoming": sorted([e for e in EVENTS if (e["dateEnd"] or e["date"]) >= today], key=lambda e: e["date"]),
+    "past": sorted([e for e in EVENTS if (e["dateEnd"] or e["date"]) < today], key=lambda e: e["date"], reverse=True),
+    "busy": ["2026-10-16", "2026-10-24", "2026-10-31"],
 }
 
 # ── assets ─────────────────────────────────────────────────────────────

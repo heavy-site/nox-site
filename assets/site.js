@@ -25,13 +25,44 @@
     return (b && b !== a) ? a + " — " + b : a;
   }
 
-  // Everything under the date that is not the title: who runs the night, and
-  // when it starts.
+  // Who runs the night. The hours go on a line of their own, in white and
+  // larger: when to come is what a guest reads the card for.
   function evMeta(e) {
-    var bits = [];
-    if (e.promoter) bits.push(e.promoter);
-    if (e.time) bits.push(e.time);
-    return bits.join(" · ");
+    return e.promoter || "";
+  }
+  // The announcement post, beside the tickets. Named after Instagram when that
+  // is where it lives, since that is what a guest expects to open.
+  function evPost(e) {
+    if (!e.post || !/^https?:/.test(e.post)) return "";
+    var label = /instagram\.com/.test(e.post) ? T("js.post.ig", "Пост в Instagram") : T("js.post", "Пост події");
+    return '<a class="btn ghost" href="' + esc(e.post) + '" target="_blank" rel="noopener">' + esc(label) + " ↗</a>";
+  }
+  // The lineup as the organiser wrote it, a set to a line. A line that opens
+  // with hours ("18:00–20:00 Mad Cult") or a label ("День 1: …") is laid out
+  // as a timetable: that part on the left, the names beside it. A lineup on
+  // one plain line stays a sentence.
+  var SET = /^(\d{1,2}[:.]\d{2}\s*[–—-]\s*\d{1,2}[:.]\d{2})\s*[–—:-]?\s*(.+)$/;
+  var LABEL = /^([^:]{1,24}):\s*(.+)$/;
+  function lineup(text, cls) {
+    var lines = String(text || "").split(/\r?\n/).map(function (l) { return l.trim(); })
+      .filter(Boolean);
+    if (!lines.length) return "";
+    var rows = lines.map(function (l) {
+      var m = SET.exec(l), at;
+      if (m) at = m[1].replace(/\./g, ":").replace(/\s*[–—-]\s*/, "–");
+      else if ((m = LABEL.exec(l))) at = m[1];
+      return m ? { at: at, who: m[2] } : null;
+    });
+    if (lines.length === 1 && !rows[0]) return '<p class="' + cls + '">' + esc(lines[0]) + "</p>";
+    return '<ul class="sched ' + cls + '">' + lines.map(function (l, i) {
+      var r = rows[i];
+      return r ? '<li><span class="at">' + esc(r.at) + '</span><span class="who">' + esc(r.who) + "</span></li>"
+               : '<li><span class="who">' + esc(l) + "</span></li>";
+    }).join("") + "</ul>";
+  }
+
+  function evTime(e, tag) {
+    return e.time ? "<" + tag + ' class="tm">' + esc(e.time) + "</" + tag + ">" : "";
   }
 
   function evDate(e) {
@@ -147,16 +178,23 @@
   // its weekday, when it starts, who runs it, and who plays.
   function evRow(e, past) {
     var wd = weekdays(e), meta = evMeta(e);
-    var right = (!past && e.tickets)
+    var src = e.posterSmall || e.poster;
+    var right = ((!past && e.tickets)
       ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">' +
-        esc(T("js.tickets", "Квитки")) + '</a>' : "";
-    return '<div class="ev' + (past ? " past" : "") + '">' +
+        esc(T("js.tickets", "Квитки")) + '</a>' : "") + evPost(e);
+    // The poster comes along whole, only smaller.
+    var thumb = src
+      ? '<div class="thumb"><img src="' + esc(src) + '" alt="' + esc(e.title) + " — " +
+        esc(T("js.poster.alt", "афіша")) + '" loading="lazy" decoding="async"></div>' : "";
+    return '<div class="ev' + (past ? " past" : "") + (thumb ? " has-thumb" : "") + '" id="ev-' + esc(e.id) + '">' + thumb +
       '<div class="d">' + evDate(e) +
         (wd ? '<span class="wd">' + esc(wd) + "</span>" : "") + "</div>" +
       '<div><div class="t">' + esc(e.title) + "</div>" +
+      evTime(e, "div") +
       (meta ? '<div class="p">' + esc(meta) + "</div>" : "") +
-      (e.lineup ? '<p class="lu">' + esc(e.lineup) + "</p>" : "") +
-      "</div><div>" + right + "</div></div>";
+      (e.genre ? '<div class="g">' + esc(e.genre) + "</div>" : "") +
+      lineup(e.lineup, "lu") +
+      '</div><div class="acts">' + right + "</div></div>";
   }
 
   function empty(text) {
@@ -191,16 +229,21 @@
 
     var wd = weekdays(e), meta = evMeta(e);
 
-    host.innerHTML = '<div class="feat">' + poster +
+    host.innerHTML = '<div class="feat" id="ev-' + esc(e.id) + '">' + poster +
       '<div class="fbody">' +
         '<div class="d">' + evDate(e) +
           (wd ? '<span class="wd">' + esc(wd) + "</span>" : "") + "</div>" +
         '<div class="t">' + esc(e.title) + "</div>" +
+        evTime(e, "div") +
         (meta ? '<div class="p">' + esc(meta) + "</div>" : "") +
-        (e.lineup ? '<p class="line">' + esc(e.lineup) + "</p>" : "") +
-        (e.tickets
-          ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">' +
-            esc(T("js.tickets", "Квитки")) + "</a>" : "") +
+        (e.genre ? '<div class="g">' + esc(e.genre) + "</div>" : "") +
+        lineup(e.lineup, "line") +
+        '<div class="acts">' +
+          (e.tickets
+            ? '<a class="btn" href="' + esc(e.tickets) + '" target="_blank" rel="noopener">' +
+              esc(T("js.tickets", "Квитки")) + "</a>" : "") +
+          evPost(e) +
+        "</div>" +
       "</div></div>";
   }
 
@@ -212,6 +255,42 @@
     host.innerHTML = rest.length
       ? rest.map(function (e) { return evRow(e, false); }).join("")
       : empty(T("js.none.later", "Далі поки порожньо — дати вільні."));
+  }
+
+  // Under the nearest night, a line through every night ahead, in date
+  // order: a dot on the line for each, its card beneath. A card opens its
+  // night further down the page. One night needs no line, so it stays empty.
+  function timeline(data) {
+    var host = $("tline");
+    if (!host) return;
+    var up = data.upcoming || [];
+    if (up.length < 2) { host.innerHTML = ""; host.hidden = true; return; }
+    host.hidden = false;
+    host.innerHTML = '<ol class="tl">' + up.map(function (e, i) {
+      var src = e.posterSmall || e.poster, wd = weekdays(e);
+      return '<li class="tl-i' + (i === 0 ? " now" : "") + '">' +
+        '<button type="button" class="tl-c" data-go="ev-' + esc(e.id) + '">' +
+          '<span class="tl-dot" aria-hidden="true"></span>' +
+          '<span class="tl-d">' + esc(DTEXT(e.dateText || e.date)) + "</span>" +
+          '<span class="tl-card">' +
+            (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async">' : "") +
+            '<span class="tl-b">' +
+              (i === 0 ? '<em class="tl-now">' + esc(T("js.line.now", "найближча")) + "</em>" : "") +
+              '<b>' + esc(e.title) + "</b>" +
+              (wd ? '<span class="tl-wd">' + esc(wd) + "</span>" : "") +
+              evTime(e, "span") +
+            "</span>" +
+          "</span>" +
+        "</button></li>";
+    }).join("") + "</ol>";
+
+    if (!host.dataset.wired) {
+      host.dataset.wired = "1";
+      host.addEventListener("click", function (ev) {
+        var b = ev.target.closest ? ev.target.closest("[data-go]") : null;
+        if (b && $(b.dataset.go)) $(b.dataset.go).scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   }
 
   // The home page's posters: the nights ahead. Until there is one, the last
@@ -228,14 +307,17 @@
       var meta = evMeta(e);
       return '<a class="pcard' + (gone ? " gone" : "") + '" href="' + esc(href) + '"' + out + ">" +
         '<div class="pimg">' + (src
-          ? '<img src="' + esc(src) + '" alt="' + esc(e.title) + " — " + esc(T("js.poster.alt", "афіша")) +
+          ? '<img class="pbg" src="' + esc(src) + '" alt="" aria-hidden="true">' +
+            '<img src="' + esc(src) + '" alt="' + esc(e.title) + " — " + esc(T("js.poster.alt", "афіша")) +
             '" loading="lazy" decoding="async">'
           : '<span class="pname">' + esc(e.title) + "</span>") +
           (gone ? '<em class="ptag">' + esc(T("js.poster.past", "минула")) + "</em>" : "") +
         "</div>" +
         '<div class="pmeta"><span class="d">' + evDate(e) + "</span>" +
           "<b>" + esc(e.title) + "</b>" +
+          evTime(e, "span") +
           (meta ? "<span>" + esc(meta) + "</span>" : "") +
+          (e.genre ? '<span class="g">' + esc(e.genre) + "</span>" : "") +
           (!gone && e.tickets ? '<i class="pcta">' + esc(T("js.tickets", "Квитки")) + " →</i>" : "") +
         "</div></a>";
     };
@@ -253,7 +335,7 @@
       var e = data.upcoming[0], wd = weekdays(e), meta = evMeta(e);
       host.innerHTML = '<div class="next"><div class="d">' + evDate(e) +
         (wd ? '<span class="wd">' + esc(wd) + "</span>" : "") + "</div>" +
-        '<div class="t">' + esc(e.title) + "</div>" +
+        '<div class="t">' + esc(e.title) + "</div>" + evTime(e, "div") +
         (meta ? '<div class="p">' + esc(meta) + "</div>" : "") + "</div>";
     } else {
       // No night ahead: the block stays empty rather than saying so.
@@ -354,6 +436,7 @@
     rent(d.rent || FALLBACK.rent);
     feature(d);
     events(d);
+    timeline(d);
     nextNight(d);
     posters(d);
   }

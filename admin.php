@@ -377,7 +377,7 @@ if ($action !== '') {
 if (($_GET['export'] ?? '') === 'csv') {
     $cols = ['id', 'status', 'state', 'date', 'date_end', 'time_from', 'time_to', 'name', 'contact',
              'telegram', 'event', 'guests', 'artists', 'music', 'social', 'comment', 'published',
-             'title', 'promoter', 'lineup', 'tickets', 'note', 'created_at'];
+             'title', 'promoter', 'genre', 'lineup', 'tickets', 'post', 'note', 'created_at'];
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="nox-bookings-' . nox_today() . '.csv"');
     $out = fopen('php://output', 'w');
@@ -600,8 +600,9 @@ if (isset($_GET['id'])) {
             '<label class="check wide"><input type="checkbox" name="published" value="1"' . ((int)$b['published'] ? ' checked' : '') . '> Показати в афіші</label>' .
             '<p class="hint wide" style="grid-column:1/-1;margin:0">Показується тільки підтверджена бронь. Без назви в афіші стоятиме «Що за вечір».</p>' .
             $field('title', 'Назва', 'text', 'wide') . $field('promoter', 'Промоутер') .
-            $field('tickets', 'Квитки (посилання)', 'url') .
-            $field('lineup', 'Лайнап', 'text', 'wide') .
+            $field('tickets', 'Квитки (посилання)', 'url') . $field('post', 'Пост події (Instagram)', 'url') .
+            $field('genre', 'Жанри', 'text', 'wide') .
+            $field('lineup', 'Лайнап — кожен сет з нового рядка: «18:00–20:00 Артист» або «День 1: …»', 'textarea', 'wide') .
             $field('poster', 'Афіша, 1080 px (шлях або посилання)') . $field('poster_small', 'Афіша, 720 px') .
         '</div></fieldset>' .
         '<fieldset><legend>Нотатка для своїх</legend>' . $field('note', 'Не показується нікому, крім адмінки', 'textarea', 'wide') . '</fieldset>' .

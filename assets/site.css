@@ -274,9 +274,12 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 .pcard{ display:block; text-decoration:none; color:inherit; background:var(--pit);
   border:1px solid var(--line); transition:border-color .3s, background .3s; }
 .pcard:hover{ border-color:var(--gas); background:var(--slab); }
-.pimg{ position:relative; aspect-ratio:9 / 16; overflow:hidden; background:var(--slab); display:grid; place-items:center; }
-.pimg img{ width:100%; height:100%; object-fit:cover; transition:transform .8s; }
-.pcard:hover .pimg img{ transform:scale(1.02); }
+/* Афіші бувають різних пропорцій. Кожна видна вся, а поле довкола неї
+   заповнює та сама афіша, розмита. */
+.pimg{ position:relative; aspect-ratio:3 / 4; overflow:hidden; background:var(--slab); display:grid; place-items:center; }
+.pimg img{ position:relative; width:100%; height:100%; object-fit:contain; transition:transform .8s; }
+.pimg img.pbg{ position:absolute; inset:0; object-fit:cover; filter:blur(28px) brightness(.55); transform:scale(1.15); }
+.pcard:hover .pimg img:not(.pbg){ transform:scale(1.02); }
 /* Перший екран закріплений, і коли він відпускає, під словами лишається його
    порожній низ. Афіші заходять на цю порожнечу, а не чекають під нею. */
 #afishi{ padding-top:clamp(28px,4vw,56px); margin-top:-17svh; z-index:2; }
@@ -289,6 +292,7 @@ p{ margin:0 0 18px; color:var(--ash); max-width:62ch; }
 .pmeta .d{ font-family:var(--hud); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--gas); }
 .pmeta b{ font-family:var(--rite); font-weight:400; font-size:26px; line-height:1.05; text-transform:uppercase; letter-spacing:.03em; }
 .pmeta span:not(.d){ font-size:14px; color:var(--ash); }
+.pmeta .g{ font-family:var(--hud); font-size:11px !important; letter-spacing:.14em; text-transform:uppercase; color:var(--pale) !important; line-height:1.6; }
 .pcta{ font-style:normal; font-family:var(--hud); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--pale); margin-top:6px; }
 @media (min-width:920px){ .figs{ grid-template-columns:repeat(4,1fr); } }
 .fig{ position:relative; padding:18px 0 0; border-top:1px solid var(--line2); }
@@ -381,10 +385,60 @@ h3{
 /* День тижня під датою: для майданчика це половина відповіді — пʼятниця і
    вівторок не одне й те саме. Склад — під назвою, тим самим тоном, що й підпис. */
 .ev .d .wd, .feat .d .wd, .next .d .wd{
-  display:block; margin-top:6px; font-family:var(--hud); font-size:9.5px;
+  display:block; margin-top:6px; font-family:var(--hud); font-size:12px;
   letter-spacing:.2em; text-transform:uppercase; color:var(--dust);
 }
-.ev .lu{ margin:10px 0 0; color:var(--ash); font-size:15px; line-height:1.55; max-width:52ch; }
+.ev .g, .feat .g{ font-family:var(--hud); font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:var(--pale); margin-top:8px; line-height:1.6; }
+.ev .tm, .feat .tm, .next .tm, .pmeta .tm{
+  font-family:var(--hud); font-weight:500; color:var(--bone) !important; letter-spacing:.06em;
+}
+.ev .tm{ font-size:20px; margin-top:12px; }
+.feat .tm{ font-size:26px; margin-top:18px; }
+.next .tm{ font-size:16px; margin-top:8px; }
+.pmeta .tm{ font-size:17px !important; }
+/* Афіша вечора в рядку: та сама, лише менша, без обрізання. */
+@media (min-width:780px){ .ev.has-thumb{ grid-template-columns:150px 230px 1fr auto; } }
+.ev .thumb img{ width:150px; height:auto; border:1px solid var(--line2); }
+@media (max-width:779px){ .ev .thumb img{ width:min(220px,60vw); } }
+.ev[id], .feat[id]{ scroll-margin-top:90px; }
+
+/* ── лінія дат ─────────────────────────────────────────────────────── */
+/* Під найближчим вечором — усі наступні по порядку: точка на лінії, під нею
+   картка. Наведення трохи збільшує картку, натискання веде до вечора нижче.
+   Коли вечорів більше, ніж влазить, лінія гортається вбік. */
+.tline{ margin-top:clamp(48px,6vw,80px); overflow-x:auto; overflow-y:visible; scrollbar-width:thin;
+  scrollbar-color:var(--line2) transparent; -webkit-overflow-scrolling:touch; }
+.tl{ list-style:none; margin:0; padding:0 24px 24px 0; display:flex; gap:clamp(16px,2.4vw,32px); position:relative;
+  min-width:min-content; }
+.tl::before{ content:""; position:absolute; left:0; right:0; top:30px; height:1px;
+  background:linear-gradient(90deg, var(--gas), var(--line2) 70%, transparent); }
+.tl-i{ flex:0 0 clamp(250px,26vw,300px); }
+.tl-c{ display:block; width:100%; padding:0; margin:0; border:0; background:none; color:inherit; font:inherit;
+  text-align:left; cursor:pointer; }
+.tl-d{ display:block; height:22px; font-family:var(--hud); font-size:13px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--gas); white-space:nowrap; }
+.tl-dot{ display:block; width:11px; height:11px; margin:2px 0 22px; border-radius:50%;
+  background:var(--void); border:2px solid var(--gas); position:relative; z-index:1; }
+.tl-i.now .tl-dot{ background:var(--gas); box-shadow:0 0 14px var(--gas); }
+.tl-c .tl-dot{ order:-1; }
+.tl-c{ display:flex; flex-direction:column; }
+.tl-c .tl-d{ order:-2; }
+.tl-card{ display:grid; grid-template-columns:84px 1fr; gap:14px; align-items:start; padding:12px;
+  border:1px solid var(--line2); background:var(--pit); transform-origin:top center;
+  transition:transform .3s cubic-bezier(.2,.7,.2,1), border-color .3s, background .3s, box-shadow .3s; }
+.tl-card img{ width:84px; height:auto; display:block; }
+.tl-b{ display:grid; gap:5px; min-width:0; }
+.tl-b b{ font-family:var(--rite); font-weight:400; font-size:22px; line-height:1.05; text-transform:uppercase;
+  letter-spacing:.03em; color:var(--bone); }
+.tl-now{ font-style:normal; font-family:var(--hud); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--gas); }
+.tl-wd{ font-family:var(--hud); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--dust); }
+.tl-b .tm{ font-family:var(--hud); font-weight:500; font-size:15px; letter-spacing:.06em; color:var(--bone); }
+.tl-c:hover .tl-card, .tl-c:focus-visible .tl-card{ transform:scale(1.05); border-color:var(--gas); background:var(--slab);
+  box-shadow:0 18px 50px rgba(0,0,0,.5), 0 0 0 1px rgba(46,155,240,.25); }
+.tl-c:hover .tl-dot{ background:var(--hot); border-color:var(--hot); }
+.tl-c:focus-visible{ outline:none; }
+@media (prefers-reduced-motion:reduce){ .tl-card{ transition:none; } }
+.ev .lu{ margin:12px 0 0; color:var(--bone); font-size:17px; line-height:1.55; max-width:56ch; }
 .ev.past .lu{ color:var(--dust); }
 .ev.past .d{ color:var(--dust); }
 .ev.past .t{ color:var(--ash); }
@@ -467,7 +521,7 @@ h3{
   border:1px solid var(--line2); box-shadow:0 30px 90px rgba(0,0,0,.55);
 }
 .feat .d{
-  font-family:var(--hud); font-size:11px; letter-spacing:.24em;
+  font-family:var(--hud); font-size:15px; letter-spacing:.2em;
   text-transform:uppercase; color:var(--gas);
 }
 .feat .t{
@@ -479,8 +533,20 @@ h3{
   font-family:var(--hud); font-size:10px; letter-spacing:.22em;
   text-transform:uppercase; color:var(--dust); margin-top:14px;
 }
-.feat .line{ margin:20px 0 0; color:var(--ash); max-width:34ch; }
-.feat .btn{ margin-top:28px; }
+.feat .line{ margin:22px 0 0; color:var(--bone); font-size:19px; line-height:1.5; max-width:40ch; }
+.feat .btn{ margin-top:0; }
+.feat .acts{ margin-top:28px; }
+.acts{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.acts .btn{ font-size:13px; padding:17px 30px; }
+/* Лайнап по годинах: час або «День 1» ліворуч, імена праворуч. */
+.sched{ list-style:none; padding:0; display:grid; gap:10px; }
+.sched li{ display:grid; grid-template-columns:auto 1fr; gap:4px 18px; align-items:baseline; }
+.sched .at{ font-family:var(--hud); font-weight:500; font-size:.82em; letter-spacing:.06em; color:var(--gas); white-space:nowrap; }
+.sched .who{ color:var(--bone); }
+@media (max-width:480px){ .sched li{ grid-template-columns:1fr; } }
+@media (min-width:780px){ .ev .acts{ flex-direction:column; align-items:stretch; text-align:center; } }
+.btn.ghost{ border-color:var(--line2); color:var(--pale); }
+.btn.ghost:hover{ border-color:var(--gas); }
 /* вечір, який уже минув: та сама верстка, приглушений акцент */
 .feat.over .d{ color:var(--dust); }
 .feat.over .fposter img{ opacity:.82; }
@@ -493,6 +559,7 @@ h3{
   font-size:clamp(52px,11vw,140px); line-height:.92; letter-spacing:.04em; text-transform:uppercase;
 }
 .phead p{ margin:26px 0 0; }
+
 
 /* ── вартість ──────────────────────────────────────────────────────── */
 /* Спершу число, під ним — що саме за нього дають. Кольором світиться те, що
