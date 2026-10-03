@@ -206,12 +206,27 @@
   // The head of the calendar: the nearest night, given the whole width, with
   // its poster. The newest night in the calendar holds this place whether or
   // not its date has passed — the section is the nearest event either way.
+  // Which night the head shows: the nearest, until one is picked on the line
+  // of dates below it.
+  var PICKED = null;
+  function shown(data) {
+    var up = data.upcoming || [], past = data.past || [];
+    var hit = PICKED && up.filter(function (e) { return e.id === PICKED; })[0];
+    return hit || up[0] || past[0];         // past comes newest first
+  }
+
   function feature(data) {
     var host = $("feature");
     if (!host) return;
 
-    var up = data.upcoming || [], past = data.past || [];
-    var e = up[0] || past[0];               // past comes newest first
+    var up = data.upcoming || [];
+    var e = shown(data);
+    var mark = $("feature-mark");
+    if (mark) {
+      mark.textContent = (e && up[0] && e !== up[0])
+        ? T("js.feature.picked", "Обраний вечір")
+        : T("events.next.mark", "Найближчий вечір");
+    }
     if (!e) {
       host.innerHTML = empty(T("js.none.upcoming", "Найближчі вечори зʼявляться тут. Дати ще вільні."));
       return;
@@ -219,12 +234,12 @@
 
     var poster = "";
     if (e.poster) {
-      poster = '<div class="fposter"><img src="' + esc(e.poster) + '"' +
+      poster = '<div class="fposter" data-tilt="7"><div class="tilt-face"><img src="' + esc(e.poster) + '"' +
         (e.posterSmall
           ? ' srcset="' + esc(e.posterSmall) + " 720w, " + esc(e.poster) + ' 1080w"' +
             ' sizes="(max-width:860px) 92vw, 440px"'
           : "") +
-        ' alt="' + esc(e.title) + " — " + esc(T("js.poster.alt", "афіша")) + '" loading="lazy"></div>';
+        ' alt="' + esc(e.title) + " — " + esc(T("js.poster.alt", "афіша")) + '" loading="lazy"></div></div>';
     }
 
     var wd = weekdays(e), meta = evMeta(e);
@@ -257,22 +272,24 @@
       : empty(T("js.none.later", "Далі поки порожньо — дати вільні."));
   }
 
-  // Under the nearest night, a line through every night ahead, in date
-  // order: a dot on the line for each, its card beneath. A card opens its
-  // night further down the page. One night needs no line, so it stays empty.
+  // Under the head, a line through every night ahead, in date order: a dot on
+  // the line for each, its card beneath. A card puts its night in the head,
+  // full size, and the page goes up to it. One night needs no line.
   function timeline(data) {
     var host = $("tline");
     if (!host) return;
     var up = data.upcoming || [];
     if (up.length < 2) { host.innerHTML = ""; host.hidden = true; return; }
     host.hidden = false;
+    var cur = shown(data);
     host.innerHTML = '<ol class="tl">' + up.map(function (e, i) {
       var src = e.posterSmall || e.poster, wd = weekdays(e);
-      return '<li class="tl-i' + (i === 0 ? " now" : "") + '">' +
-        '<button type="button" class="tl-c" data-go="ev-' + esc(e.id) + '">' +
+      return '<li class="tl-i' + (i === 0 ? " now" : "") + (e === cur ? " sel" : "") + '">' +
+        '<button type="button" class="tl-c" data-tilt="8" data-pick="' + esc(e.id) + '"' +
+          (e === cur ? ' aria-current="true"' : "") + ">" +
           '<span class="tl-dot" aria-hidden="true"></span>' +
           '<span class="tl-d">' + esc(DTEXT(e.dateText || e.date)) + "</span>" +
-          '<span class="tl-card' + (src ? "" : " bare") + '">' +
+          '<span class="tl-card tilt-face' + (src ? "" : " bare") + '">' +
             (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async">' : "") +
             '<span class="tl-b">' +
               (i === 0 ? '<em class="tl-now">' + esc(T("js.line.now", "найближча")) + "</em>" : "") +
@@ -287,8 +304,19 @@
     if (!host.dataset.wired) {
       host.dataset.wired = "1";
       host.addEventListener("click", function (ev) {
-        var b = ev.target.closest ? ev.target.closest("[data-go]") : null;
-        if (b && $(b.dataset.go)) $(b.dataset.go).scrollIntoView({ behavior: "smooth", block: "start" });
+        var b = ev.target.closest ? ev.target.closest("[data-pick]") : null;
+        if (!b || !LAST) return;
+        PICKED = b.dataset.pick;
+        feature(LAST);
+        timeline(LAST);
+        var f = $("feature");
+        if (f) {
+          f.classList.remove("swap"); void f.offsetWidth; f.classList.add("swap");
+          var to = $("feature-mark") || f;
+          var bar = $("bar");
+          var y = to.getBoundingClientRect().top + scrollY - (bar ? bar.offsetHeight : 60) - 28;
+          if (!(window.noxGlide && window.noxGlide(y))) to.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       });
     }
   }
@@ -441,6 +469,33 @@
     posters(d);
   }
 
+  // Anything marked data-tilt leans toward the mouse over it, by up to the
+  // degrees it names, and a glint on its .tilt-face follows the pointer. A
+  // mouse only: on touch the card just opens, and a reader who asked for less
+  // motion gets a still page.
+  function tilts() {
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var cur = null;
+    function let_go() { if (cur) { cur.classList.remove("tilt"); cur = null; } }
+    document.addEventListener("pointermove", function (ev) {
+      if (ev.pointerType !== "mouse") return;
+      var host = ev.target.closest ? ev.target.closest("[data-tilt]") : null;
+      if (host !== cur) let_go();
+      if (!host) return;
+      var face = host.querySelector(".tilt-face") || host;
+      var r = host.getBoundingClientRect(), max = Number(host.getAttribute("data-tilt")) || 8;
+      var x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+      face.style.setProperty("--ty", ((x - 0.5) * 2 * max).toFixed(2) + "deg");
+      face.style.setProperty("--tx", ((0.5 - y) * 1.5 * max).toFixed(2) + "deg");
+      face.style.setProperty("--gx", (x * 100).toFixed(1) + "%");
+      face.style.setProperty("--gy", (y * 100).toFixed(1) + "%");
+      host.classList.add("tilt");
+      cur = host;
+    }, { passive: true });
+    document.documentElement.addEventListener("pointerleave", let_go);
+  }
+
+  tilts();
   stickyBar();
   bookingForm();
   document.addEventListener("nox:lang", function () { if (LAST) paint(LAST); });
