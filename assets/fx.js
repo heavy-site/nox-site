@@ -1063,9 +1063,22 @@
   }
 
   /* ── the opening: darkness, then the mark assembles ─────────────── */
+  // A page with no opening still needs its ground lit: the void is drawn at
+  // the strength of the reveal, and without one it would stay at its dimmest.
+  // It comes up over a second instead of snapping on.
+  function glowUp() {
+    if (REDUCED) { STATE.reveal = 1; return; }
+    var t0 = performance.now();
+    (function step(now) {
+      var k = Math.min(1, (now - t0) / 1100);
+      STATE.reveal = 1 - Math.pow(1 - k, 3);
+      if (k < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+
   function revealScroll() {
     var host = document.getElementById("reveal");
-    if (!host) return;
+    if (!host) { glowUp(); return; }
     var pin = host.querySelector(".pin");
     var mark = host.querySelector(".mark");
     var canvas = mark && mark.querySelector("canvas");
@@ -1208,6 +1221,17 @@
       target = Math.min(limit(), Math.max(0, target + px * 1.55));
       if (!running) { running = true; requestAnimationFrame(tick); }
     }, { passive: false });
+
+    // A jump the page asks for rides the same glide, so a wheel still easing
+    // the page down cannot drag it away from where the reader was sent. False
+    // where a route box owns the scroll and the caller should move that.
+    window.noxGlide = function (y) {
+      if (document.querySelector("[data-nox-scroller]:not([hidden])")) return false;
+      target = Math.min(limit(), Math.max(0, y));
+      own = true;
+      if (!running) { running = true; requestAnimationFrame(tick); }
+      return true;
+    };
 
     // Any scroll we did not drive — a drag of the bar, a key, a jump to an
     // anchor — becomes the new starting point.

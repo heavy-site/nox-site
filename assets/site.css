@@ -37,6 +37,9 @@ a{ color:var(--pale); }
 
 /* ── фон: шейдер + плівка ──────────────────────────────────────────── */
 #fx{ position:fixed; inset:0; z-index:-3; display:block; width:100%; height:100%; }
+/* Вміст стоїть над хвилею: картка, що виїхала на поле (збільшена, нахилена,
+   прокручена вбік), закриває штрихи, а не ховається під ними. */
+main{ position:relative; z-index:2; }
 
 /* Хвиля живе у порожній смузі ліворуч від тексту. Ця смуга — те, що більше:
    бічний відступ сторінки чи поле поза колонкою контенту; мінус 10px, щоб
@@ -397,7 +400,14 @@ h3{
 .next .tm{ font-size:16px; margin-top:8px; }
 .pmeta .tm{ font-size:17px !important; }
 /* Афіша вечора в рядку: та сама, лише менша, без обрізання. */
-@media (min-width:780px){ .ev.has-thumb{ grid-template-columns:150px 230px 1fr auto; } }
+@media (min-width:1100px){ .ev.has-thumb{ grid-template-columns:150px 230px 1fr auto; } }
+/* Середня ширина: чотири колонки не влазять. Афіша ліворуч на всю висоту,
+   праворуч — дата, вечір і кнопки одна під одною. */
+@media (min-width:780px) and (max-width:1099px){
+  .ev.has-thumb{ grid-template-columns:150px minmax(0,1fr); align-items:start; }
+  .ev.has-thumb .thumb{ grid-row:span 3; }
+  .ev.has-thumb .acts{ flex-direction:row; align-items:center; }
+}
 .ev .thumb img{ width:150px; height:auto; border:1px solid var(--line2); }
 @media (max-width:779px){ .ev .thumb img{ width:min(220px,60vw); } }
 .ev[id], .feat[id]{ scroll-margin-top:90px; }
@@ -406,7 +416,10 @@ h3{
 /* Під найближчим вечором — усі наступні по порядку: точка на лінії, під нею
    картка. Наведення трохи збільшує картку, натискання веде до вечора нижче.
    Коли вечорів більше, ніж влазить, лінія гортається вбік. */
-.tline{ margin-top:clamp(48px,6vw,80px); overflow-x:auto; overflow-y:visible; scrollbar-width:thin;
+/* Лінія гортається вбік, а така коробка обрізає все, що з неї виходить.
+   Запас по боках — щоб збільшена й нахилена картка біля краю лишалась цілою;
+   від'ємні поля тримають саму лінію на місці. */
+.tline{ margin:clamp(48px,6vw,80px) -16px 0; padding:0 16px; overflow-x:auto; overflow-y:visible; scrollbar-width:thin;
   scrollbar-color:var(--line2) transparent; -webkit-overflow-scrolling:touch; }
 .tl{ list-style:none; margin:0; padding:0 24px 24px 0; display:flex; gap:clamp(16px,2.4vw,32px); position:relative;
   min-width:min-content; }
@@ -419,7 +432,6 @@ h3{
   text-transform:uppercase; color:var(--gas); white-space:nowrap; }
 .tl-dot{ display:block; width:11px; height:11px; margin:2px 0 22px; border-radius:50%;
   background:var(--void); border:2px solid var(--gas); position:relative; z-index:1; }
-.tl-i.now .tl-dot{ background:var(--gas); box-shadow:0 0 14px var(--gas); }
 .tl-c .tl-dot{ order:-1; }
 .tl-c{ display:flex; flex-direction:column; }
 .tl-c .tl-d{ order:-2; }
@@ -437,7 +449,28 @@ h3{
 .tl-c:hover .tl-card, .tl-c:focus-visible .tl-card{ transform:scale(1.05); border-color:var(--gas); background:var(--slab);
   box-shadow:0 18px 50px rgba(0,0,0,.5), 0 0 0 1px rgba(46,155,240,.25); }
 .tl-c:hover .tl-dot{ background:var(--hot); border-color:var(--hot); }
+/* Вечір, що зараз нагорі сторінки: рамка лишається, точка світиться. */
+.tl-i.sel .tl-card{ border-color:var(--gas); background:var(--slab); }
+.tl-i.sel .tl-dot{ background:var(--gas); box-shadow:0 0 14px var(--gas); }
+#feature-mark{ scroll-margin-top:90px; }
+#feature.swap .feat{ animation:swapIn .5s cubic-bezier(.2,.7,.2,1); }
+@keyframes swapIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){ #feature.swap .feat{ animation:none; } }
 .tl-c:focus-visible{ outline:none; }
+.later-mark{ margin-top:clamp(40px,5vw,64px); }
+
+/* Картка стежить за мишею: нахиляється до курсора, а відблиск іде за ним.
+   Лише для миші — на дотик картка просто відкривається. */
+[data-tilt]{ perspective:900px; }
+.tilt-face{ position:relative;
+  transition:transform .5s cubic-bezier(.2,.7,.2,1), border-color .3s, background .3s, box-shadow .3s; }
+.tilt-face::after{ content:""; position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .3s;
+  background:radial-gradient(320px circle at var(--gx,50%) var(--gy,50%), rgba(127,212,255,.16), transparent 60%); }
+[data-tilt].tilt > .tilt-face{ transition:transform .12s ease-out, border-color .3s, background .3s, box-shadow .3s;
+  transform:rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg)) scale(var(--ts,1.03)); }
+[data-tilt].tilt > .tilt-face::after{ opacity:1; }
+.tl-card{ --ts:1.05; }
+.fposter .tilt-face{ --ts:1.02; }
 @media (prefers-reduced-motion:reduce){ .tl-card{ transition:none; } }
 .ev .lu{ margin:12px 0 0; color:var(--bone); font-size:17px; line-height:1.55; max-width:56ch; }
 .ev.past .lu{ color:var(--dust); }

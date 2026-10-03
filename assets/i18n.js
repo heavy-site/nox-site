@@ -110,6 +110,7 @@
     "js.poster.past": "past",
     "events.line.label": "Event dates",
     "js.line.now": "nearest",
+    "js.feature.picked": "Picked night",
     "js.post": "Event post",
     "js.post.ig": "Instagram post",
     "js.cloak.name": "CLOAKROOM",
