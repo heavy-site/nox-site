@@ -36,6 +36,7 @@ function nox_db(): ?PDO {
         ]);
         $pdo->exec('PRAGMA journal_mode = WAL');
         nox_db_migrate($pdo);
+        nox_db_nights($pdo);
         $db = $pdo;
     } catch (Throwable $e) {
         nox_log('DB error: ' . $e->getMessage());
@@ -45,23 +46,13 @@ function nox_db(): ?PDO {
 
 function nox_db_migrate(PDO $db): void {
     $v = (int)$db->query('PRAGMA user_version')->fetchColumn();
-    if ($v >= 3) return;
-    if ($v === 2) { nox_db_fill_nights($db); return; }
-    if ($v === 1) {
-        // A night's genres and the post that announces it, for the listing.
-        // The write lock comes first, so a second request racing this one
-        // finds the columns already there.
-        $db->exec('BEGIN IMMEDIATE');
-        if ((int)$db->query('PRAGMA user_version')->fetchColumn() === 1) {
-            $db->exec("ALTER TABLE bookings ADD COLUMN genre TEXT NOT NULL DEFAULT ''");
-            $db->exec("ALTER TABLE bookings ADD COLUMN post TEXT NOT NULL DEFAULT ''");
-            $db->exec('PRAGMA user_version = 2');
-        }
-        $db->exec('COMMIT');
-        nox_db_fill_nights($db);
+    if ($v >= 4) return;
+    if ($v >= 1) {
+        if ($v === 1) nox_db_add_listing_fields($db);
+        if ($v <= 2) nox_db_fill_nights($db);
+        nox_db_mark_nights($db);
         return;
     }
-
     $db->beginTransaction();
     $db->exec("CREATE TABLE IF NOT EXISTS bookings (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,54 +92,124 @@ function nox_db_migrate(PDO $db): void {
     // The nights that were written into the code become bookings: confirmed,
     // and shown, exactly as they were on the site.
     require_once __DIR__ . '/_venue.php';
+    $mark = $db->prepare('INSERT OR IGNORE INTO meta (k, v) VALUES (?, ?)');
     foreach (nox_events() as $e) {
-        $hours = explode('–', $e['time'] ?? '') + ['', ''];
-        nox_booking_insert($db, [
-            'status' => 'confirmed', 'published' => 1,
-            'date' => $e['date'], 'date_end' => $e['dateEnd'] ?? '',
-            'time_from' => $hours[0], 'time_to' => $hours[1],
-            'title' => $e['title'], 'event' => $e['title'],
-            'promoter' => $e['promoter'] ?? '', 'name' => $e['promoter'] ?? '',
-            'genre' => $e['genre'] ?? '',
-            'lineup' => $e['lineup'] ?? '', 'tickets' => $e['tickets'] ?? '', 'post' => $e['post'] ?? '',
-            'poster' => $e['poster'] ?? '', 'poster_small' => $e['posterSmall'] ?? '',
-        ], 'seed:' . $e['id']);
+        nox_booking_insert($db, nox_night_row($e), 'seed:' . $e['id']);
+        $mark->execute(['night:' . $e['id'], (string)time()]);
     }
-    $db->exec('PRAGMA user_version = 3');
+    $db->exec('PRAGMA user_version = 4');
     $db->commit();
 
     nox_db_sync_files($db);
 }
 
-// Once: the nights written in _venue.php lend their bookings in the table
-// what those still lack — poster, genres, lineup, links. Only an empty field
-// is written, so anything typed in the admin stays as it was.
+// A night's genres and the post that announces it, for the listing. The
+// write lock comes first, so a second request racing this one finds the
+// columns already there.
+function nox_db_add_listing_fields(PDO $db): void {
+    $db->exec('BEGIN IMMEDIATE');
+    if ((int)$db->query('PRAGMA user_version')->fetchColumn() === 1) {
+        $db->exec("ALTER TABLE bookings ADD COLUMN genre TEXT NOT NULL DEFAULT ''");
+        $db->exec("ALTER TABLE bookings ADD COLUMN post TEXT NOT NULL DEFAULT ''");
+        $db->exec('PRAGMA user_version = 2');
+    }
+    $db->exec('COMMIT');
+}
+
+// A night from _venue.php in the shape of a booking: confirmed and shown.
+function nox_night_row(array $e): array {
+    $hours = explode('–', $e['time'] ?? '') + ['', ''];
+    return [
+        'status' => 'confirmed', 'published' => 1,
+        'date' => $e['date'], 'date_end' => $e['dateEnd'] ?? '',
+        'time_from' => $hours[0], 'time_to' => $hours[1],
+        'title' => $e['title'], 'event' => $e['title'],
+        'promoter' => $e['promoter'] ?? '', 'name' => $e['promoter'] ?? '',
+        'genre' => $e['genre'] ?? '',
+        'lineup' => $e['lineup'] ?? '', 'tickets' => $e['tickets'] ?? '', 'post' => $e['post'] ?? '',
+        'poster' => $e['poster'] ?? '', 'poster_small' => $e['posterSmall'] ?? '',
+    ];
+}
+
+// A night lends the confirmed bookings on its date what they still lack.
+// Only an empty field is written, so anything typed in the admin stays as it
+// was. With $show the booking is put in the listing as well. The number of
+// bookings it found comes back.
+function nox_db_lend(PDO $db, array $e, bool $show): int {
+    $row = nox_night_row($e);
+    $find = $db->prepare("SELECT * FROM bookings WHERE date = ? AND status = 'confirmed'");
+    $find->execute([$e['date']]);
+    $found = $find->fetchAll();
+    foreach ($found as $b) {
+        $set = []; $vals = [];
+        foreach (['title', 'promoter', 'genre', 'date_end', 'time_from', 'time_to', 'lineup',
+                  'tickets', 'post', 'poster', 'poster_small'] as $col) {
+            $val = trim((string)$row[$col]);
+            if ($val === '' || trim((string)$b[$col]) !== '') continue;
+            $set[] = $col . ' = ?'; $vals[] = $val;
+        }
+        if ($show && !(int)$b['published']) $set[] = 'published = 1';
+        if (!$set) continue;
+        $vals[] = time(); $vals[] = (int)$b['id'];
+        $db->prepare('UPDATE bookings SET ' . implode(', ', $set) . ', updated_at = ? WHERE id = ?')->execute($vals);
+    }
+    return count($found);
+}
+
+// Version 3: the October nights, published from the admin with a title and
+// hours only, took the rest from the code.
 function nox_db_fill_nights(PDO $db): void {
     require_once __DIR__ . '/_venue.php';
     $db->exec('BEGIN IMMEDIATE');
     if ((int)$db->query('PRAGMA user_version')->fetchColumn() !== 2) { $db->exec('COMMIT'); return; }
-    $map = ['title' => 'title', 'promoter' => 'promoter', 'genre' => 'genre', 'date_end' => 'dateEnd',
-            'lineup' => 'lineup', 'tickets' => 'tickets', 'post' => 'post',
-            'poster' => 'poster', 'poster_small' => 'posterSmall'];
-    $find = $db->prepare("SELECT * FROM bookings WHERE date = ? AND status = 'confirmed'");
-    foreach (nox_events() as $e) {
-        $hours = explode('–', $e['time'] ?? '') + ['', ''];
-        $from = $map + ['time_from' => 0, 'time_to' => 1];
-        $find->execute([$e['date']]);
-        foreach ($find->fetchAll() as $b) {
-            $set = []; $vals = [];
-            foreach ($from as $col => $key) {
-                $val = trim((string)(is_int($key) ? $hours[$key] : ($e[$key] ?? '')));
-                if ($val === '' || trim((string)$b[$col]) !== '') continue;
-                $set[] = $col . ' = ?'; $vals[] = $val;
-            }
-            if (!$set) continue;
-            $vals[] = time(); $vals[] = (int)$b['id'];
-            $db->prepare('UPDATE bookings SET ' . implode(', ', $set) . ', updated_at = ? WHERE id = ?')->execute($vals);
-        }
-    }
+    foreach (nox_events() as $e) nox_db_lend($db, $e, false);
     $db->exec('PRAGMA user_version = 3');
     $db->exec('COMMIT');
+}
+
+// Version 4: from here on each night in the code is brought in once and
+// remembered (below). The nights already shown on their dates count as
+// brought in, so the database is not touched for them again.
+function nox_db_mark_nights(PDO $db): void {
+    require_once __DIR__ . '/_venue.php';
+    $db->exec('BEGIN IMMEDIATE');
+    if ((int)$db->query('PRAGMA user_version')->fetchColumn() !== 3) { $db->exec('COMMIT'); return; }
+    $db->exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
+    $shown = $db->prepare("SELECT 1 FROM bookings WHERE date = ? AND status = 'confirmed' AND published = 1");
+    $mark = $db->prepare('INSERT OR IGNORE INTO meta (k, v) VALUES (?, ?)');
+    foreach (nox_events() as $e) {
+        $shown->execute([$e['date']]);
+        if ($shown->fetchColumn()) $mark->execute(['night:' . $e['id'], (string)time()]);
+    }
+    $db->exec('PRAGMA user_version = 4');
+    $db->exec('COMMIT');
+}
+
+// A night added to _venue.php reaches the listing on the next open, once. If
+// its date already holds a confirmed booking, that booking takes the night's
+// details and is shown; if not, the night becomes a booking of its own. Each
+// night is remembered after that, so one hidden or edited in the admin stays
+// as the admin left it.
+function nox_db_nights(PDO $db): void {
+    require_once __DIR__ . '/_venue.php';
+    $done = array_flip($db->query("SELECT k FROM meta WHERE k LIKE 'night:%'")->fetchAll(PDO::FETCH_COLUMN));
+    $todo = array_filter(nox_events(), function ($e) use ($done) { return !isset($done['night:' . $e['id']]); });
+    if (!$todo) return;
+    $db->exec('BEGIN IMMEDIATE');
+    try {
+        $seen = $db->prepare('SELECT 1 FROM meta WHERE k = ?');
+        $mark = $db->prepare('INSERT OR IGNORE INTO meta (k, v) VALUES (?, ?)');
+        foreach ($todo as $e) {
+            $seen->execute(['night:' . $e['id']]);
+            if ($seen->fetchColumn()) continue;      // a racing request got here first
+            if (!nox_db_lend($db, $e, true)) nox_booking_insert($db, nox_night_row($e), 'seed:' . $e['id']);
+            $mark->execute(['night:' . $e['id'], (string)time()]);
+        }
+        $db->exec('COMMIT');
+    } catch (Throwable $t) {
+        $db->exec('ROLLBACK');
+        throw $t;
+    }
 }
 
 // Every enquiry file that is not in the table yet is taken in. The files are

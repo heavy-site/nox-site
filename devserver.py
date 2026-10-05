@@ -26,6 +26,13 @@ EVENTS = [{
     "tickets": "https://he4vy.com/tickets",
     "poster": "/assets/insane-poster.jpg", "posterSmall": "/assets/insane-poster-720.jpg",
 }, {
+    "id": "dolls-rave", "title": "DOLLS RAVE", "promoter": "", "genre": "Hard Techno",
+    "date": "2026-10-17", "dateEnd": "",
+    "dateText": "17 жовтня", "year": "2026", "time": "16:00–22:00",
+    "tickets": "", "post": "https://www.instagram.com/p/DeHTbgUMODh/",
+    "lineup": "NORDEIL × VITALI TASH × FOAVAS × D3ADW1RE × ATRK × PTERODACTYL × NIKOLIETTA × 2SIDE × TSURA × SVZST NPS × PUSSY KILLER",
+    "poster": "/assets/dolls-poster.jpg", "posterSmall": "/assets/dolls-poster-720.jpg",
+}, {
     "id": "heavy-oct", "title": "HEAVY", "promoter": "", "genre": "Heavy EDM",
     "date": "2026-10-24", "dateEnd": "",
     "dateText": "24 жовтня", "year": "2026", "time": "18:00–22:00",
