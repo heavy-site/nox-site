@@ -35,6 +35,14 @@
   <FilesMatch "\.html$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
+  # Styles and scripts are checked with the server on every visit: the host
+  # gives CSS a week of cache on its own, and a phone kept last week's styles
+  # under this week's script, so new parts of the page came out unstyled.
+  # The ?v= on their links changes with each deploy as well, so a copy cached
+  # before this rule existed is passed over too.
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
   <FilesMatch "-poster\.(png|jpe?g|webp)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>

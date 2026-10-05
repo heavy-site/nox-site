@@ -19,3 +19,6 @@ deployment:
     - /bin/cp -R ./assets/.        $DEPLOYPATH/assets/
     - /bin/cp -R ./media/.         $DEPLOYPATH/media/
     - /bin/rm -f $DEPLOYPATH/api/config.sample.php
+    # Each deploy stamps the links to styles and scripts with its own time, so
+    # a browser holding an older copy fetches the new one instead.
+    - /bin/sed -i "s/\.\(css\|js\)?v=[0-9A-Za-z]*\"/.\1?v=$(/bin/date +%s)\"/g" $DEPLOYPATH/index.html $DEPLOYPATH/events.html $DEPLOYPATH/booking.html
