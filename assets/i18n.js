@@ -37,11 +37,11 @@
 
     "booking.h1": "Rental",
     "booking.price.mark": "Price",
-    "booking.price.h2": "What is included",
+    "booking.price.h2": "Rental terms",
     "booking.price.sub": "per night · 16:00 to 22:00",
     "booking.price.i1.b": "The hall with our bar",
     "booking.price.i1.s": "The bar at the venue is ours.",
-    "booking.price.i2.b": "Face control and security",
+    "booking.price.i2.b": "Security",
     "booking.price.i2.s": "Our people at the door and in the hall.",
     "booking.price.i3.b": "Our technician",
     "booking.price.i3.s": "He runs the light as well. You can add your own technician, or put yours in his place.",
