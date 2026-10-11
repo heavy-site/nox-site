@@ -64,18 +64,21 @@ to the other by the server, since bots cannot copy each other's messages.
   bot tied to that booking (`t.me/<bot>?start=b<id>_<sig>`). A bot cannot
   write first, so their press of Start is what lets it answer. For a booking that did not come from the
   form, `/admin` shows the same link to send once.
-- What the renter writes arrives in the venue's chat under «💬 #id · event ·
-  name». **«💬 Відкрити діалог»** under it (or under the booking's card, or
-  from `/chats`) puts that admin in the conversation: from then on whatever
-  they write in the chat goes to the renter as the bot's own message — text,
-  photos, files, voice — until `/end`. Each admin has their own open
-  conversation. A reply to a renter's message still goes to that renter.
+- Enquiries and their buttons go to the venue's group (`TG_CHAT`/`TG_TOPIC`).
+  Conversations do not: they happen in each admin's **private chat with the
+  venue's bot**. An admin is anyone in that group (checked with Telegram once a
+  day); they open the bot and press Start once.
+- A renter's message reaches every admin who started the bot, with
+  «💬 Відкрити діалог». Opening it (or picking from `/chats`) puts that admin
+  in the conversation: the last messages are shown, and whatever they write
+  in that private chat goes to the renter until `/end`. While someone has a
+  conversation open, the renter's messages go only to them. The same button
+  under a booking in the group opens the conversation in private.
 - Confirming, declining or cancelling a booking tells the renter on its own.
-- «📜 Діалог» posts the whole conversation; `/admin` shows it under the booking
-  and can send from there too. Everything is kept in the database.
-- To answer as a team, add the bot to a group and send `/here` in it from the
-  account in `TG_CHAT`: enquiries and conversations move there. `/b 12` brings
-  booking #12's card with its buttons into the chat.
+- «📜 Уся історія» posts the whole conversation; `/admin` shows it under the
+  booking and can send from there too. Everything is kept in the database.
+- Until any admin has started the venue's bot, renters' messages fall back to
+  the group so nothing is lost.
 
 ## Config
 

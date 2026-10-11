@@ -12,7 +12,7 @@ require_once __DIR__ . '/api/_relay.php';
 // connected under an older one is pointed again on the next visit. Up here,
 // because the actions below use them before the rest of the page is read.
 const TG_UPDATES = ['callback_query', 'message'];
-const TG_HOOK_V = '4';
+const TG_HOOK_V = '5';
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
@@ -592,7 +592,7 @@ if (TG_TOKEN !== '' && nox_meta('tg_hook') === '1' && nox_meta('tg_hook_v') !== 
 
 // The menu of commands in the venue's bot.
 function tg_admin_commands(): void {
-    tg_call('setMyCommands', ['commands' => json_encode([
+    tg_call('setMyCommands', ['scope' => json_encode(['type' => 'all_private_chats']), 'commands' => json_encode([
         ['command' => 'chats', 'description' => 'Діалоги з орендарями'],
         ['command' => 'end',   'description' => 'Вийти з діалогу'],
         ['command' => 'b',     'description' => 'Заявка за номером: /b 12'],
