@@ -22,6 +22,12 @@ define('TG_TOKEN', 'REPLACE_WITH_BOT_TOKEN');
 define('TG_CHAT',  '6535254719');
 define('TG_TOPIC', 0);
 
+// A second bot, the only one renters ever see: after the form the site sends
+// them to it, and the venue answers them through it. Optional here — the
+// token can be entered at the foot of /admin instead. Never the same bot as
+// TG_TOKEN.
+// define('TG_RENTER_TOKEN', 'REPLACE_WITH_RENTER_BOT_TOKEN');
+
 // /admin — the bookings. Closed while this is empty. The password itself, or
 // better its hash: php -r 'echo password_hash("your password", PASSWORD_DEFAULT);'
 define('NOX_ADMIN_PASS', '');

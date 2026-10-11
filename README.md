@@ -54,12 +54,15 @@ deployed, press **Підключити** at the foot of `/admin`; it points the 
 
 ## Talking to renters through the bot
 
-The venue's own contacts never reach a renter: the bot stands between them
-(`api/_relay.php`).
+The venue's own contacts never reach a renter: two bots stand between them
+(`api/_relay.php`). The venue's bot (`TG_TOKEN`) brings enquiries into the
+venue's chat; the renters' bot (`TG_RENTER_TOKEN`, or its token entered at the
+foot of `/admin`) is the only one renters see. Files are carried from one bot
+to the other by the server, since bots cannot copy each other's messages.
 
-- After the form is sent the site shows a button that opens the bot tied to that
-  booking (`t.me/<bot>?start=b<id>_<sig>`). A bot cannot write first, so this
-  one press is what lets it answer. For a booking that did not come from the
+- After the form is sent the site takes the visitor straight to the renters'
+  bot tied to that booking (`t.me/<bot>?start=b<id>_<sig>`). A bot cannot
+  write first, so their press of Start is what lets it answer. For a booking that did not come from the
   form, `/admin` shows the same link to send once.
 - What the renter writes arrives in the venue's chat under «💬 #id · event ·
   name». A **reply** to it (or to the booking's card, or after «✍️ Написати»)
