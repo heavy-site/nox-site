@@ -172,8 +172,11 @@ function tg_call_as(string $token, string $method, array $params, ?array $file =
     $j = is_string($res) ? json_decode($res, true) : null;
     if (($j['ok'] ?? false) !== true) {
         nox_log('TG ' . $method . ' failed: ' . substr((string)$res, 0, 300));
+        // What Telegram said, for a caller that can do something about it.
+        $GLOBALS['tg_last_error'] = (string)($j['description'] ?? 'no answer');
         return null;
     }
+    $GLOBALS['tg_last_error'] = '';
     return $j['result'];
 }
 

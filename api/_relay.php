@@ -52,6 +52,15 @@ function relay_db(): ?PDO {
         created_at INTEGER NOT NULL,
         PRIMARY KEY (admin_chat, admin_msg)
     )');
+    // A renter's conversation as a topic in an admin's private chat with the
+    // venue's bot: one per admin and conversation.
+    $db->exec('CREATE TABLE IF NOT EXISTS tg_topics (
+        admin      TEXT NOT NULL,
+        conv       TEXT NOT NULL,                   -- b<booking> or c<renter chat>
+        thread     INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (admin, conv)
+    )');
     $ready = true;
     return $db;
 }
@@ -307,17 +316,124 @@ function tg_msg_body(array $m): string {
     return $text;
 }
 
+/* ── topics in the admins' private chats ──────────────────────────────────
+   When the venue's bot has topics turned on in @BotFather, every renter is a
+   topic of their own in each admin's private chat with it — "DOLLS RAVE ·
+   Олена" — and the admin just writes in that topic. Nothing to open or close.
+   Telegram added this only recently, so anything it refuses sends the bot
+   back to the conversations opened with a button, for a few hours, before it
+   tries topics again. */
+function tg_topics_on(): bool {
+    if ((int)nox_meta('tg_topics_off_until') > time()) return false;
+    if (time() - (int)nox_meta('tg_topics_at') > 3600) {
+        $me = tg_call('getMe', []);
+        if ($me) {
+            nox_meta('tg_topics', !empty($me['has_topics_enabled']) ? '1' : '0');
+            nox_meta('tg_topics_at', (string)time());
+        }
+    }
+    return nox_meta('tg_topics') === '1';
+}
+
+function tg_topics_fail(string $why): void {
+    nox_log('TG topics off for 6h: ' . $why);
+    nox_meta('tg_topics_off_until', (string)(time() + 6 * 3600));
+}
+
+function tg_topic_name(string $chat, int $booking): string {
+    $p = tg_person($chat);
+    $b = $booking ? nox_booking($booking) : null;
+    $event = $b ? nox_booking_label($b) : 'без заявки';
+    $who = $p && $p['name'] !== '' ? $p['name'] : 'Орендар';
+    return mb_substr(($event !== '' ? $event : '#' . $booking) . ' · ' . $who, 0, 120);
+}
+
+function tg_topic_key(string $admin, int $thread): string {
+    $db = relay_db();
+    if (!$db || !$thread) return '';
+    $st = $db->prepare('SELECT conv FROM tg_topics WHERE admin = ? AND thread = ?');
+    $st->execute([$admin, $thread]);
+    return (string)($st->fetchColumn() ?: '');
+}
+
+function tg_topic_forget(string $admin, string $key): void {
+    if ($db = relay_db()) $db->prepare('DELETE FROM tg_topics WHERE admin = ? AND conv = ?')->execute([$admin, $key]);
+}
+
+// The admin's topic for a conversation, made the first time it is needed;
+// a new one opens with the last of what was said, so whoever comes in late
+// reads from there. 0 when Telegram would not make it.
+function tg_topic_for(string $admin, string $key, string $chat, int $booking, int $skip = 0): int {
+    $db = relay_db();
+    if (!$db) return 0;
+    $st = $db->prepare('SELECT thread FROM tg_topics WHERE admin = ? AND conv = ?');
+    $st->execute([$admin, $key]);
+    if ($th = (int)$st->fetchColumn()) return $th;
+
+    $t = tg_call('createForumTopic', ['chat_id' => $admin, 'name' => tg_topic_name($chat, $booking)]);
+    $th = (int)($t['message_thread_id'] ?? 0);
+    if (!$th) { tg_topics_fail('createForumTopic: ' . ($GLOBALS['tg_last_error'] ?? '')); return 0; }
+    $db->prepare('INSERT OR REPLACE INTO tg_topics (admin, conv, thread, created_at) VALUES (?, ?, ?, ?)')
+       ->execute([$admin, $key, $th, time()]);
+
+    $rows = tg_history($booking, $booking ? '' : $chat);
+    if ($skip) $rows = array_slice($rows, 0, -$skip);
+    $last = '';
+    foreach (array_slice($rows, -10) as $r) {
+        $mark = $r['dir'] === 'in' ? '⬅️' : ($r['dir'] === 'out' ? '➡️ ' . tg_esc($r['who'] !== '' ? $r['who'] : 'Ми') . ':' : '🤖');
+        $last .= "\n" . $mark . ' ' . tg_esc(mb_strimwidth((string)$r['body'], 0, 300, '…'));
+    }
+    tg_call('sendMessage', ['chat_id' => $admin, 'message_thread_id' => $th, 'parse_mode' => 'HTML',
+        'disable_web_page_preview' => 'true',
+        'text' => '💬 <b>' . tg_who_line($chat, $booking) . '</b>' . ($last !== '' ? "\n\n<i>Що було раніше:</i>" . $last : '') .
+                  "\n\nПишіть у цій темі — усе піде орендарю від імені бота для орендарів."]);
+    return $th;
+}
+
+// One message into an admin's topic: a file (once carried, then by its
+// file_id), or text. A topic the admin deleted is made again, once. Null
+// when topics did not work out, so the caller falls back.
+function tg_topic_post(string $admin, string $key, string $chat, int $booking, string $html, ?array $m, string &$fid, int $skip = 0) {
+    $kind = $m ? tg_media_kind($m) : '';
+    for ($try = 0; $try < 2; $try++) {
+        $th = tg_topic_for($admin, $key, $chat, $booking, $skip);
+        if (!$th) return null;
+        $base = ['chat_id' => $admin, 'message_thread_id' => $th, 'parse_mode' => 'HTML'];
+        $r = null;
+        if ($kind !== '') {
+            $cap = mb_substr($html, 0, 1000);
+            $r = $fid !== '' ? tg_call(TG_MEDIA[$kind], $base + ['caption' => $cap, $kind => $fid])
+                             : tg_carry(tg_renter_token(), $m, TG_TOKEN, $base + ['caption' => $cap]);
+            if ($r && $fid === '') $fid = tg_file_id($r, $kind);
+        } else {
+            $r = tg_call('sendMessage', $base + ['text' => $html !== '' ? $html : '…', 'disable_web_page_preview' => 'true']);
+        }
+        if ($r) return $r;
+        if (stripos($GLOBALS['tg_last_error'] ?? '', 'thread') === false) break;
+        tg_topic_forget($admin, $key);
+    }
+    tg_topics_fail('send: ' . ($GLOBALS['tg_last_error'] ?? ''));
+    return null;
+}
+
 /* ── into the admins' private chats ───────────────────────────────────────
    Whoever has this conversation open gets it plainly, as the next line of
    the dialog; if nobody has, every admin who started the bot gets it with
    the buttons to step in. If no admin has started the bot yet, it goes to
    the group so it is not lost, with a word on how to take it private. */
-function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = null): void {
+function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = null, int $skip = 0): void {
     $key = $booking ? 'b' . $booking : 'c' . $chat;
-    $open = tg_admins_in($key);
+    // With topics every admin gets it in their topic; without, whoever has
+    // the conversation open, or everyone with the button to step in.
+    $topics = tg_topics_on();
+    $open = $topics ? [] : tg_admins_in($key);
     $targets = $open ?: tg_admins();
     $p = tg_person($chat);
-    $short = '⬅️ <b>' . tg_esc($p && $p['name'] !== '' ? $p['name'] : 'Орендар') . '</b>';
+    // Inside an open conversation: who, and which night it is about.
+    $b = $booking ? nox_booking($booking) : null;
+    $event = $b ? nox_booking_label($b) : '';
+    $short = '⬅️ <b>' . tg_esc($p && $p['name'] !== '' ? $p['name'] : 'Орендар') . '</b>' .
+             ($event !== '' ? ' · ' . tg_esc($event) : ($booking ? '' : ' · <i>без заявки</i>'));
     $full = '💬 <b>' . tg_who_line($chat, $booking) . '</b>';
     $kb = json_encode(['inline_keyboard' => [tg_talk_row($booking, $chat)]]);
     $kind = $m ? tg_media_kind($m) : '';
@@ -333,6 +449,10 @@ function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = nu
     }
 
     foreach ($targets as $uid) {
+        if ($topics && tg_topics_on()) {
+            $r = tg_topic_post($uid, $key, $chat, $booking, $bodyHtml, $kind !== '' ? $m : null, $fid, $skip);
+            if ($r) { tg_map_put($uid, (int)$r['message_id'], $chat, $booking); continue; }
+        }
         $inDlg = in_array($uid, $open, true);
         $head = $inDlg ? $short : $full;
         $base = ['chat_id' => $uid, 'parse_mode' => 'HTML'] + ($inDlg ? [] : ['reply_markup' => $kb]);
@@ -388,7 +508,7 @@ function tg_from_renter(array $m): void {
     // anything that cannot travel as a line saying what it was.
     $html = isset($m['text']) ? tg_esc((string)$m['text'])
           : (tg_media_kind($m) !== '' ? tg_esc((string)($m['caption'] ?? '')) : tg_esc($body));
-    tg_deliver($chat, $booking, $html, isset($m['text']) ? null : $m);
+    tg_deliver($chat, $booking, $html, isset($m['text']) ? null : $m, 1);
 }
 
 // The bot's own word to a renter, kept in the history like the rest.
@@ -439,6 +559,23 @@ function tg_dlg_open(string $admin, string $adminName, string $key): void {
             'disable_web_page_preview' => 'true']);
         return;
     }
+    // With topics, opening is going to the topic: it is made if it is not
+    // there yet, and a line lands in it so it comes up in the list.
+    if (tg_topics_on()) {
+        $db = relay_db();
+        $had = false;
+        if ($db) {
+            $st = $db->prepare('SELECT 1 FROM tg_topics WHERE admin = ? AND conv = ?');
+            $st->execute([$admin, $key]);
+            $had = (bool)$st->fetchColumn();
+        }
+        $th = tg_topic_for($admin, $key, $chat, $booking);
+        if ($th) {
+            if ($had) tg_call('sendMessage', ['chat_id' => $admin, 'message_thread_id' => $th,
+                'text' => '👇 Тут. Пишіть у цій темі — усе піде орендарю.']);
+            return;
+        }
+    }
     tg_dlg_set($admin, $key);
     $rows = array_slice(tg_history($booking, $booking ? '' : $chat), -10);
     $last = '';
@@ -482,10 +619,20 @@ function tg_chats_list(string $to): void {
 // to — through the renters' bot, as that bot's own message: text as text, a
 // file carried across, so nothing of the venue's account goes with it.
 function tg_from_admin(array $m): void {
-    $reply = (int)($m['reply_to_message']['message_id'] ?? 0);
-    $to = $reply ? tg_map_get((string)$m['chat']['id'], $reply) : null;
     $text = trim((string)($m['text'] ?? ''));
     $admin = (string)($m['from']['id'] ?? '');
+
+    // Written in a renter's topic: to that renter, whatever else is open.
+    $to = null;
+    $thread = !empty($m['is_topic_message']) ? (int)($m['message_thread_id'] ?? 0) : 0;
+    if ($thread && ($conv = tg_topic_key($admin, $thread)) !== '') {
+        if ($text !== '' && $text[0] === '/') return;
+        $bk = $conv[0] === 'b' ? (int)substr($conv, 1) : 0;
+        $ch = $bk ? tg_booking_chat($bk) : substr($conv, 1);
+        if ($ch !== '') $to = ['chat' => $ch, 'booking' => $bk];
+    }
+    $reply = (int)($m['reply_to_message']['message_id'] ?? 0);
+    if (!$to && $reply) $to = tg_map_get((string)$m['chat']['id'], $reply);
 
     // A reply goes where it points; anything else, to the conversation this
     // admin has open. A command is never a message to a renter.
@@ -497,7 +644,9 @@ function tg_from_admin(array $m): void {
         // the bot gets told how it works.
         if (($m['chat']['type'] ?? '') === 'private') {
             tg_call('sendMessage', ['chat_id' => $m['chat']['id'], 'reply_to_message_id' => $m['message_id'],
-                'text' => 'Ви зараз не в діалозі. Відкрийте його кнопкою «💬 Відкрити діалог» під заявкою чи повідомленням, або командою /chats.']);
+                'text' => tg_topics_on()
+                    ? 'Пишіть у темі потрібного орендаря — кожен орендар тут окрема тема. Список: /chats'
+                    : 'Ви зараз не в діалозі. Відкрийте його кнопкою «💬 Відкрити діалог» під заявкою чи повідомленням, або командою /chats.']);
         }
         return;
     }
@@ -519,11 +668,34 @@ function tg_from_admin(array $m): void {
     if ($r) {
         tg_log_msg($to['chat'], $to['booking'], 'out', $who, tg_msg_body($m));
         tg_map_put((string)$m['chat']['id'], (int)$m['message_id'], $to['chat'], $to['booking']);
+        tg_echo_out($admin, $who, $m, $to['chat'], $to['booking']);
         tg_call('setMessageReaction', ['chat_id' => $m['chat']['id'], 'message_id' => (int)$m['message_id'],
             'reaction' => json_encode([['type' => 'emoji', 'emoji' => '👌']])]);
     } else {
         tg_call('sendMessage', ['chat_id' => $m['chat']['id'], 'reply_to_message_id' => $m['message_id'],
             'text' => '⚠️ Не доставлено: орендар, мабуть, зупинив бота.']);
+    }
+}
+
+// What one admin sent shows in the other admins' topics too, so each of them
+// reads the whole conversation and anyone can take it over.
+function tg_echo_out(string $admin, string $who, array $m, string $chat, int $booking): void {
+    if (!tg_topics_on()) return;
+    $key = $booking ? 'b' . $booking : 'c' . $chat;
+    $head = '➡️ <b>' . tg_esc($who !== '' ? $who : 'Адмін') . '</b>';
+    foreach (tg_admins() as $uid) {
+        if ($uid === $admin) continue;
+        $th = tg_topic_for($uid, $key, $chat, $booking, 1);
+        if (!$th) return;
+        if (isset($m['text'])) {
+            tg_call('sendMessage', ['chat_id' => $uid, 'message_thread_id' => $th, 'parse_mode' => 'HTML',
+                'disable_web_page_preview' => 'true', 'text' => $head . "\n" . tg_esc((string)$m['text'])]);
+        } else {
+            $cap = (string)($m['caption'] ?? '');
+            tg_call('copyMessage', ['chat_id' => $uid, 'message_thread_id' => $th, 'from_chat_id' => $admin,
+                'message_id' => (int)$m['message_id'], 'parse_mode' => 'HTML',
+                'caption' => mb_substr($head . ($cap !== '' ? "\n" . tg_esc($cap) : ''), 0, 1000)]);
+        }
     }
 }
 
@@ -572,6 +744,11 @@ function tg_send_from_web(int $id, string $text, string $who): bool {
     if (!$r) return false;
     tg_log_msg($chat, $id, 'out', $who, $text);
     // Whoever has this conversation open in Telegram sees it there too.
+    if (tg_topics_on()) {
+        $fid = '';
+        foreach (tg_admins() as $uid) tg_topic_post($uid, 'b' . $id, $chat, $id, '➡️ <i>з адмінки:</i>' . "\n" . tg_esc($text), null, $fid, 1);
+        return true;
+    }
     foreach (tg_admins_in('b' . $id) as $uid) {
         tg_call('sendMessage', ['chat_id' => $uid, 'text' => '➡️ <i>з адмінки:</i>' . "\n" . tg_esc($text),
             'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true']);
