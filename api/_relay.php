@@ -44,11 +44,13 @@ function relay_db(): ?PDO {
     $db->exec('CREATE INDEX IF NOT EXISTS tg_msgs_chat ON tg_msgs(chat, id)');
     // A message in the venue's chat that stands for a renter: what the bot
     // brought in, a prompt to write. A reply to it goes to that renter.
-    $db->exec('CREATE TABLE IF NOT EXISTS tg_map (
-        admin_msg  INTEGER PRIMARY KEY,
+    $db->exec('CREATE TABLE IF NOT EXISTS tg_map2 (
+        admin_chat TEXT NOT NULL,                   -- an admin\'s private chat with the venue\'s bot, or the group
+        admin_msg  INTEGER NOT NULL,
         chat       TEXT NOT NULL,
         booking_id INTEGER NOT NULL DEFAULT 0,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (admin_chat, admin_msg)
     )');
     $ready = true;
     return $db;
@@ -96,9 +98,25 @@ const TG_MEDIA = [
     'photo' => 'sendPhoto', 'video' => 'sendVideo', 'document' => 'sendDocument', 'voice' => 'sendVoice',
     'audio' => 'sendAudio', 'animation' => 'sendAnimation', 'video_note' => 'sendVideoNote',
 ];
+// The kind of file a message carries, in the order above: an animation also
+// comes with a document, and is sent as what it is.
+function tg_media_kind(array $m): string {
+    foreach (array_reverse(TG_MEDIA) as $kind => $method) if (isset($m[$kind])) return $kind;
+    return '';
+}
+
+// The file_id a sent message got, to send the same file to someone else
+// without carrying it again.
+function tg_file_id($sent, string $kind): string {
+    if (!is_array($sent) || !isset($sent[$kind])) return '';
+    $item = $kind === 'photo' ? end($sent['photo']) : $sent[$kind];
+    return (string)($item['file_id'] ?? '');
+}
+
 function tg_carry(string $fromToken, array $m, string $toToken, array $params) {
-    foreach (TG_MEDIA as $kind => $method) {
-        if (!isset($m[$kind])) continue;
+    $kind = tg_media_kind($m);
+    if ($kind !== '') {
+        $method = TG_MEDIA[$kind];
         $item = $kind === 'photo' ? end($m['photo']) : $m[$kind];
         $f = tg_call_as($fromToken, 'getFile', ['file_id' => (string)($item['file_id'] ?? '')]);
         if (!$f || empty($f['file_path'])) return null;
@@ -111,6 +129,54 @@ function tg_carry(string $fromToken, array $m, string $toToken, array $params) {
         return $r;
     }
     return null;
+}
+
+/* ── who answers ──────────────────────────────────────────────────────────
+   Enquiries and their buttons stay in the venue's group. Conversations with
+   renters happen in each admin's private chat with the venue's bot, and an
+   admin is anyone in that group (or the person TG_CHAT names, when it is a
+   person). Telegram is asked once a day per admin. */
+function tg_is_admin(string $uid): bool {
+    if ($uid === '' || $uid[0] === '-') return false;
+    if ($uid === (string)TG_CHAT || $uid === tg_admin_chat()) return true;
+    $group = tg_admin_chat();
+    if ($group === '' || $group[0] !== '-') return false;
+    $seen = (int)nox_meta('tg_adm:' . $uid);
+    if ($seen && time() - $seen < 86400) return true;
+    $r = tg_call('getChatMember', ['chat_id' => $group, 'user_id' => $uid]);
+    $st = (string)($r['status'] ?? '');
+    $ok = in_array($st, ['creator', 'administrator', 'member'], true) || ($st === 'restricted' && !empty($r['is_member']));
+    nox_meta('tg_adm:' . $uid, $ok ? (string)time() : '');
+    if (!$ok) nox_meta('tg_pm:' . $uid, '');
+    return $ok;
+}
+
+// The admins who pressed Start in the venue's bot, so it can write to them.
+function tg_admins(): array {
+    $db = relay_db();
+    if (!$db) return [];
+    $rows = $db->query("SELECT k FROM meta WHERE k LIKE 'tg_pm:%' AND v = '1'")->fetchAll(PDO::FETCH_COLUMN);
+    return array_map(function ($k) { return substr($k, 6); }, $rows);
+}
+
+// Of those, the ones who have this conversation open right now.
+function tg_admins_in(string $key): array {
+    $db = relay_db();
+    if (!$db) return [];
+    $st = $db->prepare("SELECT k FROM meta WHERE k LIKE 'tg_dlg:%' AND v = ?");
+    $st->execute([$key]);
+    $open = array_map(function ($k) { return substr($k, 7); }, $st->fetchAll(PDO::FETCH_COLUMN));
+    return array_values(array_intersect($open, tg_admins()));
+}
+
+// The venue's bot's own @name, for links that open it.
+function tg_admin_bot_name(): string {
+    $n = nox_meta('tg_bot');
+    if ($n !== '') return $n;
+    $me = tg_call('getMe', []);
+    $n = (string)($me['username'] ?? '');
+    if ($n !== '') nox_meta('tg_bot', $n);
+    return $n;
 }
 
 /* ── the link that ties a chat to a booking ───────────────────────────────── */
@@ -169,21 +235,22 @@ function tg_log_msg(string $chat, int $booking, string $dir, string $who, string
        ->execute([$chat, $booking, $dir, $who, $body, time()]);
 }
 
-function tg_map_put(int $adminMsg, string $chat, int $booking): void {
+function tg_map_put(string $adminChat, int $adminMsg, string $chat, int $booking): void {
     $db = relay_db();
     if (!$db || !$adminMsg) return;
-    $db->prepare('INSERT OR REPLACE INTO tg_map (admin_msg, chat, booking_id, created_at) VALUES (?, ?, ?, ?)')
-       ->execute([$adminMsg, $chat, $booking, time()]);
+    $db->prepare('INSERT OR REPLACE INTO tg_map2 (admin_chat, admin_msg, chat, booking_id, created_at) VALUES (?, ?, ?, ?, ?)')
+       ->execute([$adminChat, $adminMsg, $chat, $booking, time()]);
 }
 
-// Which renter a message in the venue's chat stands for: one the bot mapped,
-// or a booking's own card, whose renter is known once they have linked.
-function tg_map_get(int $adminMsg): ?array {
+// Which renter a message stands for: one the bot mapped in that chat, or a
+// booking's card in the group, whose renter is known once they have linked.
+function tg_map_get(string $adminChat, int $adminMsg): ?array {
     $db = relay_db();
     if (!$db || !$adminMsg) return null;
-    $st = $db->prepare('SELECT chat, booking_id FROM tg_map WHERE admin_msg = ?');
-    $st->execute([$adminMsg]);
+    $st = $db->prepare('SELECT chat, booking_id FROM tg_map2 WHERE admin_chat = ? AND admin_msg = ?');
+    $st->execute([$adminChat, $adminMsg]);
     if ($r = $st->fetch()) return ['chat' => (string)$r['chat'], 'booking' => (int)$r['booking_id']];
+    if ($adminChat !== tg_admin_chat()) return null;
     $st = $db->prepare('SELECT id FROM bookings WHERE tg_message_id = ?');
     $st->execute([$adminMsg]);
     $id = (int)$st->fetchColumn();
@@ -240,6 +307,52 @@ function tg_msg_body(array $m): string {
     return $text;
 }
 
+/* ── into the admins' private chats ───────────────────────────────────────
+   Whoever has this conversation open gets it plainly, as the next line of
+   the dialog; if nobody has, every admin who started the bot gets it with
+   the buttons to step in. If no admin has started the bot yet, it goes to
+   the group so it is not lost, with a word on how to take it private. */
+function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = null): void {
+    $key = $booking ? 'b' . $booking : 'c' . $chat;
+    $open = tg_admins_in($key);
+    $targets = $open ?: tg_admins();
+    $p = tg_person($chat);
+    $short = '⬅️ <b>' . tg_esc($p && $p['name'] !== '' ? $p['name'] : 'Орендар') . '</b>';
+    $full = '💬 <b>' . tg_who_line($chat, $booking) . '</b>';
+    $kb = json_encode(['inline_keyboard' => [tg_talk_row($booking, $chat)]]);
+    $kind = $m ? tg_media_kind($m) : '';
+    $fid = '';
+
+    if (!$targets) {
+        $bot = tg_admin_bot_name();
+        $hint = $bot !== '' ? "\n\n" . '<i>Щоб листуватися в особистих, відкрийте @' . tg_esc($bot) . ' і натисніть Start.</i>' : '';
+        $r = tg_call('sendMessage', tg_to_admin(['text' => $full . "\n\n" . $bodyHtml . $hint, 'parse_mode' => 'HTML',
+            'disable_web_page_preview' => 'true', 'reply_markup' => $kb]));
+        if ($r) tg_map_put(tg_admin_chat(), (int)$r['message_id'], $chat, $booking);
+        return;
+    }
+
+    foreach ($targets as $uid) {
+        $inDlg = in_array($uid, $open, true);
+        $head = $inDlg ? $short : $full;
+        $base = ['chat_id' => $uid, 'parse_mode' => 'HTML'] + ($inDlg ? [] : ['reply_markup' => $kb]);
+        $r = null;
+        if ($kind !== '') {
+            $cap = mb_substr($head . ($bodyHtml !== '' ? "\n" . $bodyHtml : ''), 0, 1000);
+            if ($fid !== '') {
+                $r = tg_call(TG_MEDIA[$kind], $base + ['caption' => $cap, $kind => $fid]);
+            } else {
+                $r = tg_carry(tg_renter_token(), $m, TG_TOKEN, $base + ['caption' => $cap]);
+                $fid = tg_file_id($r, $kind);
+            }
+        }
+        if (!$r) {
+            $r = tg_call('sendMessage', $base + ['text' => $head . "\n" . $bodyHtml, 'disable_web_page_preview' => 'true']);
+        }
+        if ($r) tg_map_put($uid, (int)$r['message_id'], $chat, $booking);
+    }
+}
+
 /* ── the renter writes ────────────────────────────────────────────────────── */
 function tg_from_renter(array $m): void {
     $chat = (string)$m['chat']['id'];
@@ -255,12 +368,7 @@ function tg_from_renter(array $m): void {
                      'Вашу заявку на <b>' . tg_date($b['date']) . '</b> отримали. ' .
                      'Відповідь прийде сюди, в цей чат. Питання можна писати тут же.';
             tg_say($chat, $hello, $id);
-            $sent = tg_call('sendMessage', tg_to_admin([
-                'text' => '🔗 ' . tg_who_line($chat, $id) . "\n" . 'підключив Telegram — можна писати через бота.',
-                'parse_mode' => 'HTML',
-                'reply_markup' => json_encode(['inline_keyboard' => [tg_talk_row($id)]]),
-            ]));
-            if ($sent) tg_map_put((int)$sent['message_id'], $chat, $id);
+            tg_deliver($chat, $id, '🔗 <i>відкрив бота — можна писати.</i>');
         } else {
             tg_person_seen($chat, $from);
             tg_say($chat, 'Вітаємо! Це nøx 🖤' . "\n\n" .
@@ -276,26 +384,11 @@ function tg_from_renter(array $m): void {
     $body = tg_msg_body($m);
     tg_log_msg($chat, $booking, 'in', trim(($from['first_name'] ?? '') . ' ' . ($from['last_name'] ?? '')), $body);
 
-    // Into the venue's chat under a header naming the booking: text as one
-    // message, a file carried across with the header as its caption, and
+    // To the admins: text as it is, a file carried across with the caption,
     // anything that cannot travel as a line saying what it was.
-    $head = '💬 <b>' . tg_who_line($chat, $booking) . '</b>';
-    $kb = json_encode(['inline_keyboard' => [tg_talk_row($booking, $chat)]]);
-    $sent = null;
-    if (!isset($m['text'])) {
-        $cap = (string)($m['caption'] ?? '');
-        $sent = tg_carry(tg_renter_token(), $m, TG_TOKEN, tg_to_admin([
-            'caption' => mb_substr($head . ($cap !== '' ? "\n\n" . tg_esc($cap) : ''), 0, 1000),
-            'parse_mode' => 'HTML', 'reply_markup' => $kb,
-        ]));
-    }
-    if (!$sent) {
-        $sent = tg_call('sendMessage', tg_to_admin([
-            'text' => $head . "\n\n" . tg_esc($body), 'parse_mode' => 'HTML',
-            'disable_web_page_preview' => 'true', 'reply_markup' => $kb,
-        ]));
-    }
-    if ($sent) tg_map_put((int)$sent['message_id'], $chat, $booking);
+    $html = isset($m['text']) ? tg_esc((string)$m['text'])
+          : (tg_media_kind($m) !== '' ? tg_esc((string)($m['caption'] ?? '')) : tg_esc($body));
+    tg_deliver($chat, $booking, $html, isset($m['text']) ? null : $m);
 }
 
 // The bot's own word to a renter, kept in the history like the rest.
@@ -339,11 +432,11 @@ function tg_dlg_open(string $admin, string $adminName, string $key): void {
     $chat = $booking ? tg_booking_chat($booking) : substr($key, 1);
     if ($chat === '') {
         $link = tg_start_link($booking);
-        tg_call('sendMessage', tg_to_admin(['text' => $link === ''
+        tg_call('sendMessage', ['chat_id' => $admin, 'text' => $link === ''
             ? 'Бот для орендарів ще не підключений — це робиться внизу /admin.'
             : '🔗 #' . $booking . ' ще не відкривав бота, тому написати йому бот не може.' . "\n\n" .
               'Надішліть йому один раз це посилання — після «Start» листування піде через бота:' . "\n" . $link,
-            'disable_web_page_preview' => 'true']));
+            'disable_web_page_preview' => 'true']);
         return;
     }
     tg_dlg_set($admin, $key);
@@ -353,23 +446,24 @@ function tg_dlg_open(string $admin, string $adminName, string $key): void {
         $mark = $r['dir'] === 'in' ? '⬅️' : ($r['dir'] === 'out' ? '➡️' : '🤖');
         $last .= "\n" . $mark . ' ' . tg_esc(mb_strimwidth((string)$r['body'], 0, 300, '…'));
     }
-    $sent = tg_call('sendMessage', tg_to_admin([
+    $sent = tg_call('sendMessage', [
+        'chat_id' => $admin,
         'text' => '💬 <b>' . tg_esc($adminName) . ', ви в діалозі:</b>' . "\n" . tg_who_line($chat, $booking) .
                   ($last !== '' ? "\n\n" . '<i>Останнє:</i>' . $last : '') . "\n\n" .
                   'Пишіть просто сюди — усе піде орендарю від імені бота. Вийти: /end',
         'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true',
         'reply_markup' => json_encode(['inline_keyboard' => [[['text' => '⬅️ Вийти з діалогу', 'callback_data' => 'close']]]]),
-    ]));
-    if ($sent) tg_map_put((int)$sent['message_id'], $chat, $booking);
+    ]);
+    if ($sent) tg_map_put($admin, (int)$sent['message_id'], $chat, $booking);
 }
 
 // /chats: the latest conversations, one button each.
-function tg_chats_list(): void {
+function tg_chats_list(string $to): void {
     $db = relay_db();
     if (!$db) return;
     $rows = $db->query('SELECT chat, booking_id FROM tg_people ORDER BY updated_at DESC LIMIT 12')->fetchAll();
     if (!$rows) {
-        tg_call('sendMessage', tg_to_admin(['text' => 'Поки ніхто з орендарів не писав.']));
+        tg_call('sendMessage', ['chat_id' => $to, 'text' => 'Поки ніхто з орендарів не писав.']);
         return;
     }
     $kb = [];
@@ -378,17 +472,18 @@ function tg_chats_list(): void {
         $label = html_entity_decode(strip_tags(tg_who_line((string)$r['chat'], (int)$r['booking_id'])), ENT_QUOTES);
         $kb[] = [['text' => mb_strimwidth($label, 0, 60, '…'), 'callback_data' => 'open:' . $key]];
     }
-    tg_call('sendMessage', tg_to_admin(['text' => 'Оберіть діалог:', 'reply_markup' => json_encode(['inline_keyboard' => $kb])]));
+    tg_call('sendMessage', ['chat_id' => $to, 'text' => 'Оберіть діалог:', 'reply_markup' => json_encode(['inline_keyboard' => $kb])]);
 }
 
 /* ── the venue writes ─────────────────────────────────────────────────────── */
 
-// A reply in the venue's chat to something that stands for a renter goes to
-// them through the renters' bot, as that bot's own message: text as text, a
+// What an admin writes in their private chat with the venue's bot goes to the
+// renter of the conversation they have open — or of the message they reply
+// to — through the renters' bot, as that bot's own message: text as text, a
 // file carried across, so nothing of the venue's account goes with it.
 function tg_from_admin(array $m): void {
     $reply = (int)($m['reply_to_message']['message_id'] ?? 0);
-    $to = $reply ? tg_map_get($reply) : null;
+    $to = $reply ? tg_map_get((string)$m['chat']['id'], $reply) : null;
     $text = trim((string)($m['text'] ?? ''));
     $admin = (string)($m['from']['id'] ?? '');
 
@@ -423,7 +518,7 @@ function tg_from_admin(array $m): void {
     }
     if ($r) {
         tg_log_msg($to['chat'], $to['booking'], 'out', $who, tg_msg_body($m));
-        tg_map_put((int)$m['message_id'], $to['chat'], $to['booking']);
+        tg_map_put((string)$m['chat']['id'], (int)$m['message_id'], $to['chat'], $to['booking']);
         tg_call('setMessageReaction', ['chat_id' => $m['chat']['id'], 'message_id' => (int)$m['message_id'],
             'reaction' => json_encode([['type' => 'emoji', 'emoji' => '👌']])]);
     } else {
@@ -476,11 +571,10 @@ function tg_send_from_web(int $id, string $text, string $who): bool {
     $r = tg_renter('sendMessage', ['chat_id' => $chat, 'text' => $text, 'disable_web_page_preview' => 'true']);
     if (!$r) return false;
     tg_log_msg($chat, $id, 'out', $who, $text);
-    $echo = tg_call('sendMessage', tg_to_admin([
-        'text' => '➡️ <b>' . tg_who_line($chat, $id) . '</b> · з адмінки' . "\n\n" . tg_esc($text),
-        'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true',
-        'reply_markup' => json_encode(['inline_keyboard' => [tg_talk_row($id)]]),
-    ]));
-    if ($echo) tg_map_put((int)$echo['message_id'], $chat, $id);
+    // Whoever has this conversation open in Telegram sees it there too.
+    foreach (tg_admins_in('b' . $id) as $uid) {
+        tg_call('sendMessage', ['chat_id' => $uid, 'text' => '➡️ <i>з адмінки:</i>' . "\n" . tg_esc($text),
+            'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true']);
+    }
     return true;
 }
