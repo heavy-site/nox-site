@@ -310,9 +310,75 @@ function tg_say(string $chat, string $html, int $booking) {
 function tg_talk_row(int $booking, string $chat = ''): array {
     $key = $booking ? 'b' . $booking : 'c' . $chat;
     return [
-        ['text' => '✍️ Написати', 'callback_data' => 'write:' . $key],
-        ['text' => '📜 Діалог',    'callback_data' => 'log:' . $key],
+        ['text' => '💬 Відкрити діалог', 'callback_data' => 'open:' . $key],
+        ['text' => '📜 Уся історія',     'callback_data' => 'log:' . $key],
     ];
+}
+
+/* ── a conversation one admin is in ───────────────────────────────────────
+   Opened from a button or /chats, it lasts until /end or until another one is
+   opened. While it is open, whatever that admin writes in the venue's chat —
+   no reply needed — goes to that renter. Each admin has their own, so in a
+   group two people can talk to two renters at once. */
+function tg_dlg_get(string $admin): ?array {
+    $key = nox_meta('tg_dlg:' . $admin);
+    if (!preg_match('/^(b(\d+)|c(-?\d+))$/', $key, $k)) return null;
+    $booking = isset($k[2]) && $k[2] !== '' ? (int)$k[2] : 0;
+    $chat = $booking ? tg_booking_chat($booking) : (string)($k[3] ?? '');
+    return $chat !== '' ? ['chat' => $chat, 'booking' => $booking, 'key' => $key] : null;
+}
+
+function tg_dlg_set(string $admin, string $key): void {
+    nox_meta('tg_dlg:' . $admin, $key);
+}
+
+// Opening says who it is, shows the last of what was said, and offers the
+// way out. The renter must have opened their bot first.
+function tg_dlg_open(string $admin, string $adminName, string $key): void {
+    $booking = $key[0] === 'b' ? (int)substr($key, 1) : 0;
+    $chat = $booking ? tg_booking_chat($booking) : substr($key, 1);
+    if ($chat === '') {
+        $link = tg_start_link($booking);
+        tg_call('sendMessage', tg_to_admin(['text' => $link === ''
+            ? 'Бот для орендарів ще не підключений — це робиться внизу /admin.'
+            : '🔗 #' . $booking . ' ще не відкривав бота, тому написати йому бот не може.' . "\n\n" .
+              'Надішліть йому один раз це посилання — після «Start» листування піде через бота:' . "\n" . $link,
+            'disable_web_page_preview' => 'true']));
+        return;
+    }
+    tg_dlg_set($admin, $key);
+    $rows = array_slice(tg_history($booking, $booking ? '' : $chat), -10);
+    $last = '';
+    foreach ($rows as $r) {
+        $mark = $r['dir'] === 'in' ? '⬅️' : ($r['dir'] === 'out' ? '➡️' : '🤖');
+        $last .= "\n" . $mark . ' ' . tg_esc(mb_strimwidth((string)$r['body'], 0, 300, '…'));
+    }
+    $sent = tg_call('sendMessage', tg_to_admin([
+        'text' => '💬 <b>' . tg_esc($adminName) . ', ви в діалозі:</b>' . "\n" . tg_who_line($chat, $booking) .
+                  ($last !== '' ? "\n\n" . '<i>Останнє:</i>' . $last : '') . "\n\n" .
+                  'Пишіть просто сюди — усе піде орендарю від імені бота. Вийти: /end',
+        'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true',
+        'reply_markup' => json_encode(['inline_keyboard' => [[['text' => '⬅️ Вийти з діалогу', 'callback_data' => 'close']]]]),
+    ]));
+    if ($sent) tg_map_put((int)$sent['message_id'], $chat, $booking);
+}
+
+// /chats: the latest conversations, one button each.
+function tg_chats_list(): void {
+    $db = relay_db();
+    if (!$db) return;
+    $rows = $db->query('SELECT chat, booking_id FROM tg_people ORDER BY updated_at DESC LIMIT 12')->fetchAll();
+    if (!$rows) {
+        tg_call('sendMessage', tg_to_admin(['text' => 'Поки ніхто з орендарів не писав.']));
+        return;
+    }
+    $kb = [];
+    foreach ($rows as $r) {
+        $key = (int)$r['booking_id'] ? 'b' . (int)$r['booking_id'] : 'c' . $r['chat'];
+        $label = html_entity_decode(strip_tags(tg_who_line((string)$r['chat'], (int)$r['booking_id'])), ENT_QUOTES);
+        $kb[] = [['text' => mb_strimwidth($label, 0, 60, '…'), 'callback_data' => 'open:' . $key]];
+    }
+    tg_call('sendMessage', tg_to_admin(['text' => 'Оберіть діалог:', 'reply_markup' => json_encode(['inline_keyboard' => $kb])]));
 }
 
 /* ── the venue writes ─────────────────────────────────────────────────────── */
@@ -324,13 +390,19 @@ function tg_from_admin(array $m): void {
     $reply = (int)($m['reply_to_message']['message_id'] ?? 0);
     $to = $reply ? tg_map_get($reply) : null;
     $text = trim((string)($m['text'] ?? ''));
+    $admin = (string)($m['from']['id'] ?? '');
+
+    // A reply goes where it points; anything else, to the conversation this
+    // admin has open. A command is never a message to a renter.
+    if (!$to && $text !== '' && $text[0] === '/') return;
+    if (!$to) $to = tg_dlg_get($admin);
 
     if (!$to) {
         // In a group people talk among themselves; only a private chat with
         // the bot gets told how it works.
-        if (($m['chat']['type'] ?? '') === 'private' && $text !== '' && $text[0] !== '/') {
+        if (($m['chat']['type'] ?? '') === 'private') {
             tg_call('sendMessage', ['chat_id' => $m['chat']['id'], 'reply_to_message_id' => $m['message_id'],
-                'text' => 'Щоб написати орендарю, відповідайте (Reply) на його повідомлення або натисніть «✍️ Написати» під заявкою.']);
+                'text' => 'Ви зараз не в діалозі. Відкрийте його кнопкою «💬 Відкрити діалог» під заявкою чи повідомленням, або командою /chats.']);
         }
         return;
     }

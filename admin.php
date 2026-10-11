@@ -12,7 +12,7 @@ require_once __DIR__ . '/api/_relay.php';
 // connected under an older one is pointed again on the next visit. Up here,
 // because the actions below use them before the rest of the page is read.
 const TG_UPDATES = ['callback_query', 'message'];
-const TG_HOOK_V = '3';
+const TG_HOOK_V = '4';
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
@@ -408,6 +408,7 @@ if ($action !== '') {
                 if ($r) {
                     nox_meta('tg_hook', '1'); nox_meta('tg_hook_v', TG_HOOK_V);
                     tg_renter_hook();
+                    tg_admin_commands();
                     flash('Бота підключено: кнопки під заявками й переписка з орендарями.');
                 }
                 else flash('Telegram не прийняв вебхук — подробиці в site.log.', 'err');
@@ -586,7 +587,16 @@ function status_button(array $b, string $to, string $label, string $cls, string 
 if (TG_TOKEN !== '' && nox_meta('tg_hook') === '1' && nox_meta('tg_hook_v') !== TG_HOOK_V) {
     $r = tg_call('setWebhook', ['url' => NOX_SITE_URL . '/api/telegram', 'secret_token' => tg_hook_secret(),
                                 'allowed_updates' => json_encode(TG_UPDATES)]);
-    if ($r) { nox_meta('tg_hook_v', TG_HOOK_V); tg_renter_hook(); }
+    if ($r) { nox_meta('tg_hook_v', TG_HOOK_V); tg_renter_hook(); tg_admin_commands(); }
+}
+
+// The menu of commands in the venue's bot.
+function tg_admin_commands(): void {
+    tg_call('setMyCommands', ['commands' => json_encode([
+        ['command' => 'chats', 'description' => 'Діалоги з орендарями'],
+        ['command' => 'end',   'description' => 'Вийти з діалогу'],
+        ['command' => 'b',     'description' => 'Заявка за номером: /b 12'],
+    ], JSON_UNESCAPED_UNICODE)]);
 }
 
 // The renters' bot is pointed at /api/renter, and hears only messages.

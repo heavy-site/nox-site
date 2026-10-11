@@ -243,8 +243,8 @@ function tg_booking_keyboard(array $b): ?array {
             break;
     }
     // Talking to the renter through the bot, and the whole conversation so far.
-    $talk = [['text' => '✍️ Написати', 'callback_data' => 'write:b' . $id],
-             ['text' => '📜 Діалог',    'callback_data' => 'log:b' . $id]];
+    $talk = [['text' => '💬 Відкрити діалог', 'callback_data' => 'open:b' . $id],
+             ['text' => '📜 Уся історія', 'callback_data' => 'log:b' . $id]];
     $open = [['text' => 'Відкрити в адмінці', 'url' => NOX_SITE_URL . '/admin?id=' . $id]];
     return $row ? [$row, $talk, $open] : [$talk, $open];
 }

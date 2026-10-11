@@ -65,8 +65,11 @@ to the other by the server, since bots cannot copy each other's messages.
   write first, so their press of Start is what lets it answer. For a booking that did not come from the
   form, `/admin` shows the same link to send once.
 - What the renter writes arrives in the venue's chat under «💬 #id · event ·
-  name». A **reply** to it (or to the booking's card, or after «✍️ Написати»)
-  goes to the renter as the bot's own message — text, photos, files, voice.
+  name». **«💬 Відкрити діалог»** under it (or under the booking's card, or
+  from `/chats`) puts that admin in the conversation: from then on whatever
+  they write in the chat goes to the renter as the bot's own message — text,
+  photos, files, voice — until `/end`. Each admin has their own open
+  conversation. A reply to a renter's message still goes to that renter.
 - Confirming, declining or cancelling a booking tells the renter on its own.
 - «📜 Діалог» posts the whole conversation; `/admin` shows it under the booking
   and can send from there too. Everything is kept in the database.
