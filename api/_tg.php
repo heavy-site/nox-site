@@ -13,6 +13,18 @@
 require_once __DIR__ . '/_config.php';
 require_once __DIR__ . '/_db.php';
 
+/* Where the venue's side lives: TG_CHAT from the config, or a group chosen
+   later with /here in it, so that more than one person can read and answer. */
+function tg_admin_chat(): string {
+    $moved = nox_meta('tg_admin_chat');
+    return $moved !== '' ? $moved : (string)TG_CHAT;
+}
+
+// The topic only belongs to the chat it was set up for.
+function tg_admin_topic(): int {
+    return tg_admin_chat() === (string)TG_CHAT ? (int)TG_TOPIC : 0;
+}
+
 function tg_esc(string $v): string {
     // Telegram's HTML parse mode only forbids these three; anything else,
     // including a name in angle brackets, would otherwise break the message.
@@ -123,7 +135,8 @@ function tg_plural(int $n, string $one, string $few, string $many): string {
 function tg_call(string $method, array $params) {
     if (TG_TOKEN === '') { nox_log('TG skipped: no token'); return null; }
 
-    $url = 'https://api.telegram.org/bot' . TG_TOKEN . '/' . $method;
+    // TG_API stands in for Telegram in local tests; on the host it is not set.
+    $url = (defined('TG_API') ? TG_API : 'https://api.telegram.org') . '/bot' . TG_TOKEN . '/' . $method;
     $body = http_build_query($params);
     $res = null;
 
@@ -160,14 +173,14 @@ function tg_call(string $method, array $params) {
 // A message to the venue's chat, with buttons under it when there are any.
 // The sent message on success, null otherwise.
 function tg_send(string $text, ?array $keyboard = null) {
-    if (TG_TOKEN === '' || TG_CHAT === '') { nox_log('TG skipped: not configured'); return null; }
+    if (TG_TOKEN === '' || tg_admin_chat() === '') { nox_log('TG skipped: not configured'); return null; }
     $params = [
-        'chat_id'                  => TG_CHAT,
+        'chat_id'                  => tg_admin_chat(),
         'text'                     => $text,
         'parse_mode'               => 'HTML',
         'disable_web_page_preview' => 'true',
     ];
-    if (TG_TOPIC) $params['message_thread_id'] = TG_TOPIC;
+    if (tg_admin_topic()) $params['message_thread_id'] = tg_admin_topic();
     if ($keyboard) $params['reply_markup'] = json_encode(['inline_keyboard' => $keyboard]);
     return tg_call('sendMessage', $params);
 }
@@ -218,16 +231,19 @@ function tg_booking_keyboard(array $b): ?array {
             $row[] = ['text' => '↺ Повернути в нові', 'callback_data' => 'new:' . $id];
             break;
     }
+    // Talking to the renter through the bot, and the whole conversation so far.
+    $talk = [['text' => '✍️ Написати', 'callback_data' => 'write:b' . $id],
+             ['text' => '📜 Діалог',    'callback_data' => 'log:b' . $id]];
     $open = [['text' => 'Відкрити в адмінці', 'url' => NOX_SITE_URL . '/admin?id=' . $id]];
-    return $row ? [$row, $open] : [$open];
+    return $row ? [$row, $talk, $open] : [$talk, $open];
 }
 
 // Draws the booking's message again after its status changed.
 function tg_sync_booking(int $id): void {
     $b = nox_booking($id);
-    if (!$b || !(int)$b['tg_message_id'] || TG_CHAT === '') return;
+    if (!$b || !(int)$b['tg_message_id'] || tg_admin_chat() === '') return;
     $params = [
-        'chat_id'                  => TG_CHAT,
+        'chat_id'                  => tg_admin_chat(),
         'message_id'               => (int)$b['tg_message_id'],
         'text'                     => tg_booking_text($b),
         'parse_mode'               => 'HTML',

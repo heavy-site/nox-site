@@ -6,7 +6,7 @@
 // and poster.
 //
 // Closed until NOX_ADMIN_PASS is set in nox_config.php, outside the web root.
-require_once __DIR__ . '/api/_tg.php';
+require_once __DIR__ . '/api/_relay.php';
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
@@ -150,6 +150,12 @@ input[type=checkbox]{ width:18px; height:18px; accent-color:var(--gas); }
 textarea{ min-height:90px; resize:vertical; }
 input:focus,select:focus,textarea:focus{ outline:1px solid var(--gas); border-color:var(--gas); }
 .hint{ color:var(--dust); font-size:12px; }
+.dlg{ display:grid; gap:8px; max-height:420px; overflow:auto; padding:4px 2px; }
+.msg{ max-width:80%; padding:8px 12px; border:1px solid var(--line2); font-size:14px; line-height:1.45; white-space:normal; }
+.msg span{ display:block; font-size:11px; color:var(--dust); margin-bottom:3px; }
+.msg.in{ justify-self:start; background:var(--pit); }
+.msg.out{ justify-self:end; border-color:var(--gas); }
+.msg.sys{ justify-self:center; opacity:.7; font-size:12px; }
 .foot{ margin-top:34px; padding-top:16px; border-top:1px solid var(--line2); color:var(--ash); font-size:13px; }
 .login{ max-width:340px; margin:14vh auto 0; display:grid; gap:12px; }
 .m a{ color:var(--pale); text-decoration:none; }
@@ -176,6 +182,9 @@ details.mv input{ width:auto; padding:6px 8px; font-size:14px; }
 <body><div class="wrap"><?= $body ?></div>
 <script>
 (function () {
+  // A conversation opens at its latest message.
+  document.querySelectorAll(".dlg").forEach(function (d) { d.scrollTop = d.scrollHeight; });
+
   // Copy: navigator.clipboard where the page may use it, a hidden textarea
   // where it may not (some in-app browsers, Telegram's among them).
   function fallback(t) {
@@ -281,9 +290,11 @@ if ($action !== '') {
             go(ADM);
 
         case 'status':
+            $was = nox_booking($id);
             list($ok, $why) = nox_set_status($id, (string)($_POST['status'] ?? ''));
             if ($ok) {
                 tg_sync_booking($id);
+                if ($was) tg_tell_status($id, $was['status'], (string)$_POST['status']);
                 nox_log('BOOKING #' . $id . ' -> ' . $_POST['status'] . ' by admin');
                 flash('#' . $id . ': ' . $STATUS_LABEL[$_POST['status']] . '.');
             } else {
@@ -319,6 +330,7 @@ if ($action !== '') {
                 nox_log('BOOKING #' . $id . ' -> ' . $status . ' by admin');
             }
             tg_sync_booking($id);
+            if ($before) tg_tell_status($id, $before['status'], $status);
             flash('Збережено.');
             go(ADM . '?id=' . $id);
 
@@ -345,6 +357,14 @@ if ($action !== '') {
             flash('#' . $id . ' перенесено на ' . tg_date($to) . ($shown ? ' — у «Подіях» на сайті теж.' : '.'));
             go($back);
 
+        // A message to the renter from here, through the bot.
+        case 'tg_write':
+            $text = mb_substr(trim((string)($_POST['text'] ?? '')), 0, 4000);
+            if ($text === '') { flash('Порожнє повідомлення.', 'err'); go(ADM . '?id=' . $id); }
+            if (tg_send_from_web($id, $text, 'адмінка')) flash('Надіслано орендарю.');
+            else flash('Не вдалося надіслати: орендар не підключив бота або зупинив його.', 'err');
+            go(ADM . '?id=' . $id . '#tg');
+
         case 'delete':
             nox_booking_delete($id);
             nox_log('BOOKING #' . $id . ' deleted by admin');
@@ -358,10 +378,10 @@ if ($action !== '') {
                 $r = tg_call('setWebhook', [
                     'url'                  => NOX_SITE_URL . '/api/telegram',
                     'secret_token'         => tg_hook_secret(),
-                    'allowed_updates'      => json_encode(['callback_query']),
+                    'allowed_updates'      => json_encode(TG_UPDATES),
                     'drop_pending_updates' => 'true',
                 ]);
-                if ($r) { nox_meta('tg_hook', '1'); flash('Кнопки в Telegram підключено. Вони зʼявляться під новими заявками.'); }
+                if ($r) { nox_meta('tg_hook', '1'); nox_meta('tg_hook_v', TG_HOOK_V); flash('Бота підключено: кнопки під заявками й переписка з орендарями.'); }
                 else flash('Telegram не прийняв вебхук — подробиці в site.log.', 'err');
             } else {
                 tg_call('deleteWebhook', []);
@@ -533,6 +553,50 @@ function status_button(array $b, string $to, string $label, string $cls, string 
         '<button class="btn small ' . $cls . '" type="submit">' . h($label) . '</button></form>';
 }
 
+// The bot used to be told only about button presses; now it hears messages
+// too. A hook connected before that is pointed again, once, on its own.
+const TG_UPDATES = ['callback_query', 'message'];
+const TG_HOOK_V = '2';
+if (TG_TOKEN !== '' && nox_meta('tg_hook') === '1' && nox_meta('tg_hook_v') !== TG_HOOK_V) {
+    $r = tg_call('setWebhook', ['url' => NOX_SITE_URL . '/api/telegram', 'secret_token' => tg_hook_secret(),
+                                'allowed_updates' => json_encode(TG_UPDATES)]);
+    if ($r) nox_meta('tg_hook_v', TG_HOOK_V);
+}
+
+/* The renter in Telegram: whether they opened the bot, everything said, and
+   a box to write to them. Before they open it, the link to send them once. */
+function tg_panel(array $b): string {
+    if (TG_TOKEN === '') return '';
+    $id = (int)$b['id'];
+    $chat = tg_booking_chat($id);
+    $out = '<fieldset id="tg"><legend>Telegram орендаря</legend>';
+    if ($chat === '') {
+        $link = tg_start_link($id);
+        $out .= '<p class="hint" style="margin:0 0 10px">Орендар ще не відкривав бота, тому бот не може йому написати. ' .
+            'Надішліть йому один раз це посилання — після «Start» листування піде через бота, і ваші контакти він не побачить.</p>' .
+            ($link !== '' ? '<div class="row"><code style="word-break:break-all">' . h($link) . '</code> ' .
+                '<button type="button" class="btn small" data-copy="' . h($link) . '">⧉ Скопіювати</button></div>' : '');
+        return $out . '</fieldset>';
+    }
+    $p = tg_person($chat);
+    $out .= '<p class="hint" style="margin:0 0 10px">Підключено' .
+        ($p && $p['username'] !== '' ? ' · @' . h($p['username']) : '') . ($p && $p['name'] !== '' ? ' · ' . h($p['name']) : '') .
+        '. Пишіть тут або в Telegram — відповіддю на його повідомлення.</p>';
+    $rows = tg_history($id);
+    $out .= '<div class="dlg">';
+    if (!$rows) $out .= '<p class="hint">Поки нічого не писали.</p>';
+    foreach ($rows as $r) {
+        $who = $r['dir'] === 'in' ? 'Орендар' : ($r['dir'] === 'out' ? ($r['who'] !== '' ? $r['who'] : 'Ми') : 'Бот');
+        $out .= '<div class="msg ' . h($r['dir']) . '"><span>' . h($who) . ' · ' . h(date('d.m H:i', (int)$r['created_at'])) . '</span>' .
+            nl2br(h($r['body'])) . '</div>';
+    }
+    $out .= '</div><form method="post" action="' . ADM . '" class="row" style="margin-top:10px">' . csrf_field() .
+        '<input type="hidden" name="action" value="tg_write"><input type="hidden" name="id" value="' . $id . '">' .
+        '<textarea name="text" rows="2" placeholder="Повідомлення орендарю…" style="flex:1;min-height:44px" required></textarea>' .
+        '<button class="btn main small" type="submit">Надіслати</button></form>';
+    return $out . '</fieldset>';
+}
+
 /* one booking */
 if (isset($_GET['id'])) {
     $isNew = $_GET['id'] === 'new';
@@ -612,7 +676,7 @@ if (isset($_GET['id'])) {
         csrf_field() . '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . (int)$b['id'] . '">' .
         '<button class="btn bad small" type="submit">Видалити бронь</button> <span class="hint">Краще відхилити: видалену не повернути.</span></form>';
 
-    page($isNew ? 'Нова бронь' : '#' . $b['id'], $top . $head . $form . $del);
+    page($isNew ? 'Нова бронь' : '#' . $b['id'], $top . $head . ($isNew ? '' : tg_panel($b)) . $form . $del);
 }
 
 /* the list */
@@ -698,8 +762,8 @@ if (TG_TOKEN === '') {
     $tg .= '<form class="inline" method="post" action="' . ADM . '">' . csrf_field() .
         '<input type="hidden" name="action" value="' . ($hook ? 'hook_off' : 'hook_on') . '">' .
         ($hook
-            ? 'Кнопки «Підтвердити / Відхилити» в Telegram підключені. <button class="btn small" type="submit">Вимкнути</button>'
-            : 'Кнопки «Підтвердити / Відхилити» під заявками в Telegram не підключені. <button class="btn small main" type="submit">Підключити</button>') .
+            ? 'Бот підключено: кнопки під заявками й переписка з орендарями. <button class="btn small" type="submit">Вимкнути</button>'
+            : 'Бот не підключено: немає кнопок під заявками й переписки з орендарями. <button class="btn small main" type="submit">Підключити</button>') .
         '</form>';
 }
 $tg .= '</div>';

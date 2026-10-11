@@ -430,7 +430,15 @@
           if (res.ok && res.j.ok) {
             form.reset();
             msg.className = "msg ok";
-            msg.textContent = T("js.sent", "Заявку отримано. Відповімо найближчим часом.");
+            // The answer comes through the venue's bot. It cannot write first,
+            // so the link that ties this enquiry to the visitor's chat is here.
+            if (res.j.tg && /^https:\/\/t\.me\//.test(res.j.tg)) {
+              msg.innerHTML = esc(T("js.sent.tg", "Заявку отримано. Відповідь прийде в Telegram — відкрийте бота й натисніть «Start».")) +
+                '<a class="btn main tglink" href="' + esc(res.j.tg) + '" target="_blank" rel="noopener">' +
+                esc(T("js.sent.tg.btn", "Отримати відповідь у Telegram")) + " →</a>";
+            } else {
+              msg.textContent = T("js.sent", "Заявку отримано. Відповімо найближчим часом.");
+            }
           } else if (res.j && res.j.busy) {
             // Taken since the page was opened: the form learns the day too.
             if (day && day.value && BUSY.indexOf(day.value) < 0) BUSY.push(day.value);
@@ -443,7 +451,7 @@
         })
         .catch(function () {
           msg.className = "msg err";
-          msg.textContent = T("js.offline", "Немає звʼязку. Спробуйте ще раз або подзвоніть.");
+          msg.textContent = T("js.offline", "Немає звʼязку. Спробуйте ще раз за хвилину.");
         })
         .then(function () { btn.disabled = false; });
     });

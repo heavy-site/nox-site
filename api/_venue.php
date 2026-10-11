@@ -7,12 +7,8 @@ function nox_venue(): array {
         'address'  => 'Нижньоюрківська 31, Київ',
         'street'   => 'Нижньоюрківська 31',
         'geo'      => '50.466861,30.500806',
-        'phone'    => '+380 63 309 8621',
-        'tel'      => '+380633098621',
-        'email'    => 'e.pyvovar@gmail.com',
-        'contact'  => 'Євген Пивовар',
-        'telegram' => '',
-        'instagram'=> '',
+        // No personal phone, mail or name: the venue answers through its bot,
+        // so nobody's own contacts travel with the site.
     ];
 }
 
