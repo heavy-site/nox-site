@@ -74,6 +74,12 @@ to the other by the server, since bots cannot copy each other's messages.
   in that private chat goes to the renter until `/end`. While someone has a
   conversation open, the renter's messages go only to them. The same button
   under a booking in the group opens the conversation in private.
+- **Topics.** With topics turned on for the venue's bot in @BotFather
+  (Threaded Mode), every renter becomes a topic of its own in each admin's
+  private chat — «DOLLS RAVE · Олена» — opening with the last of what was
+  said. Writing in a topic goes to that renter; what one admin sends shows in
+  the others' topics too. No opening or closing. If Telegram refuses topics,
+  the bot falls back to the conversations above for six hours and tries again.
 - Confirming, declining or cancelling a booking tells the renter on its own.
 - «📜 Уся історія» posts the whole conversation; `/admin` shows it under the
   booking and can send from there too. Everything is kept in the database.

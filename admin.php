@@ -821,6 +821,9 @@ if (TG_TOKEN !== '') {
             '<input type="hidden" name="action" value="renter_off">' .
             'Бот для орендарів: <a href="https://t.me/' . h($rname) . '" target="_blank" rel="noopener">@' . h($rname) . '</a>. ' .
             'Після заявки сайт відкриває орендарю саме його. ' .
+            (tg_topics_on()
+                ? 'Листування — темами в особистих з ботом заявок. '
+                : 'Щоб кожен орендар був окремою темою в особистих з ботом заявок, увімкніть для нього теми (Threaded Mode) в @BotFather. ') .
             (defined('TG_RENTER_TOKEN') && TG_RENTER_TOKEN !== '' ? '' : '<button class="btn small" type="submit" onclick="return confirm(\'Відключити бота для орендарів?\')">Відключити</button>') .
             '</form>';
     } else {
