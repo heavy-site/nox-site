@@ -149,7 +149,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if not str(body.get(f, "")).strip():
                     return self._json({"error": "Заповніть обовʼязкові поля"}, 400)
             print("  [rent]", {k: body.get(k) for k in ("name", "contact", "date", "guests")})
-            return self._json({"ok": True})
+            # The real endpoint hands back the bot link tied to the booking.
+            return self._json({"ok": True, "tg": "https://t.me/nox_bot?start=b0_000000000000"})
         self.send_error(405)
 
     def end_headers(self):

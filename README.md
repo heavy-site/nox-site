@@ -13,6 +13,7 @@ Backend is plain PHP in `api/`, matching what the shared host can run.
 - `api/rent.php` — `POST /api/rent` → rental enquiry, stored on disk, in the database and sent to Telegram
 - `api/telegram.php` — `POST /api/telegram` → the bot's webhook, for the buttons under an enquiry
 - `api/_tg.php` — Telegram sender
+- `api/_relay.php` — the bot between the venue and renters: linking, relaying, history
 - `api/_config.php` — loads secrets from outside the web root, logging, throttle
 - `admin.php` — `/admin`, the bookings, behind a password
 
@@ -50,6 +51,25 @@ The buttons under enquiries in Telegram need the bot's webhook. Once the site is
 deployed, press **Підключити** at the foot of `/admin`; it points the bot at
 `/api/telegram` with a secret worked out from the token. Only presses from
 `TG_CHAT` are acted on.
+
+## Talking to renters through the bot
+
+The venue's own contacts never reach a renter: the bot stands between them
+(`api/_relay.php`).
+
+- After the form is sent the site shows a button that opens the bot tied to that
+  booking (`t.me/<bot>?start=b<id>_<sig>`). A bot cannot write first, so this
+  one press is what lets it answer. For a booking that did not come from the
+  form, `/admin` shows the same link to send once.
+- What the renter writes arrives in the venue's chat under «💬 #id · event ·
+  name». A **reply** to it (or to the booking's card, or after «✍️ Написати»)
+  goes to the renter as the bot's own message — text, photos, files, voice.
+- Confirming, declining or cancelling a booking tells the renter on its own.
+- «📜 Діалог» posts the whole conversation; `/admin` shows it under the booking
+  and can send from there too. Everything is kept in the database.
+- To answer as a team, add the bot to a group and send `/here` in it from the
+  account in `TG_CHAT`: enquiries and conversations move there. `/b 12` brings
+  booking #12's card with its buttons into the chat.
 
 ## Config
 

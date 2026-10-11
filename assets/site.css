@@ -799,3 +799,6 @@ h1 .g{ position:absolute; left:0; top:0; width:100%; display:block; }
 
 /* Полотно перемальовується власним циклом — жодної CSS-анімації на ньому. */
 .mark.scrolled .dith{ animation:none; }
+
+/* Після заявки: кнопка, що відкриває бота, прив'язаного до цієї заявки. */
+.msg .tglink{ display:flex; width:max-content; max-width:100%; margin-top:16px; letter-spacing:.18em; }

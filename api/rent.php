@@ -1,6 +1,6 @@
 <?php
 // Venue rental enquiry from the "оренда" section.
-require_once __DIR__ . '/_tg.php';
+require_once __DIR__ . '/_relay.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -106,4 +106,7 @@ $sent = $b ? tg_send(tg_booking_text($b), tg_booking_keyboard($b)) : tg_send(tg_
 if ($b && $sent) nox_booking_update($id, ['tg_message_id' => (int)$sent['message_id']]);
 
 // The enquiry is on disk either way, so the sender always gets a clean answer.
-echo json_encode(['ok' => true]);
+// With it, the link that opens the bot tied to this booking: the venue answers
+// there, and never from a number of its own.
+$tg = $id ? tg_start_link($id) : '';
+echo json_encode(['ok' => true] + ($tg !== '' ? ['tg' => $tg] : []));

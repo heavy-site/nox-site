@@ -1,8 +1,9 @@
 <?php
-// Where Telegram sends a press of a button under a booking. Connected from
-// /admin, which points the bot here with a secret; a call without that secret,
-// or a press from any chat but the venue's own, is ignored.
-require_once __DIR__ . '/_tg.php';
+// Where Telegram sends what happens with the bot: a press of a button under a
+// booking, and every message — from the venue's own chat, and from renters
+// writing to the bot. Connected from /admin, which points the bot here with a
+// secret; a call without that secret is ignored.
+require_once __DIR__ . '/_relay.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -19,7 +20,61 @@ if (!hash_equals(tg_hook_secret(), $given)) {
 }
 
 $u = json_decode((string)file_get_contents('php://input'), true);
-$q = is_array($u) ? ($u['callback_query'] ?? null) : null;
+if (!is_array($u)) $done();
+
+/* ── a message ─────────────────────────────────────────────────────────── */
+if (is_array($m = $u['message'] ?? null)) {
+    $chat = (string)($m['chat']['id'] ?? '');
+    $type = (string)($m['chat']['type'] ?? '');
+    $text = trim((string)($m['text'] ?? ''));
+    $from = (string)($m['from']['id'] ?? '');
+
+    // /here, in a group, from the person the bot was set up for: the venue's
+    // side moves into that group, so whoever is in it reads and answers. Old
+    // booking messages stay where they were and are no longer tied to anyone.
+    if (preg_match('/^\/here(@\w+)?$/', $text) && $type !== 'private') {
+        if ($from === (string)TG_CHAT || $chat === tg_admin_chat()) {
+            nox_meta('tg_admin_chat', $chat);
+            if ($db = relay_db()) { $db->exec('UPDATE bookings SET tg_message_id = 0'); $db->exec('DELETE FROM tg_map'); }
+            nox_log('TG admin chat -> ' . $chat . ' by tg:' . $from);
+            tg_call('sendMessage', ['chat_id' => $chat, 'text' =>
+                "Готово: заявки й переписка з орендарями тепер ідуть сюди.\n\n" .
+                "Відповідайте (Reply) на повідомлення орендаря — бот перешле від свого імені.\n" .
+                "/b 12 — показати заявку #12 з кнопками."]);
+        }
+        $done();
+    }
+
+    if ($chat === tg_admin_chat()) {
+        // /b 12 — a booking's message with its buttons, here and now: how
+        // someone who takes over finds a conversation that started without them.
+        if (preg_match('/^\/b(?:@\w+)?\s*#?(\d+)$/', $text, $bm)) {
+            $b = nox_booking((int)$bm[1]);
+            if (!$b) {
+                tg_call('sendMessage', ['chat_id' => $chat, 'text' => 'Заявку #' . (int)$bm[1] . ' не знайдено.']);
+            } else {
+                $sent = tg_send(tg_booking_text($b), tg_booking_keyboard($b));
+                if ($sent) nox_booking_update((int)$b['id'], ['tg_message_id' => (int)$sent['message_id']]);
+            }
+            $done();
+        }
+        tg_from_admin($m);
+        $done();
+    }
+
+    // The owner's own private chat, once the venue's side has moved to a group.
+    if ($type === 'private' && $from === (string)TG_CHAT) {
+        tg_call('sendMessage', ['chat_id' => $chat, 'text' => 'Заявки й переписка тепер у групі — відповідайте там.']);
+        $done();
+    }
+
+    // Anyone else writes only in private; a group the bot sits in is not a renter.
+    if ($type === 'private') tg_from_renter($m);
+    $done();
+}
+
+/* ── a button ──────────────────────────────────────────────────────────── */
+$q = $u['callback_query'] ?? null;
 if (!is_array($q)) $done();
 
 $answer = function (string $text, bool $alert = false) use ($q) {
@@ -30,12 +85,50 @@ $answer = function (string $text, bool $alert = false) use ($q) {
     ]);
 };
 
-if ((string)($q['message']['chat']['id'] ?? '') !== (string)TG_CHAT) {
+$chat = (string)($q['message']['chat']['id'] ?? '');
+if ($chat !== tg_admin_chat()) {
     $answer('Цей чат не керує бронями.');
     $done();
 }
+$data = (string)($q['data'] ?? '');
 
-if (!preg_match('/^(new|confirmed|declined|cancelled):(\d+)$/', (string)($q['data'] ?? ''), $m)) $done();
+// ✍️ Написати and 📜 Діалог, for a booking (b12) or a chat with no booking (c123).
+if (preg_match('/^(write|log):(b(\d+)|c(-?\d+))$/', $data, $t)) {
+    $booking = isset($t[3]) && $t[3] !== '' ? (int)$t[3] : 0;
+    $to = $booking ? tg_booking_chat($booking) : (string)($t[4] ?? '');
+
+    if ($t[1] === 'log') {
+        $answer('');
+        $sent = tg_call('sendMessage', tg_to_admin(['text' => tg_history_text($booking, $booking ? '' : $to),
+            'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true']));
+        if ($sent && $to !== '') tg_map_put((int)$sent['message_id'], $to, $booking);
+        $done();
+    }
+
+    if ($to === '') {
+        // They have not opened the bot yet, so it cannot write to them: the
+        // link is posted here to be sent to them once, any way that works.
+        $answer('Орендар ще не підключив Telegram.', false);
+        $link = tg_start_link($booking);
+        tg_call('sendMessage', tg_to_admin(['text' =>
+            '🔗 #' . $booking . ' ще не відкривав бота, тому написати йому бот не може.' . "\n\n" .
+            'Надішліть йому один раз це посилання — після «Start» листування піде через бота:' . "\n" . $link,
+            'disable_web_page_preview' => 'true']));
+        $done();
+    }
+
+    $answer('');
+    $prompt = tg_call('sendMessage', tg_to_admin([
+        'text' => '✍️ <b>' . tg_who_line($to, $booking) . '</b>' . "\n" . 'Напишіть відповідь на це повідомлення — бот передасть її від свого імені.',
+        'parse_mode' => 'HTML',
+        'reply_markup' => json_encode(['force_reply' => true, 'selective' => true,
+                                       'input_field_placeholder' => 'Повідомлення орендарю…']),
+    ]));
+    if ($prompt) tg_map_put((int)$prompt['message_id'], $to, $booking);
+    $done();
+}
+
+if (!preg_match('/^(new|confirmed|declined|cancelled):(\d+)$/', $data, $m)) $done();
 $status = $m[1];
 $id = (int)$m[2];
 
@@ -60,4 +153,5 @@ $said = ['new' => 'Повернуто в нові', 'confirmed' => 'Підтве
          'cancelled' => 'Бронь скасовано'];
 $answer($said[$status]);
 tg_sync_booking($id);
+tg_tell_status($id, $b['status'], $status);
 $done();
