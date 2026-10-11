@@ -432,10 +432,13 @@
             msg.className = "msg ok";
             // The answer comes through the venue's bot. It cannot write first,
             // so the link that ties this enquiry to the visitor's chat is here.
+            // The visitor is taken there at once; the button stays for a
+            // browser that does not follow, or for coming back to it later.
             if (res.j.tg && /^https:\/\/t\.me\//.test(res.j.tg)) {
-              msg.innerHTML = esc(T("js.sent.tg", "Заявку отримано. Відповідь прийде в Telegram — відкрийте бота й натисніть «Start».")) +
-                '<a class="btn main tglink" href="' + esc(res.j.tg) + '" target="_blank" rel="noopener">' +
-                esc(T("js.sent.tg.btn", "Отримати відповідь у Telegram")) + " →</a>";
+              msg.innerHTML = esc(T("js.sent.tg", "Заявку отримано. Відкриваємо Telegram — натисніть там «Start», і відповідь прийде в цей чат.")) +
+                '<a class="btn main tglink" href="' + esc(res.j.tg) + '">' +
+                esc(T("js.sent.tg.btn", "Відкрити Telegram")) + " →</a>";
+              setTimeout(function () { location.href = res.j.tg; }, 700);
             } else {
               msg.textContent = T("js.sent", "Заявку отримано. Відповімо найближчим часом.");
             }

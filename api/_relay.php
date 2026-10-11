@@ -1,13 +1,18 @@
 <?php
-// The bot between the venue and whoever rents it. The renter writes to the
-// bot and never sees who answers; the venue answers in its own chat by
-// replying to what the bot brought in, and the bot carries the reply over as
-// its own message. Everything said either way is kept here, by booking, so a
+// Two bots between the venue and whoever rents it. Renters only ever see the
+// renters' bot; the venue's own bot, the one that brings enquiries in, stays
+// in the venue's chat. What a renter writes to their bot is brought into the
+// venue's chat by the venue's bot; a reply there goes back out through the
+// renters' bot as its own message. Nobody on the renter's side sees who
+// answers. Everything said either way is kept here, by booking, so a
 // conversation can be handed to someone else and read from the start.
 //
-// A bot cannot write first. The renter opens the bot once from the link the
-// site gives after the form is sent (t.me/<bot>?start=b<id>_<sig>), and from
-// then on the bot knows which chat belongs to which booking.
+// A bot cannot write first. The renter opens the renters' bot from the link
+// the site sends them to after the form (t.me/<bot>?start=b<id>_<sig>), and
+// from then on it knows which chat belongs to which booking.
+//
+// The renters' bot's token is TG_RENTER_TOKEN in nox_config.php, or the one
+// entered in /admin. Without it there is no relay and the site says so.
 require_once __DIR__ . '/_tg.php';
 
 // The tables are made on first use and need nothing from the migrations.
@@ -55,14 +60,57 @@ function tg_to_admin(array $params) {
     return $params;
 }
 
-// The bot's own @name, asked of Telegram once and kept.
-function tg_bot_name(): string {
-    $n = nox_meta('tg_bot');
+/* ── the renters' bot ─────────────────────────────────────────────────────── */
+function tg_renter_token(): string {
+    if (defined('TG_RENTER_TOKEN') && TG_RENTER_TOKEN !== '') return (string)TG_RENTER_TOKEN;
+    return nox_meta('tg_renter_token');
+}
+
+function tg_renter(string $method, array $params, ?array $file = null) {
+    return tg_call_as(tg_renter_token(), $method, $params, $file);
+}
+
+// Its @name, asked of Telegram once per token and kept.
+function tg_renter_name(): string {
+    $token = tg_renter_token();
+    if ($token === '') return '';
+    $key = 'tg_renter_name:' . substr(hash('sha256', $token), 0, 12);
+    $n = nox_meta($key);
     if ($n !== '') return $n;
-    $me = tg_call('getMe', []);
+    $me = tg_renter('getMe', []);
     $n = (string)($me['username'] ?? '');
-    if ($n !== '') nox_meta('tg_bot', $n);
+    if ($n !== '') nox_meta($key, $n);
     return $n;
+}
+
+// Telegram sends it back with every call to /api/renter.
+function tg_renter_secret(): string {
+    return substr(hash('sha256', 'nox-renter|' . tg_renter_token()), 0, 48);
+}
+
+/* Bots cannot copy each other's messages, so a file is carried across: fetched
+   with the bot that received it, uploaded with the one that sends it on. The
+   sent message, or null when the kind cannot travel (a sticker, a location)
+   or the file would not come. */
+const TG_MEDIA = [
+    'photo' => 'sendPhoto', 'video' => 'sendVideo', 'document' => 'sendDocument', 'voice' => 'sendVoice',
+    'audio' => 'sendAudio', 'animation' => 'sendAnimation', 'video_note' => 'sendVideoNote',
+];
+function tg_carry(string $fromToken, array $m, string $toToken, array $params) {
+    foreach (TG_MEDIA as $kind => $method) {
+        if (!isset($m[$kind])) continue;
+        $item = $kind === 'photo' ? end($m['photo']) : $m[$kind];
+        $f = tg_call_as($fromToken, 'getFile', ['file_id' => (string)($item['file_id'] ?? '')]);
+        if (!$f || empty($f['file_path'])) return null;
+        $tmp = tempnam(sys_get_temp_dir(), 'tg');
+        $data = @file_get_contents(tg_api_base() . '/file/bot' . $fromToken . '/' . $f['file_path']);
+        if ($data === false || $tmp === false || file_put_contents($tmp, $data) === false) return null;
+        $name = (string)($item['file_name'] ?? basename((string)$f['file_path']));
+        $r = tg_call_as($toToken, $method, $params, [$kind, $tmp, $name]);
+        @unlink($tmp);
+        return $r;
+    }
+    return null;
 }
 
 /* ── the link that ties a chat to a booking ───────────────────────────────── */
@@ -71,7 +119,7 @@ function tg_start_sig(int $id): string {
 }
 
 function tg_start_link(int $id): string {
-    $bot = tg_bot_name();
+    $bot = tg_renter_name();
     return $bot === '' ? '' : 'https://t.me/' . $bot . '?start=b' . $id . '_' . tg_start_sig($id);
 }
 
@@ -185,8 +233,8 @@ function tg_msg_body(array $m): string {
               'contact' => 'контакт', 'animation' => 'gif'];
     foreach ($kinds as $k => $label) {
         if (isset($m[$k])) {
-            $extra = $k === 'document' ? ' ' . (string)($m['document']['file_name'] ?? '') : '';
-            return '[' . $label . trim($extra) . ']' . ($text !== '' ? ' ' . $text : '');
+            $extra = $k === 'document' ? trim((string)($m['document']['file_name'] ?? '')) : '';
+            return '[' . $label . ($extra !== '' ? ' ' . $extra : '') . ']' . ($text !== '' ? ' ' . $text : '');
         }
     }
     return $text;
@@ -228,30 +276,32 @@ function tg_from_renter(array $m): void {
     $body = tg_msg_body($m);
     tg_log_msg($chat, $booking, 'in', trim(($from['first_name'] ?? '') . ' ' . ($from['last_name'] ?? '')), $body);
 
-    // Text comes in as one message with its header; anything else under a
-    // header, copied so it carries no trace of the sender's account.
+    // Into the venue's chat under a header naming the booking: text as one
+    // message, a file carried across with the header as its caption, and
+    // anything that cannot travel as a line saying what it was.
     $head = '💬 <b>' . tg_who_line($chat, $booking) . '</b>';
     $kb = json_encode(['inline_keyboard' => [tg_talk_row($booking, $chat)]]);
-    if (isset($m['text'])) {
+    $sent = null;
+    if (!isset($m['text'])) {
+        $cap = (string)($m['caption'] ?? '');
+        $sent = tg_carry(tg_renter_token(), $m, TG_TOKEN, tg_to_admin([
+            'caption' => mb_substr($head . ($cap !== '' ? "\n\n" . tg_esc($cap) : ''), 0, 1000),
+            'parse_mode' => 'HTML', 'reply_markup' => $kb,
+        ]));
+    }
+    if (!$sent) {
         $sent = tg_call('sendMessage', tg_to_admin([
-            'text' => $head . "\n\n" . tg_esc((string)$m['text']), 'parse_mode' => 'HTML',
+            'text' => $head . "\n\n" . tg_esc($body), 'parse_mode' => 'HTML',
             'disable_web_page_preview' => 'true', 'reply_markup' => $kb,
         ]));
-        if ($sent) tg_map_put((int)$sent['message_id'], $chat, $booking);
-    } else {
-        $h = tg_call('sendMessage', tg_to_admin(['text' => $head, 'parse_mode' => 'HTML', 'reply_markup' => $kb]));
-        if ($h) tg_map_put((int)$h['message_id'], $chat, $booking);
-        $c = tg_call('copyMessage', tg_to_admin([
-            'from_chat_id' => $chat, 'message_id' => (int)$m['message_id'],
-        ] + ($h ? ['reply_to_message_id' => (int)$h['message_id']] : [])));
-        if ($c) tg_map_put((int)$c['message_id'], $chat, $booking);
     }
+    if ($sent) tg_map_put((int)$sent['message_id'], $chat, $booking);
 }
 
 // The bot's own word to a renter, kept in the history like the rest.
 function tg_say(string $chat, string $html, int $booking) {
-    $r = tg_call('sendMessage', ['chat_id' => $chat, 'text' => $html, 'parse_mode' => 'HTML',
-                                 'disable_web_page_preview' => 'true']);
+    $r = tg_renter('sendMessage', ['chat_id' => $chat, 'text' => $html, 'parse_mode' => 'HTML',
+                                   'disable_web_page_preview' => 'true']);
     if ($r) tg_log_msg($chat, $booking, 'sys', 'бот', strip_tags($html));
     return $r;
 }
@@ -268,7 +318,8 @@ function tg_talk_row(int $booking, string $chat = ''): array {
 /* ── the venue writes ─────────────────────────────────────────────────────── */
 
 // A reply in the venue's chat to something that stands for a renter goes to
-// them, copied, so it arrives as the bot's message and not a forwarded one.
+// them through the renters' bot, as that bot's own message: text as text, a
+// file carried across, so nothing of the venue's account goes with it.
 function tg_from_admin(array $m): void {
     $reply = (int)($m['reply_to_message']['message_id'] ?? 0);
     $to = $reply ? tg_map_get($reply) : null;
@@ -285,8 +336,19 @@ function tg_from_admin(array $m): void {
     }
 
     $who = trim(($m['from']['first_name'] ?? '') . ' ' . ($m['from']['last_name'] ?? ''));
-    $r = tg_call('copyMessage', ['chat_id' => $to['chat'], 'from_chat_id' => $m['chat']['id'],
-                                 'message_id' => (int)$m['message_id']]);
+    $r = null;
+    if (isset($m['text'])) {
+        $r = tg_renter('sendMessage', ['chat_id' => $to['chat'], 'text' => (string)$m['text'],
+                                       'disable_web_page_preview' => 'true']);
+    } else {
+        $cap = (string)($m['caption'] ?? '');
+        $r = tg_carry(TG_TOKEN, $m, tg_renter_token(), ['chat_id' => $to['chat']] + ($cap !== '' ? ['caption' => $cap] : []));
+        if (!$r && !array_intersect_key($m, TG_MEDIA)) {
+            tg_call('sendMessage', ['chat_id' => $m['chat']['id'], 'reply_to_message_id' => $m['message_id'],
+                'text' => 'Такий тип повідомлення бот передати не може — надішліть текстом, фото або файлом.']);
+            return;
+        }
+    }
     if ($r) {
         tg_log_msg($to['chat'], $to['booking'], 'out', $who, tg_msg_body($m));
         tg_map_put((int)$m['message_id'], $to['chat'], $to['booking']);
@@ -339,7 +401,7 @@ function tg_tell_status(int $id, string $old, string $new): void {
 function tg_send_from_web(int $id, string $text, string $who): bool {
     $chat = tg_booking_chat($id);
     if ($chat === '' || trim($text) === '') return false;
-    $r = tg_call('sendMessage', ['chat_id' => $chat, 'text' => $text, 'disable_web_page_preview' => 'true']);
+    $r = tg_renter('sendMessage', ['chat_id' => $chat, 'text' => $text, 'disable_web_page_preview' => 'true']);
     if (!$r) return false;
     tg_log_msg($chat, $id, 'out', $who, $text);
     $echo = tg_call('sendMessage', tg_to_admin([

@@ -8,6 +8,12 @@
 // Closed until NOX_ADMIN_PASS is set in nox_config.php, outside the web root.
 require_once __DIR__ . '/api/_relay.php';
 
+// What the venue's bot is told about, and the version of that setting: a hook
+// connected under an older one is pointed again on the next visit. Up here,
+// because the actions below use them before the rest of the page is read.
+const TG_UPDATES = ['callback_query', 'message'];
+const TG_HOOK_V = '3';
+
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
 header('X-Robots-Tag: noindex, nofollow');
@@ -365,6 +371,24 @@ if ($action !== '') {
             else flash('Не вдалося надіслати: орендар не підключив бота або зупинив його.', 'err');
             go(ADM . '?id=' . $id . '#tg');
 
+        // The renters' bot: its token, checked with Telegram and pointed here.
+        case 'renter_bot':
+            $token = trim((string)($_POST['token'] ?? ''));
+            if (!preg_match('/^\d+:[\w-]{30,}$/', $token)) { flash('Це не схоже на токен бота від @BotFather.', 'err'); go(ADM); }
+            if ($token === TG_TOKEN) { flash('Це токен бота заявок. Для орендарів потрібен окремий бот.', 'err'); go(ADM); }
+            $me = tg_call_as($token, 'getMe', []);
+            if (!$me) { flash('Telegram не прийняв цей токен.', 'err'); go(ADM); }
+            nox_meta('tg_renter_token', $token);
+            if (!tg_renter_hook()) { flash('Токен збережено, але вебхук не встановився — подробиці в site.log.', 'err'); go(ADM); }
+            flash('Бот для орендарів @' . ($me['username'] ?? '') . ' підключено.');
+            go(ADM);
+
+        case 'renter_off':
+            if (tg_renter_token() !== '') tg_renter('deleteWebhook', []);
+            nox_meta('tg_renter_token', '');
+            flash('Бота для орендарів відключено.');
+            go(ADM);
+
         case 'delete':
             nox_booking_delete($id);
             nox_log('BOOKING #' . $id . ' deleted by admin');
@@ -381,7 +405,11 @@ if ($action !== '') {
                     'allowed_updates'      => json_encode(TG_UPDATES),
                     'drop_pending_updates' => 'true',
                 ]);
-                if ($r) { nox_meta('tg_hook', '1'); nox_meta('tg_hook_v', TG_HOOK_V); flash('Бота підключено: кнопки під заявками й переписка з орендарями.'); }
+                if ($r) {
+                    nox_meta('tg_hook', '1'); nox_meta('tg_hook_v', TG_HOOK_V);
+                    tg_renter_hook();
+                    flash('Бота підключено: кнопки під заявками й переписка з орендарями.');
+                }
                 else flash('Telegram не прийняв вебхук — подробиці в site.log.', 'err');
             } else {
                 tg_call('deleteWebhook', []);
@@ -555,12 +583,17 @@ function status_button(array $b, string $to, string $label, string $cls, string 
 
 // The bot used to be told only about button presses; now it hears messages
 // too. A hook connected before that is pointed again, once, on its own.
-const TG_UPDATES = ['callback_query', 'message'];
-const TG_HOOK_V = '2';
 if (TG_TOKEN !== '' && nox_meta('tg_hook') === '1' && nox_meta('tg_hook_v') !== TG_HOOK_V) {
     $r = tg_call('setWebhook', ['url' => NOX_SITE_URL . '/api/telegram', 'secret_token' => tg_hook_secret(),
                                 'allowed_updates' => json_encode(TG_UPDATES)]);
-    if ($r) nox_meta('tg_hook_v', TG_HOOK_V);
+    if ($r) { nox_meta('tg_hook_v', TG_HOOK_V); tg_renter_hook(); }
+}
+
+// The renters' bot is pointed at /api/renter, and hears only messages.
+function tg_renter_hook(): bool {
+    if (tg_renter_token() === '') return false;
+    return (bool)tg_renter('setWebhook', ['url' => NOX_SITE_URL . '/api/renter', 'secret_token' => tg_renter_secret(),
+                                          'allowed_updates' => json_encode(['message'])]);
 }
 
 /* The renter in Telegram: whether they opened the bot, everything said, and
@@ -575,7 +608,8 @@ function tg_panel(array $b): string {
         $out .= '<p class="hint" style="margin:0 0 10px">Орендар ще не відкривав бота, тому бот не може йому написати. ' .
             'Надішліть йому один раз це посилання — після «Start» листування піде через бота, і ваші контакти він не побачить.</p>' .
             ($link !== '' ? '<div class="row"><code style="word-break:break-all">' . h($link) . '</code> ' .
-                '<button type="button" class="btn small" data-copy="' . h($link) . '">⧉ Скопіювати</button></div>' : '');
+                '<button type="button" class="btn small" data-copy="' . h($link) . '">⧉ Скопіювати</button></div>'
+                : '<p class="hint">Спершу підключіть бота для орендарів — унизу списку броней.</p>');
         return $out . '</fieldset>';
     }
     $p = tg_person($chat);
@@ -767,5 +801,26 @@ if (TG_TOKEN === '') {
         '</form>';
 }
 $tg .= '</div>';
+
+// The renters' bot, separate from the one above: the only bot renters see.
+if (TG_TOKEN !== '') {
+    $rname = tg_renter_name();
+    $tg .= '<div class="foot">';
+    if ($rname !== '') {
+        $tg .= '<form class="inline" method="post" action="' . ADM . '">' . csrf_field() .
+            '<input type="hidden" name="action" value="renter_off">' .
+            'Бот для орендарів: <a href="https://t.me/' . h($rname) . '" target="_blank" rel="noopener">@' . h($rname) . '</a>. ' .
+            'Після заявки сайт відкриває орендарю саме його. ' .
+            (defined('TG_RENTER_TOKEN') && TG_RENTER_TOKEN !== '' ? '' : '<button class="btn small" type="submit" onclick="return confirm(\'Відключити бота для орендарів?\')">Відключити</button>') .
+            '</form>';
+    } else {
+        $tg .= '<form class="row" method="post" action="' . ADM . '">' . csrf_field() .
+            '<input type="hidden" name="action" value="renter_bot">' .
+            '<span>Бот для орендарів не підключений — після заявки сайт нікуди не веде. Створіть нового бота в @BotFather і вставте його токен:</span>' .
+            '<input name="token" placeholder="123456789:AA…" autocomplete="off" required style="min-width:280px">' .
+            '<button class="btn small main" type="submit">Підключити</button></form>';
+    }
+    $tg .= '</div>';
+}
 
 page('Броні', $top . $tabs . '<div class="list">' . $cards . '</div>' . $tg);

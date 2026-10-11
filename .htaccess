@@ -13,6 +13,7 @@
   RewriteRule ^api/site/?$   /api/site.php   [L,QSA]
   RewriteRule ^api/rent/?$   /api/rent.php   [L,QSA]
   RewriteRule ^api/telegram/?$ /api/telegram.php [L,QSA]
+  RewriteRule ^api/renter/?$ /api/renter.php [L,QSA]
 
   # The bookings, behind a password
   RewriteRule ^admin/?$      /admin.php      [L,QSA]

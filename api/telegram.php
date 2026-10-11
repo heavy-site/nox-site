@@ -1,8 +1,9 @@
 <?php
-// Where Telegram sends what happens with the bot: a press of a button under a
-// booking, and every message — from the venue's own chat, and from renters
-// writing to the bot. Connected from /admin, which points the bot here with a
-// secret; a call without that secret is ignored.
+// Where Telegram sends what happens with the venue's own bot: a press of a
+// button under a booking, and messages in the venue's chat. Renters never
+// write here — they have a bot of their own (api/renter.php). Connected from
+// /admin, which points the bot here with a secret; a call without that secret
+// is ignored.
 require_once __DIR__ . '/_relay.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -68,8 +69,12 @@ if (is_array($m = $u['message'] ?? null)) {
         $done();
     }
 
-    // Anyone else writes only in private; a group the bot sits in is not a renter.
-    if ($type === 'private') tg_from_renter($m);
+    // Anyone else who finds this bot is sent to the one meant for them.
+    if ($type === 'private') {
+        $bot = tg_renter_name();
+        tg_call('sendMessage', ['chat_id' => $chat, 'text' => 'Це службовий бот nøx. ' .
+            ($bot !== '' ? 'Написати нам можна тут: @' . $bot : 'Залиште заявку на сайті: ' . NOX_SITE_URL . '/booking')]);
+    }
     $done();
 }
 
@@ -110,6 +115,10 @@ if (preg_match('/^(write|log):(b(\d+)|c(-?\d+))$/', $data, $t)) {
         // link is posted here to be sent to them once, any way that works.
         $answer('Орендар ще не підключив Telegram.', false);
         $link = tg_start_link($booking);
+        if ($link === '') {
+            tg_call('sendMessage', tg_to_admin(['text' => 'Бот для орендарів ще не підключений — це робиться внизу /admin.']));
+            $done();
+        }
         tg_call('sendMessage', tg_to_admin(['text' =>
             '🔗 #' . $booking . ' ще не відкривав бота, тому написати йому бот не може.' . "\n\n" .
             'Надішліть йому один раз це посилання — після «Start» листування піде через бота:' . "\n" . $link,

@@ -129,34 +129,41 @@ function tg_plural(int $n, string $one, string $few, string $many): string {
     return $many;
 }
 
-// One call to the Bot API. The decoded result on Telegram's own ok:true, null
-// on anything else. Never throws and never blocks the reply to the visitor: a
-// form that worked must not look broken because a notification did not go out.
+// One call to the Bot API, as the venue's own bot. The decoded result on
+// Telegram's own ok:true, null on anything else. Never throws and never blocks
+// the reply to the visitor: a form that worked must not look broken because a
+// notification did not go out.
 function tg_call(string $method, array $params) {
-    if (TG_TOKEN === '') { nox_log('TG skipped: no token'); return null; }
+    return tg_call_as(TG_TOKEN, $method, $params);
+}
+
+// The same, as any bot, with a file to upload when there is one:
+// $file = [field, local path, file name].
+function tg_call_as(string $token, string $method, array $params, ?array $file = null) {
+    if ($token === '') { nox_log('TG skipped: no token for ' . $method); return null; }
 
     // TG_API stands in for Telegram in local tests; on the host it is not set.
-    $url = (defined('TG_API') ? TG_API : 'https://api.telegram.org') . '/bot' . TG_TOKEN . '/' . $method;
-    $body = http_build_query($params);
+    $url = tg_api_base() . '/bot' . $token . '/' . $method;
     $res = null;
 
     if (function_exists('curl_init')) {
+        if ($file) $params[$file[0]] = new CURLFile($file[1], '', $file[2]);
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $body,
+            CURLOPT_POSTFIELDS     => $file ? $params : http_build_query($params),
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_TIMEOUT        => $file ? 40 : 8,
         ]);
         $res = curl_exec($ch);
         curl_close($ch);
-    } else {
+    } elseif (!$file) {
         // Shared hosts sometimes ship without curl; the stream wrapper is
         // always there, and @ keeps a refused connection out of the response.
         $res = @file_get_contents($url, false, stream_context_create(['http' => [
             'method'        => 'POST',
             'header'        => "Content-Type: application/x-www-form-urlencoded\r\n",
-            'content'       => $body,
+            'content'       => http_build_query($params),
             'timeout'       => 8,
             'ignore_errors' => true,
         ]]));
@@ -168,6 +175,10 @@ function tg_call(string $method, array $params) {
         return null;
     }
     return $j['result'];
+}
+
+function tg_api_base(): string {
+    return defined('TG_API') ? TG_API : 'https://api.telegram.org';
 }
 
 // A message to the venue's chat, with buttons under it when there are any.
