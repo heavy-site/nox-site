@@ -40,7 +40,8 @@ if (is_array($m = $u['message'] ?? null)) {
             nox_log('TG admin chat -> ' . $chat . ' by tg:' . $from);
             tg_call('sendMessage', ['chat_id' => $chat, 'text' =>
                 "Готово: заявки й переписка з орендарями тепер ідуть сюди.\n\n" .
-                "Відповідайте (Reply) на повідомлення орендаря — бот перешле від свого імені.\n" .
+                "«💬 Відкрити діалог» під повідомленням або /chats — і пишіть просто сюди, усе піде орендарю. /end — вийти.\n" .
+                "У кожного свій діалог, тож можна вести кілька одночасно.\n" .
                 "/b 12 — показати заявку #12 з кнопками."]);
         }
         $done();
@@ -57,6 +58,16 @@ if (is_array($m = $u['message'] ?? null)) {
                 $sent = tg_send(tg_booking_text($b), tg_booking_keyboard($b));
                 if ($sent) nox_booking_update((int)$b['id'], ['tg_message_id' => (int)$sent['message_id']]);
             }
+            $done();
+        }
+        // /chats — the latest conversations to step into; /end — step out.
+        if (preg_match('/^\/chats(@\w+)?$/', $text)) { tg_chats_list(); $done(); }
+        if (preg_match('/^\/end(@\w+)?$/', $text)) {
+            $was = tg_dlg_get($from);
+            tg_dlg_set($from, '');
+            tg_call('sendMessage', tg_to_admin(['text' => $was
+                ? 'Ви вийшли з діалогу. Повідомлення більше нікому не йдуть. Відкрити інший: /chats'
+                : 'Ви й так не в діалозі. Відкрити: /chats']));
             $done();
         }
         tg_from_admin($m);
@@ -97,8 +108,21 @@ if ($chat !== tg_admin_chat()) {
 }
 $data = (string)($q['data'] ?? '');
 
-// ✍️ Написати and 📜 Діалог, for a booking (b12) or a chat with no booking (c123).
-if (preg_match('/^(write|log):(b(\d+)|c(-?\d+))$/', $data, $t)) {
+$admin = (string)($q['from']['id'] ?? '');
+$adminName = trim((string)($q['from']['first_name'] ?? ''));
+
+// ⬅️ Вийти з діалогу.
+if ($data === 'close') {
+    tg_dlg_set($admin, '');
+    $answer('Ви вийшли з діалогу');
+    tg_call('sendMessage', tg_to_admin(['text' => ($adminName !== '' ? $adminName . ', в' : 'В') .
+        'и вийшли з діалогу. Відкрити інший: /chats']));
+    $done();
+}
+
+// 💬 Відкрити діалог (and ✍️ Написати under older messages) and 📜 Уся
+// історія, for a booking (b12) or a chat with no booking (c123).
+if (preg_match('/^(open|write|log):(b(\d+)|c(-?\d+))$/', $data, $t)) {
     $booking = isset($t[3]) && $t[3] !== '' ? (int)$t[3] : 0;
     $to = $booking ? tg_booking_chat($booking) : (string)($t[4] ?? '');
 
@@ -110,30 +134,8 @@ if (preg_match('/^(write|log):(b(\d+)|c(-?\d+))$/', $data, $t)) {
         $done();
     }
 
-    if ($to === '') {
-        // They have not opened the bot yet, so it cannot write to them: the
-        // link is posted here to be sent to them once, any way that works.
-        $answer('Орендар ще не підключив Telegram.', false);
-        $link = tg_start_link($booking);
-        if ($link === '') {
-            tg_call('sendMessage', tg_to_admin(['text' => 'Бот для орендарів ще не підключений — це робиться внизу /admin.']));
-            $done();
-        }
-        tg_call('sendMessage', tg_to_admin(['text' =>
-            '🔗 #' . $booking . ' ще не відкривав бота, тому написати йому бот не може.' . "\n\n" .
-            'Надішліть йому один раз це посилання — після «Start» листування піде через бота:' . "\n" . $link,
-            'disable_web_page_preview' => 'true']));
-        $done();
-    }
-
-    $answer('');
-    $prompt = tg_call('sendMessage', tg_to_admin([
-        'text' => '✍️ <b>' . tg_who_line($to, $booking) . '</b>' . "\n" . 'Напишіть відповідь на це повідомлення — бот передасть її від свого імені.',
-        'parse_mode' => 'HTML',
-        'reply_markup' => json_encode(['force_reply' => true, 'selective' => true,
-                                       'input_field_placeholder' => 'Повідомлення орендарю…']),
-    ]));
-    if ($prompt) tg_map_put((int)$prompt['message_id'], $to, $booking);
+    $answer($to === '' ? 'Орендар ще не підключив Telegram.' : 'Ви в діалозі');
+    tg_dlg_open($admin, $adminName, $booking ? 'b' . $booking : 'c' . $to);
     $done();
 }
 
