@@ -7,6 +7,7 @@
 //
 // Closed until NOX_ADMIN_PASS is set in nox_config.php, outside the web root.
 require_once __DIR__ . '/api/_relay.php';
+require_once __DIR__ . '/api/_poster.php';
 
 // What the venue's bot is told about, and the version of that setting: a hook
 // connected under an older one is pointed again on the next visit. Up here,
@@ -156,12 +157,18 @@ input[type=checkbox]{ width:18px; height:18px; accent-color:var(--gas); }
 textarea{ min-height:90px; resize:vertical; }
 input:focus,select:focus,textarea:focus{ outline:1px solid var(--gas); border-color:var(--gas); }
 .hint{ color:var(--dust); font-size:12px; }
+.poster-up{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+.poster-up img{ width:120px; height:auto; border:1px solid var(--line2); }
+.poster-up label{ flex:1; min-width:220px; }
+.poster-up input[type=file]{ padding:10px; cursor:pointer; }
 .dlg{ display:grid; gap:8px; max-height:420px; overflow:auto; padding:4px 2px; }
 .msg{ max-width:80%; padding:8px 12px; border:1px solid var(--line2); font-size:14px; line-height:1.45; white-space:normal; }
 .msg span{ display:block; font-size:11px; color:var(--dust); margin-bottom:3px; }
 .msg.in{ justify-self:start; background:var(--pit); }
 .msg.out{ justify-self:end; border-color:var(--gas); }
 .msg.sys{ justify-self:center; opacity:.7; font-size:12px; }
+.msg .att{ margin-top:8px; display:grid; gap:8px; }
+.msg .att img{ max-width:150px; max-height:200px; display:block; border:1px solid var(--line2); }
 .foot{ margin-top:34px; padding-top:16px; border-top:1px solid var(--line2); color:var(--ash); font-size:13px; }
 .login{ max-width:340px; margin:14vh auto 0; display:grid; gap:12px; }
 .m a{ color:var(--pale); text-decoration:none; }
@@ -279,7 +286,32 @@ if (!$db) {
         'Заявки й далі зберігаються файлами в <code>' . h(NOX_DATA_DIR) . '/rent</code> і надходять у Telegram.</p>');
 }
 
+/* ── a file a renter sent, for a signed-in admin only ─────────────────── */
+if (isset($_GET['file'])) {
+    $f = tg_file_get((int)$_GET['file']);
+    if (!$f) { http_response_code(404); exit('Файл не знайдено.'); }
+    $mime = function_exists('mime_content_type') ? (string)@mime_content_type($f['abs']) : '';
+    if ($mime === '') $mime = $f['mime'] !== '' ? $f['mime'] : 'application/octet-stream';
+    // Only a picture is shown in place; anything else is handed out as a file.
+    $inline = !isset($_GET['dl']) && preg_match('#^image/(jpeg|png|webp|gif)$#', $mime);
+    $name = preg_replace('/[^\w.\-]+/u', '_', $f['name']) ?: 'file';
+    header('Content-Type: ' . ($inline ? $mime : 'application/octet-stream'));
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Length: ' . filesize($f['abs']));
+    header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="' . $name . '"; filename*=UTF-8\'\'' . rawurlencode($f['name']));
+    header('Cache-Control: private, max-age=86400');
+    readfile($f['abs']);
+    exit;
+}
+
 /* ── actions ─────────────────────────────────────────────────────────── */
+// A form bigger than the host takes arrives with nothing in it at all — not
+// even its token — and would read as a stale page. Said for what it is.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$_POST && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    flash('Файл завеликий — максимум ' . nox_mb(nox_upload_limit()) . '. Зменште афішу й спробуйте ще раз.', 'err');
+    go(ADM . (isset($_GET['id']) ? '?id=' . urlencode((string)$_GET['id']) : ''));
+}
+
 if ($action !== '') {
     if (!hash_equals(csrf(), (string)($_POST['csrf'] ?? ''))) {
         flash('Сторінка застаріла — спробуйте ще раз.', 'err');
@@ -322,6 +354,13 @@ if ($action !== '') {
             elseif (!in_array($status, NOX_STATUSES, true)) $err = 'Невідомий статус.';
             elseif ($status === 'confirmed' && ($c = nox_conflict($in['date'], $in['date_end'], $id)))
                 $err = 'Дата вже зайнята: #' . $c['id'] . ' ' . nox_booking_label($c) . '.';
+            // A poster file, when one was chosen, takes the place of both paths.
+            $up = $_FILES['poster_file'] ?? null;
+            if ($err === '' && $up && ($up['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $r = nox_poster_upload($up);
+                if (is_string($r)) $err = $r;
+                else { $in['poster'] = $r[0]; $in['poster_small'] = $r[1]; }
+            }
             if ($err !== '') {
                 $_SESSION['draft'] = $in + ['status' => $status, 'id' => $id];
                 flash($err, 'err');
@@ -332,6 +371,11 @@ if ($action !== '') {
             }
             $before = nox_booking($id);
             nox_booking_update($id, $in + ['status' => $status]);
+            if ($before) {
+                foreach (['poster', 'poster_small'] as $pf) {
+                    if ($before[$pf] !== $in[$pf] && $before[$pf] !== $in['poster'] && $before[$pf] !== $in['poster_small']) nox_poster_drop($before[$pf]);
+                }
+            }
             if ($before && $before['status'] !== $status) {
                 nox_log('BOOKING #' . $id . ' -> ' . $status . ' by admin');
             }
@@ -362,6 +406,17 @@ if ($action !== '') {
             $shown = $b['status'] === 'confirmed' && (int)$b['published'];
             flash('#' . $id . ' перенесено на ' . tg_date($to) . ($shown ? ' — у «Подіях» на сайті теж.' : '.'));
             go($back);
+
+        // A picture the renter sent becomes the night's poster.
+        case 'poster_from_file':
+            $f = tg_file_get((int)($_POST['file'] ?? 0));
+            if (!$f || (int)$f['booking_id'] !== $id) { flash('Файл не знайдено.', 'err'); go(ADM . '?id=' . $id . '#tg'); }
+            $r = nox_poster_make($f['abs']);
+            if (is_string($r)) { flash($r, 'err'); go(ADM . '?id=' . $id . '#tg'); }
+            nox_poster_set($id, $r);
+            nox_log('BOOKING #' . $id . ' poster from tg file ' . $f['id'] . ' by admin');
+            flash('Афішу оновлено — з файлу від орендаря.');
+            go(ADM . '?id=' . $id);
 
         // A message to the renter from here, through the bot.
         case 'tg_write':
@@ -627,12 +682,33 @@ function tg_panel(array $b): string {
         ($p && $p['username'] !== '' ? ' · @' . h($p['username']) : '') . ($p && $p['name'] !== '' ? ' · ' . h($p['name']) : '') .
         '. Пишіть тут або в Telegram — відповіддю на його повідомлення.</p>';
     $rows = tg_history($id);
+    // The files the renter sent, by the line they came with.
+    $files = [];
+    if ($rows && ($db = relay_db())) {
+        $st = $db->prepare('SELECT id, msg_id FROM tg_files WHERE booking_id = ?');
+        $st->execute([$id]);
+        foreach ($st->fetchAll() as $fr) $files[(int)$fr['msg_id']][] = (int)$fr['id'];
+    }
     $out .= '<div class="dlg">';
     if (!$rows) $out .= '<p class="hint">Поки нічого не писали.</p>';
     foreach ($rows as $r) {
         $who = $r['dir'] === 'in' ? 'Орендар' : ($r['dir'] === 'out' ? ($r['who'] !== '' ? $r['who'] : 'Ми') : 'Бот');
+        $att = '';
+        foreach ($files[(int)$r['id']] ?? [] as $fid) {
+            $f = tg_file_get($fid);
+            if (!$f) continue;
+            $img = tg_file_is_image($f);
+            $att .= '<div class="att">' .
+                ($img ? '<a href="' . ADM . '?file=' . $fid . '" target="_blank"><img src="' . ADM . '?file=' . $fid . '" alt=""></a>' : '') .
+                '<div class="row"><a class="btn small" href="' . ADM . '?file=' . $fid . '&amp;dl=1">⬇ Завантажити ' . h($f['name']) . '</a>' .
+                ($img ? '<form class="inline" method="post" action="' . ADM . '">' . csrf_field() .
+                    '<input type="hidden" name="action" value="poster_from_file"><input type="hidden" name="id" value="' . $id . '">' .
+                    '<input type="hidden" name="file" value="' . $fid . '">' .
+                    '<button class="btn small main" type="submit">🖼 Зробити афішею</button></form>' : '') .
+                '</div></div>';
+        }
         $out .= '<div class="msg ' . h($r['dir']) . '"><span>' . h($who) . ' · ' . h(date('d.m H:i', (int)$r['created_at'])) . '</span>' .
-            nl2br(h($r['body'])) . '</div>';
+            nl2br(h($r['body'])) . $att . '</div>';
     }
     $out .= '</div><form method="post" action="' . ADM . '" class="row" style="margin-top:10px">' . csrf_field() .
         '<input type="hidden" name="action" value="tg_write"><input type="hidden" name="id" value="' . $id . '">' .
@@ -687,7 +763,7 @@ if (isset($_GET['id'])) {
             '<button type="button" class="btn small" data-copy="' . h(booking_summary($b, $STATE[$state][0])) . '">⧉ Скопіювати все</button></div>');
     $shown = !$isNew && $b['status'] === 'confirmed' && (int)$b['published'];
 
-    $form = '<form class="edit" method="post" action="' . ADM . '" style="margin-top:16px">' . csrf_field() .
+    $form = '<form class="edit" method="post" action="' . ADM . '?id=' . ($isNew ? 'new' : (int)$b['id']) . '" enctype="multipart/form-data" style="margin-top:16px">' . csrf_field() .
         '<input type="hidden" name="action" value="save"><input type="hidden" name="id" value="' . (int)$b['id'] . '">' .
         '<fieldset><legend>Коли</legend><div class="grid">' . $statusSel .
             $field('date', 'Дата', 'date', '', ' required') .
@@ -711,6 +787,13 @@ if (isset($_GET['id'])) {
             $field('tickets', 'Квитки (посилання)', 'url') . $field('post', 'Пост події (Instagram)', 'url') .
             $field('genre', 'Жанри', 'text', 'wide') .
             $field('lineup', 'Лайнап — кожен сет з нового рядка: «18:00–20:00 Артист» або «День 1: …»', 'textarea', 'wide') .
+            '<div class="wide poster-up" style="grid-column:1/-1">' .
+                (($b['poster_small'] ?? '') !== '' || ($b['poster'] ?? '') !== ''
+                    ? '<img src="' . h($b['poster_small'] !== '' ? $b['poster_small'] : $b['poster']) . '" alt="Поточна афіша">' : '') .
+                '<label>Завантажити афішу<input type="file" name="poster_file" accept="image/jpeg,image/png,image/webp"></label>' .
+                '<p class="hint" style="margin:6px 0 0">JPG, PNG або WebP, до ' . h(nox_mb(nox_upload_limit())) . '. ' .
+                'Краще вертикальна, від 1080 px завширшки. Після «Зберегти» сайт сам зробить дві версії (1080 і 720 px) і підставить їх нижче.</p>' .
+            '</div>' .
             $field('poster', 'Афіша, 1080 px (шлях або посилання)') . $field('poster_small', 'Афіша, 720 px') .
         '</div></fieldset>' .
         '<fieldset><legend>Нотатка для своїх</legend>' . $field('note', 'Не показується нікому, крім адмінки', 'textarea', 'wide') . '</fieldset>' .

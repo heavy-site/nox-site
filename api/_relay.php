@@ -52,6 +52,20 @@ function relay_db(): ?PDO {
         created_at INTEGER NOT NULL,
         PRIMARY KEY (admin_chat, admin_msg)
     )');
+    // Files a renter sent, kept outside the web root and shown only in /admin.
+    $db->exec('CREATE TABLE IF NOT EXISTS tg_files (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        msg_id     INTEGER NOT NULL DEFAULT 0,      -- its line in tg_msgs
+        booking_id INTEGER NOT NULL DEFAULT 0,
+        chat       TEXT NOT NULL,
+        kind       TEXT NOT NULL,                   -- photo, document, video…
+        name       TEXT NOT NULL DEFAULT \'\',
+        mime       TEXT NOT NULL DEFAULT \'\',
+        path       TEXT NOT NULL,                   -- under NOX_DATA_DIR/files
+        size       INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+    )');
+    $db->exec('CREATE INDEX IF NOT EXISTS tg_files_msg ON tg_files(msg_id)');
     // A renter's conversation as a topic in an admin's private chat with the
     // venue's bot: one per admin and conversation.
     $db->exec('CREATE TABLE IF NOT EXISTS tg_topics (
@@ -237,11 +251,84 @@ function tg_person_seen(string $chat, array $from, int $booking = -1): void {
     }
 }
 
-function tg_log_msg(string $chat, int $booking, string $dir, string $who, string $body): void {
+function tg_log_msg(string $chat, int $booking, string $dir, string $who, string $body): int {
     $db = relay_db();
-    if (!$db) return;
+    if (!$db) return 0;
     $db->prepare('INSERT INTO tg_msgs (chat, booking_id, dir, who, body, created_at) VALUES (?, ?, ?, ?, ?, ?)')
        ->execute([$chat, $booking, $dir, $who, $body, time()]);
+    return (int)$db->lastInsertId();
+}
+
+/* ── files a renter sends ──────────────────────────────────────────────────
+   Fetched once from the renters' bot and kept on the server, outside the web
+   root, so /admin can show and hand them out and an image can become the
+   night's poster. Telegram lets a bot fetch files up to 20 MB; anything
+   bigger is only named in the conversation. */
+const TG_FILE_MAX = 20 * 1024 * 1024;
+
+function tg_files_dir(): string {
+    return NOX_DATA_DIR . '/files';
+}
+
+function tg_store_media(array $m, string $chat, int $booking, int $msgId): ?array {
+    $kind = tg_media_kind($m);
+    if ($kind === '') return null;
+    $item = $kind === 'photo' ? end($m['photo']) : $m[$kind];
+    if ((int)($item['file_size'] ?? 0) > TG_FILE_MAX) return null;
+    $f = tg_renter('getFile', ['file_id' => (string)($item['file_id'] ?? '')]);
+    if (!$f || empty($f['file_path'])) return null;
+    $data = @file_get_contents(tg_api_base() . '/file/bot' . tg_renter_token() . '/' . $f['file_path']);
+    if ($data === false || $data === '') return null;
+
+    $name = (string)($item['file_name'] ?? '');
+    $ext = strtolower(pathinfo($name !== '' ? $name : (string)$f['file_path'], PATHINFO_EXTENSION));
+    if (!preg_match('/^[a-z0-9]{1,8}$/', $ext)) $ext = $kind === 'photo' ? 'jpg' : 'bin';
+    if ($name === '') $name = $kind . '-' . date('Ymd-His') . '.' . $ext;
+    $rel = date('Ym') . '/' . bin2hex(random_bytes(8)) . '.' . $ext;
+    $abs = tg_files_dir() . '/' . $rel;
+    if (!is_dir(dirname($abs)) && !@mkdir(dirname($abs), 0750, true)) return null;
+    if (file_put_contents($abs, $data) === false) return null;
+
+    $mime = (string)($item['mime_type'] ?? ($kind === 'photo' ? 'image/jpeg' : ''));
+    $db = relay_db();
+    $db->prepare('INSERT INTO tg_files (msg_id, booking_id, chat, kind, name, mime, path, size, created_at)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+       ->execute([$msgId, $booking, $chat, $kind, mb_substr($name, 0, 200), $mime, $rel, strlen($data), time()]);
+    return ['id' => (int)$db->lastInsertId(), 'abs' => $abs, 'name' => $name, 'kind' => $kind, 'mime' => $mime];
+}
+
+function tg_file_get(int $id): ?array {
+    $db = relay_db();
+    if (!$db || !$id) return null;
+    $st = $db->prepare('SELECT * FROM tg_files WHERE id = ?');
+    $st->execute([$id]);
+    $f = $st->fetch();
+    if (!$f) return null;
+    $f['abs'] = tg_files_dir() . '/' . $f['path'];
+    return is_file($f['abs']) ? $f : null;
+}
+
+// A file that can become a poster: a picture the server can read.
+function tg_file_is_image(array $f): bool {
+    $info = @getimagesize($f['abs']);
+    return $info && in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true);
+}
+
+// Under a picture from a renter with a booking: one press makes it the poster.
+function tg_poster_row(?array $file, int $booking): array {
+    if (!$file || !$booking || !tg_file_is_image($file)) return [];
+    return [['text' => '🖼 Зробити афішею #' . $booking, 'callback_data' => 'poster:' . $file['id']]];
+}
+
+// A file into an admin's chat: the same one by its file_id once it has been
+// sent, the copy kept on the server the first time, or, failing that, fetched
+// from the renters' bot again.
+function tg_send_media(array $params, string $kind, ?array $m, string &$fid, ?array $file) {
+    if ($fid !== '') return tg_call(TG_MEDIA[$kind], $params + [$kind => $fid]);
+    $r = $file ? tg_call_as(TG_TOKEN, TG_MEDIA[$kind], $params, [$kind, $file['abs'], $file['name']])
+               : tg_carry(tg_renter_token(), $m, TG_TOKEN, $params);
+    if ($r) $fid = tg_file_id($r, $kind);
+    return $r;
 }
 
 function tg_map_put(string $adminChat, int $adminMsg, string $chat, int $booking): void {
@@ -393,18 +480,16 @@ function tg_topic_for(string $admin, string $key, string $chat, int $booking, in
 // One message into an admin's topic: a file (once carried, then by its
 // file_id), or text. A topic the admin deleted is made again, once. Null
 // when topics did not work out, so the caller falls back.
-function tg_topic_post(string $admin, string $key, string $chat, int $booking, string $html, ?array $m, string &$fid, int $skip = 0) {
+function tg_topic_post(string $admin, string $key, string $chat, int $booking, string $html, ?array $m, string &$fid, int $skip = 0, ?array $file = null, array $row = []) {
     $kind = $m ? tg_media_kind($m) : '';
     for ($try = 0; $try < 2; $try++) {
         $th = tg_topic_for($admin, $key, $chat, $booking, $skip);
         if (!$th) return null;
-        $base = ['chat_id' => $admin, 'message_thread_id' => $th, 'parse_mode' => 'HTML'];
+        $base = ['chat_id' => $admin, 'message_thread_id' => $th, 'parse_mode' => 'HTML']
+              + ($row ? ['reply_markup' => json_encode(['inline_keyboard' => [$row]])] : []);
         $r = null;
         if ($kind !== '') {
-            $cap = mb_substr($html, 0, 1000);
-            $r = $fid !== '' ? tg_call(TG_MEDIA[$kind], $base + ['caption' => $cap, $kind => $fid])
-                             : tg_carry(tg_renter_token(), $m, TG_TOKEN, $base + ['caption' => $cap]);
-            if ($r && $fid === '') $fid = tg_file_id($r, $kind);
+            $r = tg_send_media($base + ['caption' => mb_substr($html, 0, 1000)], $kind, $m, $fid, $file);
         } else {
             $r = tg_call('sendMessage', $base + ['text' => $html !== '' ? $html : '…', 'disable_web_page_preview' => 'true']);
         }
@@ -421,7 +506,7 @@ function tg_topic_post(string $admin, string $key, string $chat, int $booking, s
    the dialog; if nobody has, every admin who started the bot gets it with
    the buttons to step in. If no admin has started the bot yet, it goes to
    the group so it is not lost, with a word on how to take it private. */
-function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = null, int $skip = 0): void {
+function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = null, int $skip = 0, ?array $file = null): void {
     $key = $booking ? 'b' . $booking : 'c' . $chat;
     // With topics every admin gets it in their topic; without, whoever has
     // the conversation open, or everyone with the button to step in.
@@ -435,7 +520,8 @@ function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = nu
     $short = '⬅️ <b>' . tg_esc($p && $p['name'] !== '' ? $p['name'] : 'Орендар') . '</b>' .
              ($event !== '' ? ' · ' . tg_esc($event) : ($booking ? '' : ' · <i>без заявки</i>'));
     $full = '💬 <b>' . tg_who_line($chat, $booking) . '</b>';
-    $kb = json_encode(['inline_keyboard' => [tg_talk_row($booking, $chat)]]);
+    $prow = tg_poster_row($file, $booking);
+    $kb = json_encode(['inline_keyboard' => $prow ? [$prow, tg_talk_row($booking, $chat)] : [tg_talk_row($booking, $chat)]]);
     $kind = $m ? tg_media_kind($m) : '';
     $fid = '';
 
@@ -450,21 +536,17 @@ function tg_deliver(string $chat, int $booking, string $bodyHtml, ?array $m = nu
 
     foreach ($targets as $uid) {
         if ($topics && tg_topics_on()) {
-            $r = tg_topic_post($uid, $key, $chat, $booking, $bodyHtml, $kind !== '' ? $m : null, $fid, $skip);
+            $r = tg_topic_post($uid, $key, $chat, $booking, $bodyHtml, $kind !== '' ? $m : null, $fid, $skip, $file, $prow);
             if ($r) { tg_map_put($uid, (int)$r['message_id'], $chat, $booking); continue; }
         }
         $inDlg = in_array($uid, $open, true);
         $head = $inDlg ? $short : $full;
-        $base = ['chat_id' => $uid, 'parse_mode' => 'HTML'] + ($inDlg ? [] : ['reply_markup' => $kb]);
+        $markup = $inDlg ? ($prow ? json_encode(['inline_keyboard' => [$prow]]) : '') : $kb;
+        $base = ['chat_id' => $uid, 'parse_mode' => 'HTML'] + ($markup !== '' ? ['reply_markup' => $markup] : []);
         $r = null;
         if ($kind !== '') {
             $cap = mb_substr($head . ($bodyHtml !== '' ? "\n" . $bodyHtml : ''), 0, 1000);
-            if ($fid !== '') {
-                $r = tg_call(TG_MEDIA[$kind], $base + ['caption' => $cap, $kind => $fid]);
-            } else {
-                $r = tg_carry(tg_renter_token(), $m, TG_TOKEN, $base + ['caption' => $cap]);
-                $fid = tg_file_id($r, $kind);
-            }
+            $r = tg_send_media($base + ['caption' => $cap], $kind, $m, $fid, $file);
         }
         if (!$r) {
             $r = tg_call('sendMessage', $base + ['text' => $head . "\n" . $bodyHtml, 'disable_web_page_preview' => 'true']);
@@ -502,13 +584,14 @@ function tg_from_renter(array $m): void {
     $booking = $p ? (int)$p['booking_id'] : 0;
     tg_person_seen($chat, $from);
     $body = tg_msg_body($m);
-    tg_log_msg($chat, $booking, 'in', trim(($from['first_name'] ?? '') . ' ' . ($from['last_name'] ?? '')), $body);
+    $msgId = tg_log_msg($chat, $booking, 'in', trim(($from['first_name'] ?? '') . ' ' . ($from['last_name'] ?? '')), $body);
+    $file = isset($m['text']) ? null : tg_store_media($m, $chat, $booking, $msgId);
 
     // To the admins: text as it is, a file carried across with the caption,
     // anything that cannot travel as a line saying what it was.
     $html = isset($m['text']) ? tg_esc((string)$m['text'])
           : (tg_media_kind($m) !== '' ? tg_esc((string)($m['caption'] ?? '')) : tg_esc($body));
-    tg_deliver($chat, $booking, $html, isset($m['text']) ? null : $m, 1);
+    tg_deliver($chat, $booking, $html, isset($m['text']) ? null : $m, 1, $file);
 }
 
 // The bot's own word to a renter, kept in the history like the rest.

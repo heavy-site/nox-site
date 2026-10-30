@@ -5,3 +5,4 @@ make_preview.py
 nox_config.php
 nox_data/
 preview.html
+uploads/
