@@ -10,6 +10,7 @@
 // Connected from /admin, which points the bot here with a secret; a call
 // without that secret is ignored.
 require_once __DIR__ . '/_relay.php';
+require_once __DIR__ . '/_poster.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -145,6 +146,28 @@ if (!$inGroup && !($chat === $admin && tg_is_admin($admin))) {
     $done();
 }
 $data = (string)($q['data'] ?? '');
+
+// 🖼 Зробити афішею: a picture the renter sent becomes the night's poster on
+// the site, in the same two sizes an upload in /admin gets.
+if (preg_match('/^poster:(\d+)$/', $data, $pm)) {
+    $f = tg_file_get((int)$pm[1]);
+    $bid = $f ? (int)$f['booking_id'] : 0;
+    $b = $bid ? nox_booking($bid) : null;
+    if (!$b) { $answer('Файл або бронь не знайдено.', true); $done(); }
+    $r = nox_poster_make($f['abs']);
+    if (is_string($r)) { $answer($r, true); $done(); }
+    nox_poster_set($bid, $r);
+    nox_log('BOOKING #' . $bid . ' poster from tg file ' . $f['id'] . ' by tg:' . $admin);
+    $answer('Афішу #' . $bid . ' оновлено');
+    $shown = $b['status'] === 'confirmed' && (int)$b['published'];
+    $thread = (int)($q['message']['message_thread_id'] ?? 0);
+    tg_call('sendMessage', ['chat_id' => $chat, 'parse_mode' => 'HTML', 'disable_web_page_preview' => 'true'] +
+        ($thread ? ['message_thread_id' => $thread] : []) + ['text' =>
+        '🖼 Це тепер афіша #' . $bid . ' · ' . tg_esc(nox_booking_label($b)) . '.' . "\n" .
+        ($shown ? 'Уже на сайті: ' . NOX_SITE_URL . '/events'
+                : 'На сайті зʼявиться, коли бронь підтверджена й позначена «Показати в афіші» — в /admin.')]);
+    $done();
+}
 
 // ⬅️ Вийти з діалогу.
 if ($data === 'close') {

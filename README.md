@@ -81,6 +81,14 @@ to the other by the server, since bots cannot copy each other's messages.
   the others' topics too. No opening or closing. If Telegram refuses topics,
   the bot falls back to the conversations above for six hours and tries again.
 - Confirming, declining or cancelling a booking tells the renter on its own.
+- **Files from renters** (up to 20 MB, Telegram's limit for bots) are kept in
+  `NOX_DATA_DIR/files`, outside the web root. `/admin` shows them in the
+  conversation — a preview for pictures, a download for anything — only to a
+  signed-in admin. A picture can become the night's poster in one press:
+  «🖼 Зробити афішею» under it in Telegram or in `/admin`.
+- **Posters** can also be uploaded on a booking's page in `/admin`. Either way
+  the site makes 1080 and 720 px JPEGs in `/uploads/posters` (a folder the
+  deploy never touches) and fills in both poster paths (`api/_poster.php`).
 - «📜 Уся історія» posts the whole conversation; `/admin` shows it under the
   booking and can send from there too. Everything is kept in the database.
 - Until any admin has started the venue's bot, renters' messages fall back to
