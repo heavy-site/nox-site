@@ -198,6 +198,57 @@ details.mv input{ width:auto; padding:6px 8px; font-size:14px; }
   // A conversation opens at its latest message.
   document.querySelectorAll(".dlg").forEach(function (d) { d.scrollTop = d.scrollHeight; });
 
+  // …and keeps up on its own: every two seconds the page asks what came after
+  // the last line it has. A hidden tab does not ask. When a renter opens the
+  // bot while the page waits for them, the page reloads to show the chat.
+  var live = document.querySelector("[data-live]");
+  if (live && window.fetch) {
+    var busy = false;
+    var poll = function () {
+      if (busy || document.hidden) return;
+      busy = true;
+      var since = live.getAttribute("data-last") || "0";
+      fetch("?live=" + live.getAttribute("data-live") + "&since=" + since, { credentials: "same-origin", cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (!j) return;
+          if (live.getAttribute("data-linked") === "0") { if (j.linked) location.reload(); return; }
+          if (!j.html) return;
+          var near = live.scrollHeight - live.scrollTop - live.clientHeight < 80;
+          var none = live.querySelector(".none"); if (none) none.remove();
+          live.insertAdjacentHTML("beforeend", j.html);
+          live.setAttribute("data-last", String(j.last));
+          if (near) live.scrollTop = live.scrollHeight;
+        })
+        .catch(function () {})
+        .then(function () { busy = false; });
+    };
+    setInterval(poll, 2000);
+    document.addEventListener("visibilitychange", poll);
+
+    // Writing to the renter without leaving the page.
+    var send = document.querySelector("form.tg-send");
+    if (send) send.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var box = send.querySelector("textarea"), btn = send.querySelector("button");
+      if (!box.value.trim()) return;
+      btn.disabled = true;
+      fetch(send.getAttribute("action"), { method: "POST", body: new FormData(send),
+                                           credentials: "same-origin", headers: { "X-Nox-Fetch": "1" } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.ok) { box.value = ""; poll(); live.scrollTop = live.scrollHeight; }
+          else alert(j.error || "Не вдалося надіслати.");
+        })
+        .catch(function () { alert("Немає звʼязку з сервером."); })
+        .then(function () { btn.disabled = false; box.focus(); });
+    });
+    // Ctrl/⌘+Enter sends.
+    if (send) send.querySelector("textarea").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send.requestSubmit ? send.requestSubmit() : send.submit();
+    });
+  }
+
   // Copy: navigator.clipboard where the page may use it, a hidden textarea
   // where it may not (some in-app browsers, Telegram's among them).
   function fallback(t) {
@@ -421,9 +472,16 @@ if ($action !== '') {
         // A message to the renter from here, through the bot.
         case 'tg_write':
             $text = mb_substr(trim((string)($_POST['text'] ?? '')), 0, 4000);
-            if ($text === '') { flash('Порожнє повідомлення.', 'err'); go(ADM . '?id=' . $id); }
-            if (tg_send_from_web($id, $text, 'адмінка')) flash('Надіслано орендарю.');
-            else flash('Не вдалося надіслати: орендар не підключив бота або зупинив його.', 'err');
+            $sent = $text !== '' && tg_send_from_web($id, $text, 'адмінка');
+            $why = $text === '' ? 'Порожнє повідомлення.' : 'Не вдалося надіслати: орендар не підключив бота або зупинив його.';
+            // Sent from the page without leaving it: the answer, and the new
+            // line arrives with the next look for news.
+            if (($_SERVER['HTTP_X_NOX_FETCH'] ?? '') === '1') {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['ok' => $sent, 'error' => $sent ? '' : $why], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            if ($sent) flash('Надіслано орендарю.'); else flash($why, 'err');
             go(ADM . '?id=' . $id . '#tg');
 
         // The renters' bot: its token, checked with Telegram and pointed here.
@@ -670,6 +728,8 @@ function tg_panel(array $b): string {
     $out = '<fieldset id="tg"><legend>Telegram орендаря</legend>';
     if ($chat === '') {
         $link = tg_start_link($id);
+        // Watched too: the moment they open the bot, the page shows the conversation.
+        $out = '<fieldset id="tg" data-live="' . $id . '" data-linked="0"><legend>Telegram орендаря</legend>';
         $out .= '<p class="hint" style="margin:0 0 10px">Орендар ще не відкривав бота, тому бот не може йому написати. ' .
             'Надішліть йому один раз це посилання — після «Start» листування піде через бота, і ваші контакти він не побачить.</p>' .
             ($link !== '' ? '<div class="row"><code style="word-break:break-all">' . h($link) . '</code> ' .
@@ -680,17 +740,31 @@ function tg_panel(array $b): string {
     $p = tg_person($chat);
     $out .= '<p class="hint" style="margin:0 0 10px">Підключено' .
         ($p && $p['username'] !== '' ? ' · @' . h($p['username']) : '') . ($p && $p['name'] !== '' ? ' · ' . h($p['name']) : '') .
-        '. Пишіть тут або в Telegram — відповіддю на його повідомлення.</p>';
+        '. Пишіть тут або в Telegram — у темі цього орендаря в особистих з ботом заявок. Нові повідомлення зʼявляються тут самі.</p>';
     $rows = tg_history($id);
-    // The files the renter sent, by the line they came with.
+    $last = $rows ? (int)end($rows)['id'] : 0;
+    // The page asks for what came after the last line it has, every few
+    // seconds, so a conversation reads live without reloading.
+    $out .= '<div class="dlg" data-live="' . $id . '" data-last="' . $last . '" data-linked="1">';
+    if (!$rows) $out .= '<p class="hint none">Поки нічого не писали.</p>';
+    $out .= tg_msgs_html($id, $rows);
+    $out .= '</div><form method="post" action="' . ADM . '" class="row tg-send" style="margin-top:10px">' . csrf_field() .
+        '<input type="hidden" name="action" value="tg_write"><input type="hidden" name="id" value="' . $id . '">' .
+        '<textarea name="text" rows="2" placeholder="Повідомлення орендарю… (Ctrl+Enter — надіслати)" style="flex:1;min-height:44px" required></textarea>' .
+        '<button class="btn main small" type="submit">Надіслати</button></form>';
+    return $out . '</fieldset>';
+}
+
+// The lines of a conversation, with the files that came with them.
+function tg_msgs_html(int $id, array $rows): string {
+    if (!$rows) return '';
     $files = [];
-    if ($rows && ($db = relay_db())) {
+    if ($db = relay_db()) {
         $st = $db->prepare('SELECT id, msg_id FROM tg_files WHERE booking_id = ?');
         $st->execute([$id]);
         foreach ($st->fetchAll() as $fr) $files[(int)$fr['msg_id']][] = (int)$fr['id'];
     }
-    $out .= '<div class="dlg">';
-    if (!$rows) $out .= '<p class="hint">Поки нічого не писали.</p>';
+    $out = '';
     foreach ($rows as $r) {
         $who = $r['dir'] === 'in' ? 'Орендар' : ($r['dir'] === 'out' ? ($r['who'] !== '' ? $r['who'] : 'Ми') : 'Бот');
         $att = '';
@@ -710,11 +784,20 @@ function tg_panel(array $b): string {
         $out .= '<div class="msg ' . h($r['dir']) . '"><span>' . h($who) . ' · ' . h(date('d.m H:i', (int)$r['created_at'])) . '</span>' .
             nl2br(h($r['body'])) . $att . '</div>';
     }
-    $out .= '</div><form method="post" action="' . ADM . '" class="row" style="margin-top:10px">' . csrf_field() .
-        '<input type="hidden" name="action" value="tg_write"><input type="hidden" name="id" value="' . $id . '">' .
-        '<textarea name="text" rows="2" placeholder="Повідомлення орендарю…" style="flex:1;min-height:44px" required></textarea>' .
-        '<button class="btn main small" type="submit">Надіслати</button></form>';
-    return $out . '</fieldset>';
+    return $out;
+}
+
+/* What is new in a conversation since the line the page has, as JSON. */
+if (isset($_GET['live'])) {
+    $id = (int)$_GET['live'];
+    $since = (int)($_GET['since'] ?? 0);
+    $linked = tg_booking_chat($id) !== '';
+    $rows = $linked ? array_values(array_filter(tg_history($id), fn($r) => (int)$r['id'] > $since)) : [];
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['linked' => $linked, 'html' => tg_msgs_html($id, $rows),
+                      'last' => $rows ? (int)end($rows)['id'] : $since], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 /* one booking */
